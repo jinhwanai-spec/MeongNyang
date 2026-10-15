@@ -55,11 +55,10 @@ func show_hideout() -> void:
 
 func show_multiplayer() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	if ClassDB.class_exists("MultiplayerMenu") or ResourceLoader.exists("res://scripts/net/multiplayer_menu.gd"):
-		var m = load("res://scripts/net/multiplayer_menu.gd").new()
-		m.back.connect(show_title)
-		m.start_coop.connect(start_raid)
-		_swap(m)
+	var m := MultiplayerMenu.new()
+	m.back.connect(show_title)
+	m.start_coop.connect(start_raid)
+	_swap(m)
 
 func start_raid() -> void:
 	var kit := GameState.begin_raid()
@@ -72,5 +71,9 @@ func show_result(result: Dictionary) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var rs := ResultScreen.new()
 	rs.result = result
-	rs.done.connect(show_hideout)
+	rs.done.connect(func():
+		if Net.active:
+			show_multiplayer()
+		else:
+			show_hideout())
 	_swap(rs)

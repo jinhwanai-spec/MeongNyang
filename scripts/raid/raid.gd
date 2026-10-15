@@ -917,7 +917,9 @@ func net_hit_enemy(eid: int, dmg: float, from: Vector2, kick: float, sender: int
 	var e: Enemy = enemies_by_id.get(eid)
 	if e and is_instance_valid(e) and not e.dead:
 		e.last_hitter = sender
+		e._net_hit = true
 		e.take_damage(dmg, from, kick)
+		e._net_hit = false
 
 func net_enemy_died(eid: int, killer: int) -> void:
 	var e: Enemy = enemies_by_id.get(eid)

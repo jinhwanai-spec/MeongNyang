@@ -110,15 +110,15 @@ func _sync_players(p: Dictionary) -> void:
 	players = p
 	players_changed.emit()
 
-func set_my_info(ready: bool) -> void:
+func set_my_info(rdy: bool) -> void:
 	if not active:
 		return
-	_update_info.rpc_id(1, GameState.hamster, ready)
+	_update_info.rpc_id(1, GameState.hamster, rdy)
 	if is_host():
-		_update_info(GameState.hamster, ready)
+		_update_info(GameState.hamster, rdy)
 
 @rpc("any_peer", "reliable")
-func _update_info(hamster: String, ready: bool) -> void:
+func _update_info(hamster: String, rdy: bool) -> void:
 	if not is_host():
 		return
 	var id := multiplayer.get_remote_sender_id()
@@ -126,7 +126,7 @@ func _update_info(hamster: String, ready: bool) -> void:
 		id = 1
 	if players.has(id):
 		players[id].hamster = hamster
-		players[id].ready = ready
+		players[id].ready = rdy
 		_sync_players.rpc(players)
 		players_changed.emit()
 
