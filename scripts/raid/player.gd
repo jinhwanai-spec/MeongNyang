@@ -373,6 +373,8 @@ func _fire() -> void:
 		if w.get("recover", false):
 			p.recoverable = true
 		raid.fx_layer.add_child(p)
+		if Net.in_raid:
+			Net.fired(origin, dir, float(w.speed), float(w.range), wid, false)
 	recoil = minf(recoil + float(w.recoil), 20.0)
 	muzzle_t = 0.06
 	raid.shake(float(w.recoil) * 0.55)

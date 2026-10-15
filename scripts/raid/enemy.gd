@@ -42,6 +42,13 @@ var lunge := 0.0
 var think_t := 0.0
 var show_bar_t := 0.0
 var stun := 0.0
+# 협동 멀티
+var net_id := 0
+var puppet := false          # 클라이언트: 호스트가 보낸 상태만 따라함
+var last_hitter := 1
+var net_pos := Vector2.ZERO
+var target: Node2D           # 노리는 햄스터 (가장 가까운 플레이어)
+var _net_hit := false
 
 # AI 타입 → [스프라이트, 무기, 손 높이]
 const SPRITES := {"hyena": ["cat_tabby", "knife", -30.0], "bulldog": ["cat_black", "hammer", -40.0], "cat": ["cat_white", "sniper", -34.0]}
@@ -61,6 +68,7 @@ func setup(r: Raid, t: String, pos: Vector2) -> void:
 	radius = float(data.radius)
 	position = pos
 	home = pos
+	net_pos = pos
 	target_pos = pos
 	facing = 1.0 if randf() > 0.5 else -1.0
 	think_t = randf() * 0.3
@@ -147,19 +155,40 @@ func _set_state(s: S) -> void:
 		icon_t = 1.0
 	state = s
 
+## 가장 가까운 살아 있는 햄스터 (조금이라도 이미 노리던 대상을 선호)
+func _tgt() -> Node2D:
+	var best: Node2D = null
+	var bd := 1e18
+	for q in raid.players:
+		if not is_instance_valid(q) or q.dead:
+			continue
+		var d := global_position.distance_squared_to(q.global_position)
+		if q == target:
+			d *= 0.6
+		if d < bd:
+			bd = d
+			best = q
+	target = best
+	return best
+
+func _cur() -> Node2D:
+	if target and is_instance_valid(target) and not target.dead:
+		return target
+	return _tgt()
+
 func _perceive(delta: float) -> void:
-	var p: Player = raid.player
+	var p = _tgt()
 	sees_player = false
 	if p == null or p.dead:
 		return
-	var to := (p.global_position + Vector2(0, -20)) - center()
+	var to: Vector2 = (p.global_position + Vector2(0, -20)) - center()
 	var dist := to.length()
 	if p.cloak_t > 0.0:
 		# 상자를 뒤집어쓴 햄스터는 보이지 않는다 — 쫓던 고양이도 마지막 위치를 뒤질 뿐
 		if state == S.CHASE:
 			_go_search(last_seen, false)
 		return
-	var vision := float(data.vision) * raid.vision_mul * p.visibility()
+	var vision: float = float(data.vision) * raid.vision_mul * p.visibility()
 	var in_cone := rad_to_deg(absf(Vector2(facing, 0).angle_to(to))) <= float(data.fov) * 0.5
 	if is_aware():
 		in_cone = true  # 이미 경계 중이면 사방을 본다
@@ -186,6 +215,9 @@ func _perceive(delta: float) -> void:
 # ── 메인 루프 ────────────────────────────────────────
 func _physics_process(delta: float) -> void:
 	if dead:
+		return
+	if puppet:
+		_puppet_step(delta)
 		return
 	attack_cd = maxf(0.0, attack_cd - delta)
 	charge_cd = maxf(0.0, charge_cd - delta)
@@ -267,13 +299,46 @@ func _physics_process(delta: float) -> void:
 		if absf(velocity.x) > 10.0 and not (state == S.CHASE and sees_player):
 			facing = signf(velocity.x)
 	if state == S.CHASE and (sees_player or windup > 0.0):
-		var to := raid.player.global_position - global_position
+		var to: Vector2 = (_cur().global_position if _cur() else global_position + Vector2(facing, 0)) - global_position
 		if absf(to.x) > 4.0:
 			facing = signf(to.x)
 	walk += delta * (velocity.length() / 25.0 + 1.0)
 	art.queue_redraw()
 	hand.queue_redraw()
 	_update_visuals()
+
+## 클라이언트: 호스트 상태를 부드럽게 따라가기
+func _puppet_step(delta: float) -> void:
+	flash = maxf(0.0, flash - delta * 6.0)
+	icon_t = maxf(0.0, icon_t - delta)
+	show_bar_t = maxf(0.0, show_bar_t - delta)
+	lunge = maxf(0.0, lunge - delta)
+	var to := net_pos - global_position
+	if to.length() > 220.0:
+		global_position = net_pos
+	else:
+		global_position += to * (1.0 - exp(-12.0 * delta))
+	velocity = to * 8.0
+	walk += delta * (velocity.length() / 25.0 + 1.0)
+	art.queue_redraw()
+	hand.queue_redraw()
+	_update_visuals()
+
+func net_apply(st: Array) -> void:
+	net_pos = st[1]
+	aim = st[2]
+	state = int(st[3]) as S
+	hp = st[4]
+	windup = st[5]
+	windup_total = st[6]
+	lunge = maxf(lunge, float(st[7]))
+	stun = st[8]
+	facing = st[9]
+	flash = maxf(flash, float(st[10]))
+	show_bar_t = maxf(show_bar_t, float(st[11]))
+	icon_t = maxf(icon_t, float(st[12]))
+	max_hp = st[13]
+	awareness = st[14]
 
 func _patrol(delta: float) -> Vector2:
 	if wait_t > 0.0:
@@ -310,7 +375,7 @@ func _move_to(pos: Vector2, delta: float) -> Vector2:
 
 # ── 전투 ─────────────────────────────────────────────
 func _combat(delta: float) -> Vector2:
-	var p: Player = raid.player
+	var p = _cur()
 	if p == null or p.dead:
 		_set_state(S.PATROL)
 		return Vector2.ZERO
@@ -318,7 +383,7 @@ func _combat(delta: float) -> Vector2:
 		# 마지막 위치와 발자국 쪽으로 추적
 		_go_search(last_seen, true)
 		return Vector2.ZERO
-	var to := p.global_position - global_position
+	var to: Vector2 = p.global_position - global_position
 	var dist := to.length()
 	aim = ((p.global_position + Vector2(0, -20)) - (global_position + hand.position)).normalized()
 	match type:
@@ -367,10 +432,10 @@ func _begin_windup(t: float, charge: bool = false) -> void:
 		Sfx.play_at("growl", global_position, -4.0)
 
 func _release_attack() -> void:
-	var p: Player = raid.player
+	var p = _cur()
 	if p == null or dead:
 		return
-	var to := p.global_position - global_position
+	var to: Vector2 = p.global_position - global_position
 	attack_cd = float(data.attack_cd)
 	if _charge_pending:
 		_charge_pending = false
@@ -399,12 +464,14 @@ func _release_attack() -> void:
 			var origin := global_position + hand.position + aim * Sprites.muzzle_dist(sprite_kind, "sniper")
 			bolt.setup(raid, origin, aim.rotated(randf_range(-0.04, 0.04)), 760.0, float(data.dmg), 700.0, false, "enemy_bolt")
 			raid.fx_layer.add_child(bolt)
+			if Net.is_host():
+				Net.fired(origin, bolt.vel.normalized(), 760.0, 700.0, "enemy_bolt", true)
 			Sfx.play_at("shot_pistol", global_position, -6.0, 0.1)
 			FX.muzzle(raid.fx_layer, origin, aim, false)
 			raid.emit_noise(global_position, 120.0)
 
 func _check_charge_hit() -> void:
-	var p: Player = raid.player
+	var p = _cur()
 	if p and global_position.distance_to(p.global_position) < 44.0:
 		p.take_damage(float(data.dmg) * 0.8, global_position)
 		charge_t = 0.0
@@ -412,7 +479,7 @@ func _check_charge_hit() -> void:
 
 func _seek_cover() -> void:
 	# 플레이어 시야에서 벗어난 근처 지점으로 숨기
-	var p: Player = raid.player
+	var p = _cur()
 	for i in 14:
 		var cand: Vector2 = raid.random_floor_near(global_position, 5)
 		if not raid.has_los(cand + Vector2(0, -16), p.global_position + Vector2(0, -20)):
@@ -433,6 +500,16 @@ func stun_for(t: float) -> void:
 func take_damage(amount: float, from_pos: Vector2, kick_force: float) -> void:
 	if dead:
 		return
+	if not _net_hit:
+		last_hitter = Net.my_id()
+	if puppet:
+		# 클라이언트: 맞힌 건 호스트에게 알리고, 여기선 반응만
+		flash = 1.0
+		show_bar_t = 3.0
+		FX.icon_pop(raid.fx_layer, center() + Vector2(randf_range(-8, 8), -radius), "hit")
+		Sfx.play_at("hit", global_position, -4.0, 0.15)
+		Net.send_hit(net_id, amount, from_pos, kick_force)
+		return
 	var crit := not is_aware()
 	hp -= amount
 	flash = 1.0
@@ -451,6 +528,8 @@ func take_damage(amount: float, from_pos: Vector2, kick_force: float) -> void:
 
 func _die() -> void:
 	dead = true
+	if Net.is_host():
+		Net.enemy_died(net_id, last_hitter)
 	remove_from_group("enemy")
 	FX.fur_puff(raid.fx_layer, center(), data.body, 20)
 	var tint: Color = {"cat_black": Color(0.38, 0.38, 0.44), "cat_white": Color(1.7, 1.7, 1.7)}.get(sprite_kind, Color.WHITE)

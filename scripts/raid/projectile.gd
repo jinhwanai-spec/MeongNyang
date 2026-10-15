@@ -14,6 +14,7 @@ var pierce := 0
 var recoverable := false
 var exclude: Array[RID] = []
 var origin := Vector2.ZERO
+var visual := false     # 다른 플레이어가 쏜 총알 (보이기만, 피해 없음)
 
 func setup(r: Raid, pos: Vector2, dir: Vector2, speed: float, damage: float, dist: float, player_owned: bool, wid: String) -> void:
 	raid = r
@@ -38,6 +39,10 @@ func _physics_process(delta: float) -> void:
 		var col: Object = hit.collider
 		if col is Enemy and from_player:
 			var e: Enemy = col
+			if visual:
+				FX.hit_spark(raid.fx_layer, hit.position, -vel.normalized(), Color("#FFE3A3"))
+				queue_free()
+				return
 			if not e.dead:
 				var fall := clampf(1.0 - (travelled / max_dist) * 0.5, 0.5, 1.0)
 				e.take_damage(dmg * fall, origin, kick)
@@ -50,6 +55,9 @@ func _physics_process(delta: float) -> void:
 				global_position = hit.position
 				return
 			queue_free()
+			return
+		elif col is RemotePlayer and not from_player:
+			queue_free()   # 다른 사람의 햄스터 피해는 그 사람 화면에서 계산
 			return
 		elif col is Player and not from_player:
 			(col as Player).take_damage(dmg, origin)

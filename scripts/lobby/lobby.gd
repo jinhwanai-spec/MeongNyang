@@ -12,7 +12,7 @@ var room: HideoutRoom
 var view: Node3D
 var cam: Camera3D
 var player: LobbyPlayer
-var avatar: Char3D
+var avatar: CharBillboard
 var ui: CanvasLayer
 var prompt: Label
 var info: Label
@@ -65,9 +65,9 @@ func _make_avatar() -> void:
 	if avatar:
 		avatar.queue_free()
 	player.hdata = DB.HAMSTERS.get(GameState.hamster, DB.HAMSTERS.baragi)
-	avatar = Char3D.new()
+	avatar = CharBillboard.new()
 	view.add_child(avatar)
-	avatar.setup(player, "hamster")
+	avatar.setup(player, 52.0)
 	shown_hamster = GameState.hamster
 
 func _build_ui() -> void:

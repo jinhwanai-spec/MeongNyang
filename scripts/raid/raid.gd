@@ -7,6 +7,11 @@ signal finished(result: Dictionary)
 const T := DB.TILE
 const USE_3D := true   # 3D 화면 (false면 예전 2D/2.5D 화면)
 var view3d: View3D
+# ── 협동 멀티 ──
+var players: Array = []           # 고양이가 노릴 수 있는 햄스터들 (나 + 다른 플레이어)
+var remotes := {}                 # peer_id -> RemotePlayer
+var enemies_by_id := {}           # 적 네트워크 id -> Enemy
+var next_eid := 1
 
 var kit: Dictionary
 var player: Player
@@ -61,6 +66,9 @@ func _ready() -> void:
 		bag.try_add("bandage")
 	for sid in kit.get("snacks", []):
 		bag.try_add(sid)
+	if Net.in_raid:
+		Net.raid = self
+		seed(Net.raid_seed)   # 모두 같은 맵·같은 상자 내용
 	_build_world()
 	_build_nav()
 	_spawn_entities()
@@ -225,6 +233,9 @@ func _spawn_entities() -> void:
 					player = Player.new()
 					player.raid = self
 					player.position = foot - Vector2(0, 8)
+					if Net.in_raid:
+						player.position += Vector2(T * 0.8 * Net.order_of(Net.my_id()), 0)
+					players.append(player)
 					world.add_child(player)
 					player.setup(kit)
 					player.died.connect(_on_player_died)
@@ -334,9 +345,13 @@ func _make_exit(label: String, cells: Array, need: float) -> ExitZone:
 	ez.add_child(l)
 	return ez
 
-func _spawn_enemy(t: String, pos: Vector2) -> Enemy:
+func _spawn_enemy(t: String, pos: Vector2, eid: int = 0) -> Enemy:
 	var e := Enemy.new()
 	e.setup(self, t, pos)
+	e.net_id = eid if eid > 0 else next_eid
+	next_eid = maxi(next_eid, e.net_id) + 1
+	e.puppet = Net.is_client()
+	enemies_by_id[e.net_id] = e
 	world.add_child(e)
 	return e
 
@@ -411,7 +426,7 @@ func _build_pause() -> void:
 func _set_pause(on: bool) -> void:
 	paused_menu = on
 	pause_layer.visible = on
-	get_tree().paused = on
+	get_tree().paused = on and not Net.active   # 멀티 중에는 세상이 멈추지 않는다
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if on or inv_open else Input.MOUSE_MODE_HIDDEN
 
 # ── 공용 질의 ────────────────────────────────────────
@@ -462,7 +477,9 @@ func tile_at(p: Vector2) -> String:
 	var c := cell_of(p - Vector2(0, 4))
 	return LevelData.code(c.x, c.y)
 
-func emit_noise(pos: Vector2, radius: float) -> void:
+func emit_noise(pos: Vector2, radius: float, share: bool = true) -> void:
+	if share and Net.is_client():
+		Net.noise(pos, radius)
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if e.dead:
 			continue
@@ -494,7 +511,7 @@ func shake(amount: float) -> void:
 	shake_amt = minf(shake_amt + amount * Settings.shake, 14.0)
 
 func perfect_dodge() -> void:
-	if Engine.time_scale >= 1.0:
+	if Engine.time_scale >= 1.0 and not Net.active:
 		FX.text_pop(fx_layer, player.global_position + Vector2(0, -70), "완벽한 회피!", DB.C_RARE, 0.9)
 		Sfx.play("perfect", -4.0)
 		Engine.time_scale = 0.45
@@ -541,6 +558,11 @@ func open_loot(c: LootContainer) -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_wall_occ()
+	if Net.in_raid:
+		# 떠난 플레이어 정리
+		for id in remotes.keys():
+			if not Net.players.has(id):
+				net_remove_peer(id)
 	if ending or player == null:
 		return
 	elapsed += delta
@@ -581,7 +603,7 @@ func _update_storm(delta: float) -> void:
 	modulate_node.color = base
 	rain.set("strength", storm_k)
 	reinforce_t -= delta * (1.0 + storm_k)
-	if reinforce_t <= 0.0:
+	if reinforce_t <= 0.0 and not Net.is_client():
 		reinforce_t = 95.0
 		_reinforce()
 
@@ -594,6 +616,8 @@ func _reinforce() -> void:
 		var t := "hyena" if randf() < 0.7 else "cat"
 		var e := _spawn_enemy(t, Vector2(cell.x * T + T * 0.5, cell.y * T + T * 0.7))
 		e.call_deferred("_go_search", random_floor_near(player.global_position, 4), false)
+		if Net.is_host():
+			Net.enemy_spawned(e.net_id, t, e.position)
 	notify("야생 무리가 이동 중이다...", DB.C_LEGEND)
 
 func _update_interaction(delta: float) -> void:
@@ -710,7 +734,9 @@ func on_loot_taken(id: String) -> void:
 		tut_step = 2
 
 func on_enemy_killed(e: Enemy) -> void:
-	kills += 1
+	enemies_by_id.erase(e.net_id)
+	if not Net.active or e.last_hitter == Net.my_id():
+		kills += 1
 	var items := e.roll_loot()
 	if not items.is_empty():
 		var drop := LootContainer.new()
@@ -741,7 +767,14 @@ func drop_item_on_ground(id: String) -> void:
 	d.drop_color = Color("#8A7A5A")
 	world.add_child(d)
 
-func power_on() -> void:
+func net_power_on() -> void:
+	if generator and not generator.powered:
+		generator.powered = true
+		power_on(false)
+
+func power_on(share: bool = true) -> void:
+	if share and Net.active:
+		Net.power_on()
 	notify("발전기 가동! 셔터가 열린다 — 소음이 퍼졌다!", DB.C_LEGEND)
 	Sfx.play("alarm", -2.0)
 	emit_noise(generator.global_position, 950.0)
@@ -757,6 +790,11 @@ func _end(survived: bool, reason: String) -> void:
 	if ending:
 		return
 	ending = true
+	if Net.in_raid:
+		Net.left_raid()
+		if Net.is_host():
+			Net.raid_ended()
+		Net.in_raid = false
 	_cancel_channel()
 	if inv_open:
 		toggle_inventory(false)
@@ -826,3 +864,89 @@ func _end(survived: bool, reason: String) -> void:
 		finished.emit(result))
 	if not survived:
 		Engine.time_scale = 0.5
+
+
+# ── 협동 멀티: 네트워크 상태 주고받기 ─────────────────
+func net_my_state() -> Array:
+	var p := player
+	var f := (1 if p.crouching else 0) | (2 if p.cloak_t > 0.0 else 0) | (4 if p.burrow_t > 0.0 else 0) | (8 if p.dead or ending else 0)
+	return [p.global_position, p.aim_dir, p.hp, p.max_hp, f, p.current_weapon(), p.hid, p.visibility(), p.dodge_t, p.melee_anim, p.recoil, p.heal_t]
+
+func net_apply_player(id: int, st: Array) -> void:
+	if ending:
+		return
+	var rp: RemotePlayer = remotes.get(id)
+	if rp == null or not is_instance_valid(rp):
+		rp = RemotePlayer.new()
+		rp.peer = id
+		rp.nickname = str(Net.players.get(id, {}).get("name", "햄찌"))
+		rp.apply(st)
+		world.add_child(rp)
+		remotes[id] = rp
+		players.append(rp)
+		notify("%s 합류!" % rp.nickname, Color("#9CFFB4"))
+	else:
+		rp.apply(st)
+
+func net_remove_peer(id: int) -> void:
+	var rp: RemotePlayer = remotes.get(id)
+	if rp and is_instance_valid(rp):
+		players.erase(rp)
+		if not rp.dead:
+			notify("%s 원정을 마쳤다" % rp.nickname, DB.C_MUTED)
+		rp.queue_free()
+	remotes.erase(id)
+
+func net_enemy_states() -> Array:
+	var out := []
+	for id in enemies_by_id:
+		var e: Enemy = enemies_by_id[id]
+		if not is_instance_valid(e) or e.dead:
+			continue
+		out.append([id, e.global_position, e.aim, int(e.state), e.hp, e.windup, e.windup_total, e.lunge, e.stun, e.facing, e.flash, e.show_bar_t, e.icon_t, e.max_hp, e.awareness])
+	return out
+
+func net_apply_enemies(list: Array, tleft: float) -> void:
+	time_left = tleft
+	for st in list:
+		var e: Enemy = enemies_by_id.get(int(st[0]))
+		if e and is_instance_valid(e) and not e.dead:
+			e.net_apply(st)
+
+func net_hit_enemy(eid: int, dmg: float, from: Vector2, kick: float, sender: int) -> void:
+	var e: Enemy = enemies_by_id.get(eid)
+	if e and is_instance_valid(e) and not e.dead:
+		e.last_hitter = sender
+		e.take_damage(dmg, from, kick)
+
+func net_enemy_died(eid: int, killer: int) -> void:
+	var e: Enemy = enemies_by_id.get(eid)
+	if e and is_instance_valid(e) and not e.dead:
+		e.last_hitter = killer
+		e._die()
+
+func net_spawn_enemy(eid: int, t: String, pos: Vector2) -> void:
+	if enemies_by_id.has(eid):
+		return
+	_spawn_enemy(t, pos, eid)
+
+func net_remote_fire(origin: Vector2, dir: Vector2, speed: float, dist: float, wid: String, enemy: bool) -> void:
+	var p := Projectile.new()
+	p.setup(self, origin, dir, speed, 0.0 if not enemy else 1.0, dist, not enemy, wid)
+	if enemy:
+		# 호스트 고양이의 저격탄: 내 햄스터에게만 실제 피해
+		for e in get_tree().get_nodes_in_group("enemy"):
+			if e.net_id > 0 and e.global_position.distance_to(origin) < 120.0:
+				p.dmg = float(e.data.dmg)
+				break
+	else:
+		p.visual = true
+	fx_layer.add_child(p)
+	FX.muzzle(fx_layer, origin, dir, wid == "shotgun")
+	Sfx.play_at("shot_" + (wid if wid in ["pistol", "shotgun"] else "pistol"), origin, -8.0, 0.1)
+
+## 호스트가 원정을 끝냄 → 우리도 무사 귀환
+func net_host_left() -> void:
+	if not ending and player and not player.dead:
+		notify("호스트가 원정을 끝냈다 — 함께 귀환!", DB.C_LEGEND)
+		_end(true, "호스트와 함께 귀환")

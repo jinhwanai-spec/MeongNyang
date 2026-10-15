@@ -25,16 +25,15 @@ func _ready() -> void:
 	v.add_child(room)
 	for k in room.labels:
 		room.labels[k].visible = false
-	ham = (load("res://assets/models/hamster.glb") as PackedScene).instantiate()
-	ham.position = center
-	ham.rotation_degrees.y = 18.0
-	ham.scale = Vector3.ONE * 1.1
-	v.add_child(ham)
-	_recolor(ham, Color(str(DB.HAMSTERS.get(GameState.hamster, DB.HAMSTERS.baragi).fur)))
-	var gp := (load("res://assets/models/w_shotgun.glb") as PackedScene).instantiate()
-	var grip := ham.find_child("grip", true, false)
-	if grip:
-		grip.add_child(gp)
+	# 선택한 햄스터 — 레퍼런스 시트 그림 그대로
+	var sheet := "hamster_" + GameState.hamster
+	if Sprites.char_info(sheet).is_empty():
+		sheet = "hamster"
+	var hb := CharBillboard.new()
+	hb.position = center
+	v.add_child(hb)
+	hb.setup_static(sheet, "idle_front", 30.0, 1.25)
+	ham = hb
 	var spot := SpotLight3D.new()
 	spot.position = center + Vector3(0, 4.5, 1.5)
 	spot.rotation_degrees = Vector3(-75, 0, 0)
@@ -180,11 +179,8 @@ func _process(delta: float) -> void:
 	var a := t * 0.12 + 0.35
 	cam.position = center + Vector3(sin(a) * 5.2 - 1.6, 3.2, cos(a) * 5.2)
 	cam.look_at(center + Vector3(-1.4, 0.75, 0), Vector3.UP)
-	# 햄스터 숨쉬기·가끔 깡충
+	# 햄스터 숨쉬기·가끔 깡충 (가끔 반가운 표정)
 	var hop := maxf(0.0, sin(t * 1.3)) ** 12 * 0.25
 	ham.position.y = hop
-	ham.scale = Vector3(1.1, 1.1 * (1.0 + sin(t * 2.4) * 0.015), 1.1)
-	var head := ham.find_child("head", true, false) as Node3D
-	if head:
-		head.rotation.x = -0.12 + sin(t * 0.8) * 0.06
-		head.rotation.y = sin(t * 0.5) * 0.25
+	var hb := ham as CharBillboard
+	hb.static_anim = "happy" if fmod(t, 6.0) > 5.2 else "idle_front"
