@@ -1,0 +1,45 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="멍냥서바이벌"
+config/description="재난 이후의 도시를 누비는 용병 개와 고양이의 탑다운 익스트랙션 슈터"
+config/version="0.1.0"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.5", "GL Compatibility")
+boot_splash/bg_color=Color(0.105882, 0.121569, 0.168627, 1)
+config/icon="res://icon.svg"
+
+[autoload]
+
+GameState="*res://scripts/autoload/game_state.gd"
+Sfx="*res://scripts/autoload/sfx.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom_font="res://assets/fonts/NotoSansKR-Bold.otf"
+
+[physics]
+
+2d/default_gravity=0.0
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.168627, 0.188235, 0.227451, 1)

@@ -1,0 +1,98 @@
+
+=== run chars 02:00:02 ===
+OK hamster 23.9s
+DONE chars
+
+=== run chars 02:01:47 ===
+OK hamster 4.8s
+DONE chars
+
+=== run chars 02:02:53 ===
+OK hamster 4.7s
+OK cat_tabby 3.6s
+OK cat_black 3.7s
+OK cat_white 3.6s
+DONE chars
+
+=== run chars 02:05:25 ===
+OK hamster 6.2s
+OK cat_tabby 4.8s
+OK cat_black 3.6s
+OK cat_white 3.5s
+DONE chars
+
+=== run all 02:09:04 ===
+OK hamster 6.7s
+OK cat_tabby 5.7s
+OK cat_black 4.5s
+OK cat_white 3.7s
+OK prop shelf
+OK prop shelf_empty
+OK prop fridge
+OK prop fridge_off
+OK prop counter
+OK prop register
+OK prop box
+OK prop box_open
+OK prop crates
+OK prop trash
+OK prop trash_open
+OK prop dumpster
+OK prop dumpster_open
+OK prop vending
+OK prop vending_off
+OK prop plant
+OK prop toolbox
+OK prop toolbox_open
+OK prop medcab
+OK prop medcab_open
+OK prop locker
+OK prop locker_open
+OK prop generator
+OK prop car0
+OK prop car1
+OK prop car2
+OK prop fence
+OK prop barrel_red
+OK prop barrel_blue
+OK prop sandbags
+OK prop cone
+OK item canned_food
+OK item kibble
+OK item churu
+OK item energy_drink
+OK item bandage
+OK item medkit
+OK item screws
+OK item pipe
+OK item rope
+OK item spring
+OK item duct_tape
+OK item battery
+OK item circuit
+OK item toy_mouse
+OK item catnip
+OK item silver_bell
+OK item lucky_coin
+OK item old_camera
+OK item gold_collar
+OK item ammo_pistol
+OK item ammo_shell
+OK item ammo_bolt
+DONE all
+
+=== run props 02:23:40 ===
+OK prop fridge
+OK prop fridge_off
+DONE props
+
+=== run items 02:23:53 ===
+OK item canned_food
+OK item energy_drink
+OK item screws
+OK item pipe
+OK item spring
+OK item battery
+OK item silver_bell
+OK item lucky_coin
+DONE items

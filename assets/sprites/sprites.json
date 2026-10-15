@@ -1,0 +1,1769 @@
+{
+ "chars": {
+  "hamster": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  },
+  "cat_tabby": {
+   "frame": [
+    256,
+    120
+   ],
+   "count": 7,
+   "anchor": [
+    128.0,
+    113.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     1
+    ],
+    "alert": [
+     2,
+     1
+    ],
+    "windup": [
+     3,
+     1
+    ],
+    "attack": [
+     4,
+     1
+    ],
+    "hurt": [
+     5,
+     1
+    ],
+    "dead": [
+     6,
+     1
+    ]
+   },
+   "faces_left": true,
+   "scale": 0.4716981132075472,
+   "h": 106.0
+  },
+  "cat_black": {
+   "frame": [
+    152,
+    121
+   ],
+   "count": 7,
+   "anchor": [
+    76.0,
+    114.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     1
+    ],
+    "alert": [
+     2,
+     1
+    ],
+    "windup": [
+     3,
+     1
+    ],
+    "attack": [
+     4,
+     1
+    ],
+    "hurt": [
+     5,
+     1
+    ],
+    "dead": [
+     6,
+     1
+    ]
+   },
+   "faces_left": true,
+   "scale": 0.5825242718446602,
+   "h": 103.0
+  },
+  "cat_white": {
+   "frame": [
+    130,
+    131
+   ],
+   "count": 7,
+   "anchor": [
+    65.0,
+    124.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     1
+    ],
+    "alert": [
+     2,
+     1
+    ],
+    "windup": [
+     3,
+     1
+    ],
+    "attack": [
+     4,
+     1
+    ],
+    "hurt": [
+     5,
+     1
+    ],
+    "dead": [
+     6,
+     1
+    ]
+   },
+   "faces_left": true,
+   "scale": 0.4406779661016949,
+   "h": 118.0
+  },
+  "hamster_baragi": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  },
+  "hamster_solbang": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  },
+  "hamster_kongtteok": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  },
+  "hamster_cheeseball": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  },
+  "hamster_moka": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  },
+  "hamster_marshmallow": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  },
+  "hamster_meokmul": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  },
+  "hamster_toto": {
+   "frame": [
+    152,
+    127
+   ],
+   "count": 22,
+   "anchor": [
+    76.0,
+    120.0
+   ],
+   "anims": {
+    "idle": [
+     0,
+     1
+    ],
+    "walk": [
+     1,
+     4
+    ],
+    "idle_front": [
+     5,
+     1
+    ],
+    "walk_front": [
+     6,
+     4
+    ],
+    "idle_back": [
+     10,
+     1
+    ],
+    "walk_back": [
+     11,
+     2
+    ],
+    "aim": [
+     13,
+     1
+    ],
+    "hurt": [
+     14,
+     1
+    ],
+    "happy": [
+     15,
+     1
+    ],
+    "heal": [
+     16,
+     1
+    ],
+    "dodge": [
+     17,
+     1
+    ],
+    "sleep": [
+     18,
+     1
+    ],
+    "portrait": [
+     19,
+     1
+    ],
+    "portrait_hurt": [
+     20,
+     1
+    ],
+    "portrait_happy": [
+     21,
+     1
+    ]
+   },
+   "faces_left": false,
+   "scale": 0.45217391304347826,
+   "h": 115.0
+  }
+ },
+ "weapons": {
+  "hamster__pistol": {
+   "anchor": [
+    13.02,
+    19.69
+   ],
+   "size": [
+    55,
+    41
+   ]
+  },
+  "hamster__shotgun": {
+   "anchor": [
+    48.69,
+    15.95
+   ],
+   "size": [
+    127,
+    35
+   ]
+  },
+  "hamster__crossbow": {
+   "anchor": [
+    23.69,
+    15.55
+   ],
+   "size": [
+    97,
+    37
+   ]
+  },
+  "hamster__bat": {
+   "anchor": [
+    10.76,
+    10.12
+   ],
+   "size": [
+    79,
+    21
+   ]
+  },
+  "hamster__rifle": {
+   "anchor": [
+    43.59,
+    23.43
+   ],
+   "size": [
+    118,
+    47
+   ]
+  },
+  "cat_tabby__knife": {
+   "anchor": [
+    13.98,
+    11.7
+   ],
+   "size": [
+    57,
+    23
+   ]
+  },
+  "cat_black__hammer": {
+   "anchor": [
+    10.97,
+    21.6
+   ],
+   "size": [
+    88,
+    43
+   ]
+  },
+  "cat_white__sniper": {
+   "anchor": [
+    51.36,
+    25.51
+   ],
+   "size": [
+    148,
+    46
+   ]
+  }
+ },
+ "props": {
+  "shelf": {
+   "anchor": [
+    49.8,
+    105.89
+   ],
+   "size": [
+    100,
+    127
+   ],
+   "px_per_tile": 96.0
+  },
+  "shelf_empty": {
+   "anchor": [
+    49.8,
+    105.89
+   ],
+   "size": [
+    100,
+    127
+   ],
+   "px_per_tile": 96.0
+  },
+  "fridge": {
+   "anchor": [
+    49.8,
+    128.71
+   ],
+   "size": [
+    100,
+    153
+   ],
+   "px_per_tile": 96.0
+  },
+  "fridge_off": {
+   "anchor": [
+    49.8,
+    128.71
+   ],
+   "size": [
+    100,
+    153
+   ],
+   "px_per_tile": 96.0
+  },
+  "counter": {
+   "anchor": [
+    54.9,
+    78.95
+   ],
+   "size": [
+    110,
+    107
+   ],
+   "px_per_tile": 96.0
+  },
+  "register": {
+   "anchor": [
+    54.9,
+    95.43
+   ],
+   "size": [
+    110,
+    124
+   ],
+   "px_per_tile": 96.0
+  },
+  "box": {
+   "anchor": [
+    34.8,
+    58.54
+   ],
+   "size": [
+    69,
+    80
+   ],
+   "px_per_tile": 96.0
+  },
+  "box_open": {
+   "anchor": [
+    54.9,
+    71.97
+   ],
+   "size": [
+    110,
+    94
+   ],
+   "px_per_tile": 96.0
+  },
+  "crates": {
+   "anchor": [
+    50.53,
+    99.15
+   ],
+   "size": [
+    103,
+    126
+   ],
+   "px_per_tile": 96.0
+  },
+  "trash": {
+   "anchor": [
+    40.2,
+    85.67
+   ],
+   "size": [
+    80,
+    109
+   ],
+   "px_per_tile": 96.0
+  },
+  "trash_open": {
+   "anchor": [
+    37.4,
+    81.16
+   ],
+   "size": [
+    85,
+    104
+   ],
+   "px_per_tile": 96.0
+  },
+  "dumpster": {
+   "anchor": [
+    49.8,
+    114.07
+   ],
+   "size": [
+    196,
+    141
+   ],
+   "px_per_tile": 96.0
+  },
+  "dumpster_open": {
+   "anchor": [
+    47.7,
+    172.98
+   ],
+   "size": [
+    191,
+    200
+   ],
+   "px_per_tile": 96.0
+  },
+  "vending": {
+   "anchor": [
+    48.9,
+    135.56
+   ],
+   "size": [
+    98,
+    161
+   ],
+   "px_per_tile": 96.0
+  },
+  "vending_off": {
+   "anchor": [
+    48.9,
+    135.56
+   ],
+   "size": [
+    98,
+    161
+   ],
+   "px_per_tile": 96.0
+  },
+  "plant": {
+   "anchor": [
+    38.45,
+    63.5
+   ],
+   "size": [
+    72,
+    83
+   ],
+   "px_per_tile": 96.0
+  },
+  "toolbox": {
+   "anchor": [
+    38.1,
+    61.35
+   ],
+   "size": [
+    76,
+    80
+   ],
+   "px_per_tile": 96.0
+  },
+  "toolbox_open": {
+   "anchor": [
+    38.1,
+    80.66
+   ],
+   "size": [
+    76,
+    100
+   ],
+   "px_per_tile": 96.0
+  },
+  "medcab": {
+   "anchor": [
+    44.4,
+    107.42
+   ],
+   "size": [
+    88,
+    127
+   ],
+   "px_per_tile": 96.0
+  },
+  "medcab_open": {
+   "anchor": [
+    43.99,
+    107.04
+   ],
+   "size": [
+    119,
+    131
+   ],
+   "px_per_tile": 96.0
+  },
+  "locker": {
+   "anchor": [
+    46.2,
+    135.66
+   ],
+   "size": [
+    92,
+    157
+   ],
+   "px_per_tile": 96.0
+  },
+  "locker_open": {
+   "anchor": [
+    45.86,
+    135.39
+   ],
+   "size": [
+    118,
+    170
+   ],
+   "px_per_tile": 96.0
+  },
+  "generator": {
+   "anchor": [
+    46.2,
+    86.27
+   ],
+   "size": [
+    92,
+    112
+   ],
+   "px_per_tile": 96.0
+  },
+  "car0": {
+   "anchor": [
+    45.36,
+    96.78
+   ],
+   "size": [
+    192,
+    128
+   ],
+   "px_per_tile": 96.0
+  },
+  "car1": {
+   "anchor": [
+    45.36,
+    96.78
+   ],
+   "size": [
+    192,
+    128
+   ],
+   "px_per_tile": 96.0
+  },
+  "car2": {
+   "anchor": [
+    45.36,
+    96.78
+   ],
+   "size": [
+    192,
+    128
+   ],
+   "px_per_tile": 96.0
+  },
+  "fence": {
+   "anchor": [
+    77.1,
+    95.42
+   ],
+   "size": [
+    154,
+    103
+   ],
+   "px_per_tile": 96.0
+  },
+  "barrel_red": {
+   "anchor": [
+    35.7,
+    85.62
+   ],
+   "size": [
+    71,
+    108
+   ],
+   "px_per_tile": 96.0
+  },
+  "barrel_blue": {
+   "anchor": [
+    35.7,
+    85.62
+   ],
+   "size": [
+    71,
+    108
+   ],
+   "px_per_tile": 96.0
+  },
+  "sandbags": {
+   "anchor": [
+    65.4,
+    40.88
+   ],
+   "size": [
+    131,
+    52
+   ],
+   "px_per_tile": 96.0
+  },
+  "cone": {
+   "anchor": [
+    24.0,
+    53.8
+   ],
+   "size": [
+    48,
+    70
+   ],
+   "px_per_tile": 96.0
+  }
+ },
+ "items": {
+  "ammo_bolt": [
+   96,
+   150
+  ],
+  "ammo_pistol": [
+   61,
+   59
+  ],
+  "ammo_shell": [
+   56,
+   64
+  ],
+  "bandage": [
+   155,
+   144
+  ],
+  "battery": [
+   69,
+   71
+  ],
+  "canned_food": [
+   42,
+   58
+  ],
+  "catnip": [
+   256,
+   150
+  ],
+  "churu": [
+   94,
+   144
+  ],
+  "circuit": [
+   172,
+   226
+  ],
+  "duct_tape": [
+   122,
+   88
+  ],
+  "energy_drink": [
+   51,
+   64
+  ],
+  "gold_collar": [
+   120,
+   110
+  ],
+  "kibble": [
+   155,
+   256
+  ],
+  "lucky_coin": [
+   46,
+   54
+  ],
+  "medkit": [
+   66,
+   57
+  ],
+  "old_camera": [
+   256,
+   233
+  ],
+  "pipe": [
+   54,
+   256
+  ],
+  "rope": [
+   79,
+   72
+  ],
+  "screws": [
+   157,
+   94
+  ],
+  "silver_bell": [
+   49,
+   55
+  ],
+  "spring": [
+   79,
+   124
+  ],
+  "toy_mouse": [
+   144,
+   106
+  ],
+  "sunflower_seed": [
+   148,
+   87
+  ],
+  "cheese": [
+   138,
+   115
+  ],
+  "carrot_juice": [
+   89,
+   153
+  ],
+  "nut_mix": [
+   140,
+   100
+  ]
+ },
+ "icons": {
+  "w_pistol": [
+   74,
+   62
+  ],
+  "w_shotgun": [
+   127,
+   52
+  ],
+  "w_rifle": [
+   119,
+   64
+  ],
+  "w_sniper": [
+   119,
+   60
+  ],
+  "w_knife": [
+   66,
+   66
+  ],
+  "w_launcher": [
+   189,
+   102
+  ],
+  "w_ak": [
+   137,
+   74
+  ],
+  "w_revolver": [
+   72,
+   71
+  ]
+ },
+ "sprops": {
+  "crate": {
+   "anchor": [
+    43.5,
+    65.0375
+   ],
+   "size": [
+    87,
+    79
+   ],
+   "px_per_tile": 78.0
+  },
+  "crate_blue": {
+   "anchor": [
+    38.5,
+    64.4125
+   ],
+   "size": [
+    77,
+    77
+   ],
+   "px_per_tile": 78.0
+  },
+  "barrel_red": {
+   "anchor": [
+    24.5,
+    67.93625
+   ],
+   "size": [
+    49,
+    76
+   ],
+   "px_per_tile": 78.0
+  },
+  "barrel_blue": {
+   "anchor": [
+    25.5,
+    57.68875
+   ],
+   "size": [
+    51,
+    66
+   ],
+   "px_per_tile": 78.0
+  },
+  "fence": {
+   "anchor": [
+    48.5,
+    86.799
+   ],
+   "size": [
+    97,
+    92
+   ],
+   "px_per_tile": 78.0
+  },
+  "fence2": {
+   "anchor": [
+    48.5,
+    86.799
+   ],
+   "size": [
+    97,
+    92
+   ],
+   "px_per_tile": 78.0
+  },
+  "lamp": {
+   "anchor": [
+    25.5,
+    171.585
+   ],
+   "size": [
+    51,
+    182
+   ],
+   "px_per_tile": 78.0
+  },
+  "sandbags": {
+   "anchor": [
+    61.0,
+    53.9025
+   ],
+   "size": [
+    122,
+    71
+   ],
+   "px_per_tile": 78.0
+  },
+  "locker": {
+   "anchor": [
+    32.0,
+    63.2
+   ],
+   "size": [
+    64,
+    74
+   ],
+   "px_per_tile": 78.0
+  },
+  "barrier_orange": {
+   "anchor": [
+    38.0,
+    64.685
+   ],
+   "size": [
+    76,
+    74
+   ],
+   "px_per_tile": 78.0
+  },
+  "barrier_concrete": {
+   "anchor": [
+    49.5,
+    60.47125
+   ],
+   "size": [
+    99,
+    72
+   ],
+   "px_per_tile": 78.0
+  },
+  "cardboard": {
+   "anchor": [
+    33.0,
+    47.925
+   ],
+   "size": [
+    66,
+    59
+   ],
+   "px_per_tile": 78.0
+  },
+  "barrier_stripe": {
+   "anchor": [
+    49.0,
+    50.22
+   ],
+   "size": [
+    98,
+    63
+   ],
+   "px_per_tile": 78.0
+  },
+  "cone": {
+   "anchor": [
+    30.5,
+    67.6125
+   ],
+   "size": [
+    61,
+    78
+   ],
+   "px_per_tile": 78.0
+  },
+  "tires": {
+   "anchor": [
+    43.5,
+    65.0375
+   ],
+   "size": [
+    87,
+    79
+   ],
+   "px_per_tile": 78.0
+  },
+  "ammo_locker": {
+   "anchor": [
+    31.0,
+    73.475
+   ],
+   "size": [
+    62,
+    84
+   ],
+   "px_per_tile": 78.0
+  },
+  "bush": {
+   "anchor": [
+    49.5,
+    59.74875
+   ],
+   "size": [
+    99,
+    74
+   ],
+   "px_per_tile": 78.0
+  },
+  "rock": {
+   "anchor": [
+    23.0,
+    26.675
+   ],
+   "size": [
+    46,
+    35
+   ],
+   "px_per_tile": 78.0
+  },
+  "stump": {
+   "anchor": [
+    20.5,
+    37.3625
+   ],
+   "size": [
+    41,
+    45
+   ],
+   "px_per_tile": 78.0
+  },
+  "crate_small": {
+   "anchor": [
+    25.5,
+    49.9875
+   ],
+   "size": [
+    51,
+    59
+   ],
+   "px_per_tile": 78.0
+  },
+  "pallet": {
+   "anchor": [
+    52.0,
+    30.840000000000003
+   ],
+   "size": [
+    104,
+    50
+   ],
+   "px_per_tile": 78.0
+  },
+  "trough": {
+   "anchor": [
+    44.5,
+    37.98625
+   ],
+   "size": [
+    89,
+    51
+   ],
+   "px_per_tile": 78.0
+  }
+ },
+ "fx": {
+  "flash1": [
+   79,
+   36
+  ],
+  "flash2": [
+   84,
+   37
+  ],
+  "explosion": [
+   109,
+   64
+  ],
+  "smoke": [
+   69,
+   54
+  ],
+  "explosion2": [
+   73,
+   53
+  ],
+  "puff1": [
+   44,
+   39
+  ],
+  "puff2": [
+   49,
+   39
+  ],
+  "slash": [
+   86,
+   76
+  ],
+  "smoke_big": [
+   66,
+   49
+  ],
+  "burst": [
+   71,
+   51
+  ],
+  "heal": [
+   66,
+   64
+  ],
+  "sparkle": [
+   59,
+   54
+  ],
+  "orb": [
+   69,
+   68
+  ],
+  "coin": [
+   43,
+   50
+  ],
+  "blood": [
+   66,
+   71
+  ],
+  "impact": [
+   74,
+   69
+  ],
+  "crater": [
+   96,
+   39
+  ],
+  "dust": [
+   75,
+   54
+  ],
+  "bag": [
+   67,
+   71
+  ],
+  "key": [
+   37,
+   62
+  ],
+  "grenade": [
+   49,
+   62
+  ],
+  "decal_blood": [
+   79,
+   54
+  ],
+  "decal_scorch": [
+   69,
+   52
+  ],
+  "decal_crack": [
+   72,
+   54
+  ]
+ },
+ "ui": {
+  "heart": [
+   51,
+   51
+  ],
+  "shield": [
+   51,
+   51
+  ],
+  "bolt": [
+   51,
+   51
+  ],
+  "ammo": [
+   54,
+   51
+  ],
+  "crosshair": [
+   54,
+   51
+  ],
+  "grenade": [
+   52,
+   51
+  ],
+  "skull": [
+   52,
+   51
+  ],
+  "alert": [
+   49,
+   51
+  ],
+  "question": [
+   51,
+   51
+  ],
+  "coin": [
+   51,
+   51
+  ]
+ }
+}
