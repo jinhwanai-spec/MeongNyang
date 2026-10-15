@@ -15,6 +15,8 @@ var craft_box: VBoxContainer
 var market_box: VBoxContainer
 var stash_box: VBoxContainer
 var market_mult := {}
+var overlay_mode := false   # 3D 로비 위에 띄우는 창 (왼쪽 일러스트 없음)
+var start_tab := 0
 
 func _ready() -> void:
 	theme = UITheme.get_theme()
@@ -25,7 +27,7 @@ func _ready() -> void:
 	GameState.validate_loadout()
 	GameState.save_game()
 	var bg := ColorRect.new()
-	bg.color = Color("#1E1A1E")
+	bg.color = Color("#1E1A1E") if not overlay_mode else Color(0.05, 0.04, 0.05, 0.55)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	var root := HBoxContainer.new()
@@ -37,13 +39,17 @@ func _ready() -> void:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.size_flags_stretch_ratio = 0.85
 	root.add_child(left)
-	var art := HideoutArt.new()
+	if overlay_mode:
+		left.size_flags_stretch_ratio = 0.6
+	var art: Control = HideoutArt.new() if not overlay_mode else Control.new()
 	art.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	left.add_child(art)
 	var stat := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		stat.add_theme_constant_override("margin_" + side, 18)
 	left.add_child(stat)
+	stat.visible = not overlay_mode
 	var stat_panel := PanelContainer.new()
 	stat.add_child(stat_panel)
 	var sv := VBoxContainer.new()
@@ -54,6 +60,12 @@ func _ready() -> void:
 	# 오른쪽: 메뉴
 	var right := MarginContainer.new()
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if overlay_mode:
+		var rbg := Panel.new()
+		rbg.add_theme_stylebox_override("panel", UITheme.box(Color(0.09, 0.08, 0.1, 0.94), 0))
+		rbg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		rbg.show_behind_parent = true
+		right.add_child(rbg)
 	for side in ["left", "right", "top", "bottom"]:
 		right.add_theme_constant_override("margin_" + side, 22)
 	root.add_child(right)
@@ -67,7 +79,7 @@ func _ready() -> void:
 	top.add_child(title)
 	coin_label = UITheme.label("", 22, DB.C_LEGEND, true)
 	top.add_child(coin_label)
-	var menu_btn := UITheme.button("메뉴", 15)
+	var menu_btn := UITheme.button("메뉴" if not overlay_mode else "닫기 (E)", 15)
 	menu_btn.pressed.connect(func(): to_title.emit())
 	top.add_child(menu_btn)
 	tabs = TabContainer.new()
@@ -81,11 +93,12 @@ func _ready() -> void:
 	toast = UITheme.label("", 16, DB.C_LEGEND)
 	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rv.add_child(toast)
-	var go := UITheme.button("원정 출발  ▶", 26, true)
+	var go := UITheme.button("원정 출발  ▶" if not overlay_mode else "바로 출구로 나가기  ▶", 26, true)
 	go.custom_minimum_size = Vector2(0, 62)
 	go.pressed.connect(func(): start_raid.emit())
 	rv.add_child(go)
 	refresh()
+	tabs.current_tab = clampi(start_tab, 0, tabs.get_tab_count() - 1)
 	if not given.is_empty() and int(GameState.stats.raids) > 0:
 		show_toast("기본 보급 지급: " + ", ".join(given))
 

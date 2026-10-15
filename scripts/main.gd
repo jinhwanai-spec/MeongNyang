@@ -6,6 +6,7 @@ var fade: ColorRect
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	Settings.apply()
 	var cl := CanvasLayer.new()
 	cl.layer = 100
 	add_child(cl)
@@ -36,19 +37,29 @@ func _swap(n: Node) -> void:
 
 func show_title() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	var t := TitleScreen.new()
+	var t := MainMenu.new()
 	t.play.connect(show_hideout)
 	t.new_game.connect(func():
 		GameState.new_game()
 		show_hideout())
+	t.multi.connect(show_multiplayer)
 	_swap(t)
 
+## 은신처: 3D 로비를 걸어 다니다 출구로 나가면 원정 시작
 func show_hideout() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	var h := Hideout.new()
+	var h := Lobby.new()
 	h.start_raid.connect(start_raid)
 	h.to_title.connect(show_title)
 	_swap(h)
+
+func show_multiplayer() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if ClassDB.class_exists("MultiplayerMenu") or ResourceLoader.exists("res://scripts/net/multiplayer_menu.gd"):
+		var m = load("res://scripts/net/multiplayer_menu.gd").new()
+		m.back.connect(show_title)
+		m.start_coop.connect(start_raid)
+		_swap(m)
 
 func start_raid() -> void:
 	var kit := GameState.begin_raid()

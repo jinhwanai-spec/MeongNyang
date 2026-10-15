@@ -28,6 +28,7 @@ var ov_cam: Camera2D
 var ov_quad: MeshInstance3D
 var cam_target := Vector3.ZERO
 var registered := {}
+var env: Environment
 
 func build(r: Raid) -> void:
 	raid = r
@@ -92,6 +93,7 @@ func _env() -> void:
 	e.adjustment_contrast = 1.04
 	we.environment = e
 	add_child(we)
+	env = e
 	var moon := DirectionalLight3D.new()
 	# 늦은 오후의 따뜻한 해 (부드러운 그림자)
 	moon.light_color = Color(1.0, 0.86, 0.68)
@@ -101,6 +103,7 @@ func _env() -> void:
 	moon.directional_shadow_max_distance = 45.0
 	moon.rotation_degrees = Vector3(-48, -38, 0)
 	add_child(moon)
+	Settings.apply_env(e, moon)
 
 func _lights() -> void:
 	# [타일 위치, 색, 반경(타일), 세기]

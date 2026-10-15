@@ -491,7 +491,7 @@ func notify(text: String, color: Color = DB.C_TEXT) -> void:
 		hud.notify(text, color)
 
 func shake(amount: float) -> void:
-	shake_amt = minf(shake_amt + amount, 14.0)
+	shake_amt = minf(shake_amt + amount * Settings.shake, 14.0)
 
 func perfect_dodge() -> void:
 	if Engine.time_scale >= 1.0:

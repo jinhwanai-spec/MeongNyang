@@ -39,6 +39,8 @@ func _process(_d: float) -> void:
 			"crouch": main.current.player.crouching = arg == "1"
 			"hideout": main.show_hideout()
 			"raid": main.start_raid()
+			"press": Input.action_press(arg)
+			"release": Input.action_release(arg)
 			"title": main.show_title()
 			"tp":
 				var xy := arg.split(",")

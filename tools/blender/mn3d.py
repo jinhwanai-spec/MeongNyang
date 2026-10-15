@@ -245,7 +245,7 @@ def build_cat(kind):
         H.append(sphere("eye%d" % sx, 0.085 * k, m["eye"], S((0.15 * sx, -0.31, HZ + 0.04)), (1.15, 0.45, 0.8), (0, math.radians(-12 * sx), 0)))
         H.append(sphere("pupil%d" % sx, 0.06 * k, m["pupil"], S((0.15 * sx, -0.345, HZ + 0.04)), (0.38, 0.4, 0.95)))
         H.append(sphere("eshine%d" % sx, 0.018 * k, m["shine"], S((0.15 * sx - 0.03, -0.37, HZ + 0.075))))
-        H.append(box("brow%d" % sx, S((0.15, 0.03, 0.035)), m["stripe"], S((0.15 * sx, -0.32, HZ + 0.13)), (0, math.radians(20 * sx), 0), bevel=0.012 * k))
+        H.append(box("brow%d" % sx, S((0.15, 0.03, 0.035)), m["stripe"], S((0.15 * sx, -0.32, HZ + 0.13)), (0, math.radians(-20 * sx), 0), bevel=0.012 * k))
         # 수염
         for j in range(2):
             H.append(tube("whisker%d%d" % (sx, j), [S((0.12 * sx, -0.34, HZ - 0.08 - j * 0.03)), S((0.32 * sx, -0.36, HZ - 0.06 - j * 0.06))], 0.005 * k, m["white"], smooth_curve=False))
@@ -454,3 +454,149 @@ def purge_scenes(prefix="MN3D_"):
             for ob in list(s.collection.all_objects):
                 bpy.data.objects.remove(ob, do_unlink=True)
             bpy.data.scenes.remove(s)
+
+# ── 은신처 (걸어 다니는 3D 방) ─────────────────────────
+# 고도트 좌표: x = 블렌더 x, z = -블렌더 y  →  방 안쪽은 x 0..14, z 0..10 (z=0이 북쪽 벽, 카메라는 남쪽)
+def _mark(name, x, z, parent, hx=0.0, hz=0.0):
+    """마커/충돌 상자용 빈 오브젝트. 충돌 상자는 scale = 반폭(x), 반깊이(z)"""
+    e = empty(name, (x, -z, 0.0), parent)
+    if hx > 0:
+        e.scale = (hx, hz, 1.0)
+    return e
+
+def build_hideout():
+    new_scene("MN3D_hideout")
+    root = empty("Hideout")
+    wood = M("hd_wood", "#9A6B43", 0.7)
+    wood2 = M("hd_wood2", "#7A5232", 0.7)
+    plank = M("hd_plank", "#B98552", 0.75)
+    earth = M("hd_earth", "#6E5240", 0.95)
+    earth2 = M("hd_earth2", "#5A4234", 0.95)
+    brick = M("hd_brick", "#A8604A", 0.85)
+    metal = M("hd_metal", "#8A929C", 0.35, 0.7)
+    dark = M("hd_dark", "#2E3036", 0.6)
+    red = M("hd_red", "#D64545", 0.5)
+    yellow = M("hd_yellow", "#F2C14E", 0.5)
+    cream = M("hd_cream", "#F1E6CF", 0.7)
+    green = M("hd_green", "#5F8F4E", 0.7)
+    blue = M("hd_blue", "#4A6FA5", 0.75)
+    blue2 = M("hd_blue2", "#6A8AC0", 0.8)
+    glow = M("hd_glow", "#FFD98A", 0.3, 0.0, 0.0, 8.0)
+    glow_g = M("hd_glow_g", "#7CFF9A", 0.3, 0.0, 0.0, 5.0)
+    W, D, H = 14.0, 10.0, 3.2
+    O = []   # 정적 메시 모음
+    def B(n, size, m, x, z, y, rot=(0, 0, 0), bevel=0.0):
+        O.append(box(n, size, m, (x, -z, y), rot, bevel=bevel))
+    def CY(n, r, d, m, x, z, y, rot=(0, 0, 0), bevel=0.0, seg=32):
+        O.append(cyl(n, r, d, m, (x, -z, y), rot, bevel=bevel, seg=seg))
+    def SP(n, r, m, x, z, y, sc=(1, 1, 1), seg=24, ring=14):
+        O.append(sphere(n, r, m, (x, -z, y), sc, seg=seg, ring=ring))
+    # 바닥: 나무 판자
+    for i in range(int(D / 0.5)):
+        B("floor%d" % i, (W, 0.48, 0.12), plank if i % 2 else wood, W / 2, 0.25 + i * 0.5, -0.06, bevel=0.01)
+    # 벽: 흙벽 + 아래 벽돌 띠 (북·서·동), 남쪽은 낮은 턱
+    B("wallN", (W + 0.6, 0.4, H), earth, W / 2, -0.2, H / 2)
+    B("brickN", (W, 0.1, 0.9), brick, W / 2, 0.02, 0.45, bevel=0.02)
+    for sx, x in ((-1, -0.2), (1, W + 0.2)):
+        B("wallS%d" % sx, (0.4, D + 0.4, H), earth2, x, D / 2, H / 2)
+        B("brickS%d" % sx, (0.1, D, 0.9), brick, x - 0.25 * sx, D / 2, 0.45, bevel=0.02)
+    B("ledgeS", (W + 0.8, 0.5, 0.35), earth2, W / 2, D + 0.25, 0.17, bevel=0.06)
+    # 천장 들보 (위로 지나는 나무 기둥)
+    for x in (0.2, W - 0.2):
+        for z in (0.2, 6.0):
+            B("post", (0.3, 0.3, H), wood2, x, z, H / 2, bevel=0.03)
+    # 북쪽 벽: 출구 터널 (x 11~12.4)
+    B("door_frameL", (0.25, 0.3, 2.2), wood2, 10.85, 0.05, 1.1, bevel=0.03)
+    B("door_frameR", (0.25, 0.3, 2.2), wood2, 12.55, 0.05, 1.1, bevel=0.03)
+    B("door_top", (1.95, 0.3, 0.3), wood2, 11.7, 0.05, 2.25, bevel=0.03)
+    B("tunnel", (1.45, 0.1, 2.05), M("hd_tunnel", "#0E0C0B", 1.0), 11.7, -0.12, 1.03)
+    B("exit_sign", (1.0, 0.06, 0.32), glow_g, 11.7, 0.1, 2.65, bevel=0.02)
+    for i in range(3):
+        B("arrow%d" % i, (0.22, 0.03, 0.06), glow_g, 11.7, 0.6 + i * 0.45, 0.01, (0, 0, math.radians(90)))
+    # 작업대 (북서)
+    B("bench_top", (3.4, 1.0, 0.14), wood, 3.4, 0.75, 0.95, bevel=0.03)
+    for x in (1.9, 4.9):
+        for z in (0.4, 1.1):
+            B("bench_leg", (0.12, 0.12, 0.9), wood2, x, z, 0.45)
+    B("bench_shelf", (3.2, 0.8, 0.08), wood2, 3.4, 0.75, 0.3)
+    B("vise", (0.3, 0.3, 0.25), metal, 2.2, 1.0, 1.15, bevel=0.03)
+    B("toolbox", (0.7, 0.38, 0.34), red, 4.4, 0.6, 1.2, bevel=0.04)
+    B("radio", (0.75, 0.38, 0.45), M("hd_radio", "#3B4252", 0.5), 3.3, 0.5, 1.25, bevel=0.05)
+    B("radio_scr", (0.4, 0.02, 0.18), glow_g, 3.2, 0.69, 1.3)
+    O.append(cyl("antenna", 0.02, 0.8, metal, (3.6, -0.45, 1.85), (0, math.radians(18), 0)))
+    B("pegboard", (3.0, 0.06, 1.3), M("hd_peg", "#C9A27A", 0.8), 3.4, 0.03, 2.0)
+    for i, x in enumerate((2.2, 2.9, 3.7, 4.5)):
+        B("tool%d" % i, (0.08, 0.04, 0.6 - i * 0.08), metal if i % 2 else red, x, 0.08, 2.0)
+    B("lampshade", (0.4, 0.4, 0.2), yellow, 2.1, 1.0, 1.65, bevel=0.06)
+    # 보관함: 서쪽 벽 사물함·선반
+    for i in range(3):
+        B("locker%d" % i, (0.7, 0.6, 1.9), M("hd_locker", "#5C7A99", 0.4, 0.4), 0.55, 3.2 + i * 0.75, 0.95, bevel=0.03)
+        B("locker_vent%d" % i, (0.02, 0.4, 0.2), dark, 0.9, 3.2 + i * 0.75, 1.6)
+    for i, z in enumerate((5.9, 6.6)):
+        B("crate%d" % i, (0.7, 0.7, 0.62), wood, 0.6, z, 0.31, bevel=0.03)
+    SP("seedsack", 0.38, cream, 0.6, 7.4, 0.34, (1, 1, 0.9))
+    B("seedtag", (0.2, 0.02, 0.15), yellow, 0.6, 7.05, 0.45)
+    # 냥이 시장 (동쪽) : 가판대 + 줄무늬 차양
+    B("stall", (2.4, 0.9, 0.95), wood, 12.4, 5.2, 0.48, bevel=0.04)
+    B("stall_top", (2.6, 1.0, 0.1), wood2, 12.4, 5.2, 1.0, bevel=0.02)
+    for i in range(6):
+        B("awning%d" % i, (0.44, 1.3, 0.06), red if i % 2 else cream, 11.3 + i * 0.44, 4.95, 2.25, (math.radians(-18), 0, 0))
+    for x in (11.25, 13.55):
+        B("stall_post", (0.1, 0.1, 2.2), wood2, x, 4.7, 1.1)
+    for i in range(4):
+        CY("can%d" % i, 0.09, 0.2, [red, yellow, blue, green][i], 11.6 + i * 0.4, 5.1, 1.15, seg=16)
+    SP("cheese", 0.22, yellow, 13.1, 5.2, 1.12, (1, 1, 0.55))
+    B("coinjar", (0.2, 0.2, 0.26), M("hd_glass", "#BFD8E8", 0.1), 12.3, 5.3, 1.18)
+    # 출발 준비: 작전 지도 탁자 + 무기 거치대 (가운데 왼쪽)
+    B("table", (2.2, 1.4, 0.1), wood, 4.0, 6.0, 0.85, bevel=0.03)
+    for x in (3.05, 4.95):
+        for z in (5.45, 6.55):
+            B("tleg", (0.1, 0.1, 0.8), wood2, x, z, 0.4)
+    B("map", (1.7, 1.0, 0.02), cream, 4.0, 6.0, 0.915)
+    for i, (x, z) in enumerate(((3.6, 5.8), (4.3, 6.2), (4.5, 5.7))):
+        CY("pin%d" % i, 0.04, 0.08, red, x, z, 0.96, seg=12)
+    B("rack", (1.8, 0.2, 1.4), wood2, 7.2, 0.25, 1.2, bevel=0.02)
+    for i in range(3):
+        B("gun%d" % i, (0.1, 0.06, 0.9), dark, 6.7 + i * 0.5, 0.4, 1.25, (0, math.radians(8), 0))
+    # 잠자리 (남서)
+    CY("cushion", 1.0, 0.28, blue, 2.0, 8.6, 0.14, bevel=0.1)
+    CY("cushion_top", 0.8, 0.1, blue2, 2.0, 8.6, 0.3, bevel=0.05)
+    SP("pillow", 0.32, cream, 1.4, 8.3, 0.4, (1.2, 0.8, 0.45))
+    # 둥근 러그
+    CY("rug", 2.4, 0.02, red, 7.5, 6.2, 0.01, seg=48)
+    CY("rug2", 1.9, 0.025, M("hd_rug2", "#E0A458", 0.9), 7.5, 6.2, 0.015, seg=48)
+    CY("rug3", 1.4, 0.03, red, 7.5, 6.2, 0.02, seg=48)
+    # 화분·통
+    CY("pot", 0.25, 0.4, M("hd_pot", "#B5653C", 0.8), 9.2, 0.6, 0.2, seg=16)
+    SP("leaf", 0.4, green, 9.2, 0.6, 0.7, (1, 1, 1.1), 16, 10)
+    CY("barrel", 0.35, 0.8, M("hd_barrel", "#3E6FB0", 0.5), 13.4, 8.8, 0.4, bevel=0.03)
+    # 줄 전구 (북쪽 벽 위)
+    for i in range(18):
+        x = 0.6 + i * 0.75
+        SP("bulbs%d" % i, 0.06, glow, x, 0.35, 2.75 - 0.12 * math.sin(i * 0.9) ** 2, seg=10, ring=6)
+    static = merge("room", O, (0, 0, 0), root)
+    # 마커 (고도트에서 위치·충돌로 읽음)
+    _mark("spawn", 7.5, 7.0, root)
+    _mark("st_craft", 3.4, 1.9, root)
+    _mark("st_market", 12.3, 6.3, root)
+    _mark("st_stash", 1.6, 4.0, root)
+    _mark("st_prep", 4.0, 7.3, root)
+    _mark("st_door", 11.7, 0.6, root)
+    _mark("npc_navi", 5.6, 1.4, root)
+    _mark("npc_market", 12.4, 4.3, root)
+    _mark("npc_sleep", 2.0, 8.6, root)
+    for nm, x, z, hx, hz in (("col_bench", 3.4, 0.75, 1.75, 0.55), ("col_lockers", 0.55, 3.95, 0.4, 1.15),
+                             ("col_crates", 0.6, 6.6, 0.4, 1.2), ("col_stall", 12.4, 5.2, 1.25, 0.5),
+                             ("col_table", 4.0, 6.0, 1.15, 0.75), ("col_rack", 7.2, 0.3, 0.95, 0.2),
+                             ("col_pot", 9.2, 0.6, 0.3, 0.3), ("col_barrel", 13.4, 8.8, 0.38, 0.38),
+                             ("col_wallN_l", 5.4, -0.3, 5.4, 0.3), ("col_wallN_r", 13.3, -0.3, 0.7, 0.3)):
+        _mark(nm, x, z, root, hx, hz)
+    for nm, x, z in (("light_bench", 3.0, 1.5), ("light_center", 7.5, 5.5), ("light_market", 12.3, 4.8), ("light_bed", 2.2, 8.0), ("light_door", 11.7, 1.0)):
+        _mark(nm, x, z, root)
+    return root
+
+def make_hideout():
+    root = build_hideout()
+    export_glb(root, os.path.join(GLB_DIR, "hideout.glb"))
+    preview(os.path.join(PREV_DIR, "hideout_game.png"), (7, -5.5, 0.5), 16.0, 49, 0, (960, 640), 40)
+    return root

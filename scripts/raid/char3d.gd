@@ -148,7 +148,7 @@ func _process(delta: float) -> void:
 	else:
 		dir = ent.aim if (ent.is_aware() or ent.windup > 0.0) else (vel if moving else Vector2(ent.facing, 0.3))
 	if dir.length() > 0.01:
-		yaw = lerp_angle(yaw, atan2(dir.x, dir.y) + PI, 1.0 - exp(-14.0 * delta))   # 모델 정면 = -Z
+		yaw = lerp_angle(yaw, atan2(dir.x, dir.y), 1.0 - exp(-14.0 * delta))   # 모델 정면 = +Z
 	rotation.y = yaw
 	# 걷기
 	var m := clampf(speed / 220.0, 0.0, 1.3)
@@ -158,7 +158,7 @@ func _process(delta: float) -> void:
 	var breathe := sin(t * 2.4) * 0.012
 	_rot("leg_l", sw * 0.75)
 	_rot("leg_r", -sw * 0.75)
-	_rot("arm_l", -sw * 0.25 + 0.1, 0, 0)
+	_rot("arm_l", -sw * 0.25 - 0.1, 0, 0)
 	var arm_r_x := sw * 0.12
 	var arm_r_y := 0.0
 	var body_off := Vector3(0, bob, 0)
@@ -169,8 +169,8 @@ func _process(delta: float) -> void:
 	var alpha := 1.0
 	if kind == "hamster":
 		if float(ent.recoil) > 0.1:
-			body_off.z += minf(float(ent.recoil), 12.0) * 0.006
-			arm_r_x += minf(float(ent.recoil), 12.0) * 0.03
+			body_off.z -= minf(float(ent.recoil), 12.0) * 0.006
+			arm_r_x -= minf(float(ent.recoil), 12.0) * 0.03
 		if float(ent.melee_anim) > 0.0:
 			arm_r_y = -sin(float(ent.melee_anim) / 0.22 * PI) * 1.6
 		if float(ent.dodge_t) > 0.0:
@@ -182,24 +182,24 @@ func _process(delta: float) -> void:
 		if float(ent.get("burrow_t")) > 0.0:
 			vis = false
 		if float(ent.heal_t) > 0.0:
-			arm_r_x = 0.9
+			arm_r_x = -0.9
 	else:
 		if float(ent.windup) > 0.0:
 			var k := 1.0 - float(ent.windup) / maxf(0.01, float(ent.windup_total))
-			arm_r_x = 1.2 * k if kind != "cat" else 0.0
+			arm_r_x = -1.2 * k if kind != "cat" else 0.0
 			body_off.y += sin(t * 60.0) * 0.01 * k
 		if float(ent.lunge) > 0.0:
-			arm_r_x = -0.7
+			arm_r_x = 0.7
 		if float(ent.stun) > 0.0:
 			roll = 0.0
 			lean = sin(t * 9.0) * 0.18
 	_rot("arm_r", arm_r_x, arm_r_y)
-	_rot("body", -lean * 0.5, 0, 0, body_off)
-	_rot("head", 0.3 + breathe, 0, 0, body_off)   # 카메라 쪽으로 고개를 살짝 든다
+	_rot("body", lean * 0.5, 0, 0, body_off)
+	_rot("head", -0.3 + breathe, 0, 0, body_off)   # 카메라 쪽으로 고개를 살짝 든다
 	model.visible = vis
 	var pop := 1.0 + clampf(float(ent.flash), 0.0, 1.0) * 0.14
 	model.scale = Vector3(base_scale * pop, base_scale * squash * pop * (1.0 + breathe), base_scale * pop)
-	model.rotation = Vector3(-roll - lean * 0.4, 0, 0)
+	model.rotation = Vector3(roll + lean * 0.4, 0, 0)
 	_set_alpha(alpha)
 	if kind == "hamster":
 		_set_weapon(_want_weapon())
