@@ -45,6 +45,16 @@ func _ready() -> void:
 	var sl := UITheme.label(sub, 17, DB.C_MUTED)
 	sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(sl)
+	if not ok and result.has("bag_rule"):
+		var bt := "가방이 쓰러진 자리에 남았다! 다음 원정에서 노란 표시를 따라가 회수하자."
+		if not bool(result.get("bag_left", false)):
+			bt = "난이도 규칙: 가방이 바로 사라졌다."
+		elif str(result.bag_rule) == "two":
+			bt += "  (회수하기 전에 또 쓰러지면 이 가방은 사라진다)"
+		var bl := UITheme.label(bt, 16, DB.C_LEGEND, true)
+		bl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		v.add_child(bl)
 	var stats := HBoxContainer.new()
 	stats.alignment = BoxContainer.ALIGNMENT_CENTER
 	stats.add_theme_constant_override("separation", 40)
@@ -54,7 +64,7 @@ func _ready() -> void:
 	_stat(stats, "처치", str(int(result.get("kills", 0))))
 	_stat(stats, "전리품 가치", "%s냥" % HUD._fmt(int(result.get("value", 0))))
 	var items: Array = result.get("items", []) if ok else result.get("lost_items", [])
-	v.add_child(UITheme.label("가져온 전리품" if ok else "잃어버린 것", 18, DB.C_TEXT if ok else DB.C_DANGER, true))
+	v.add_child(UITheme.label("가져온 전리품" if ok else ("가방에 남긴 것" if bool(result.get("bag_left", false)) else "잃어버린 것"), 18, DB.C_TEXT if ok else DB.C_DANGER, true))
 	var flow := HFlowContainer.new()
 	flow.add_theme_constant_override("h_separation", 8)
 	flow.add_theme_constant_override("v_separation", 8)

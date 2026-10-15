@@ -27,6 +27,9 @@ func setup_static(e: Node2D, name_: String, rot_deg: float, offset: Vector2, sca
 func setup_container(c: LootContainer) -> void:
 	lc = c
 	ent = c
+	if c.lost_bag:
+		_build_lost_bag()
+		return
 	if c.is_drop:
 		sc = 0.45
 		off = Vector2(0, -0.1)
@@ -39,6 +42,37 @@ func setup_container(c: LootContainer) -> void:
 		rotation_degrees.y = 90.0 if (tx % 2 == 0) else -90.0
 	_place()
 	_show(_cname())
+
+## 쓰러진 자리에 남은 내 가방: 큼직한 배낭 + 노란 빛기둥
+var bag_node: Node3D
+var beam: Node3D
+func _build_lost_bag() -> void:
+	_place()
+	bag_node = ProcModels.backpack()
+	bag_node.scale = Vector3.ONE * 1.3
+	bag_node.rotation.y = randf() * TAU
+	bag_node.rotation.z = 0.25
+	add_child(bag_node)
+	beam = ProcModels.light_beam(Color("#F2C14E"), 5.0, 0.35)
+	add_child(beam)
+	var l := OmniLight3D.new()
+	l.light_color = Color("#FFD27A")
+	l.light_energy = 1.4
+	l.omni_range = 2.5
+	l.position = Vector3(0, 0.8, 0)
+	add_child(l)
+	var lb := Label3D.new()
+	lb.text = "내 가방"
+	lb.font = FX.font()
+	lb.font_size = 30
+	lb.outline_size = 10
+	lb.modulate = Color("#FFD27A")
+	lb.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lb.fixed_size = true
+	lb.pixel_size = 0.0007
+	lb.no_depth_test = true
+	lb.position = Vector3(0, 1.4, 0)
+	add_child(lb)
 
 func _cname() -> String:
 	if lc.is_drop:
@@ -70,6 +104,16 @@ func _show(name_: String) -> void:
 func _process(_delta: float) -> void:
 	if not is_instance_valid(ent):
 		queue_free()
+		return
+	if lc and lc.lost_bag:
+		_t += _delta
+		var empty: bool = lc.searched and lc.items.is_empty()
+		if beam:
+			beam.visible = not empty
+			beam.scale = Vector3(1.0 + sin(_t * 3.0) * 0.08, 1.0, 1.0 + sin(_t * 3.0) * 0.08)
+		for c in get_children():
+			if c is Label3D or c is OmniLight3D:
+				c.visible = not empty
 		return
 	if lc:
 		_show(_cname())

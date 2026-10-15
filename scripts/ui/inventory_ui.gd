@@ -128,6 +128,8 @@ func _on_input(event: InputEvent) -> void:
 					var id: String = bag.entries[idx2].id
 					if DB.ITEMS[id].cat == "weapon":
 						raid.player.equip_from_bag(idx2)
+					elif DB.ITEMS[id].cat == "armor":
+						raid.player.equip_armor_from_bag(idx2)
 					elif DB.ITEMS[id].has("use"):
 						if raid.player.use_item(id):
 							raid.notify("%s 사용 중..." % DB.ITEMS[id].name, DB.C_TEXT)

@@ -24,6 +24,11 @@ var weapons: Array = []           # 휴대 무기 id (사망 시 잃음)
 var mags := {}                    # 무기 id -> 탄창에 든 탄
 var reserve := {"pistol": 0, "shell": 0, "bolt": 0, "rifle": 0}
 var melee_id := "bat"               # 근접 무기 (V)
+var mods := {}                      # 총 부품 (무기 id -> {슬롯: 부품})
+var helmet := ""                    # 입은 헬멧 / 조끼 (DB.ITEMS id)
+var vest := ""
+var helmet_dur := 0.0
+var vest_dur := 0.0
 var cur := 0
 var fire_cd := 0.0
 var reload_t := 0.0
@@ -143,13 +148,26 @@ func setup(kit: Dictionary) -> void:
 	melee_id = str(kit.get("melee", "bat"))
 	if not DB.MELEES.has(melee_id):
 		melee_id = "bat"
+	mods = kit.get("mods", {})
+	helmet = str(kit.get("helmet", ""))
+	vest = str(kit.get("vest", ""))
+	helmet_dur = float(kit.get("helmet_dur", 0.0))
+	vest_dur = float(kit.get("vest_dur", 0.0))
 	for wid in weapons:
-		var w: Dictionary = DB.WEAPONS[wid]
+		var w: Dictionary = wstat(wid)
 		var n := mini(int(w.mag), int(reserve[w.ammo]))
 		mags[wid] = n
 		reserve[w.ammo] = int(reserve[w.ammo]) - n
 	cur = 0
 	weapon_changed.emit()
+
+## 부품을 반영한 무기 성능 (+ 집중 물약)
+func wstat(wid: String) -> Dictionary:
+	var w := DB.apply_mods(wid, mods.get(wid, {}))
+	if buffs.has("focus"):
+		w.spread = float(w.spread) * 0.5
+		w.reload = float(w.reload) * 0.7
+	return w
 
 func current_weapon() -> String:
 	if weapons.is_empty():
@@ -363,7 +381,7 @@ func _fire() -> void:
 	if wid == "" or fire_cd > 0.0 or reload_t > 0.0 or dodge_t > 0.0 or heal_t > 0.0:
 		return
 	cloak_t = 0.0  # 쏘면 은신이 풀린다
-	var w: Dictionary = DB.WEAPONS[wid]
+	var w: Dictionary = wstat(wid)
 	if hid == "baragi":
 		w = w.duplicate()
 		w.recoil = float(w.recoil) * 0.9
@@ -403,7 +421,7 @@ func start_reload() -> void:
 	var wid := current_weapon()
 	if wid == "" or reload_t > 0.0:
 		return
-	var w: Dictionary = DB.WEAPONS[wid]
+	var w: Dictionary = wstat(wid)
 	if int(mags[wid]) >= int(w.mag):
 		return
 	if int(reserve[w.ammo]) <= 0:
@@ -419,7 +437,7 @@ func _finish_reload() -> void:
 	var wid := current_weapon()
 	if wid == "":
 		return
-	var w: Dictionary = DB.WEAPONS[wid]
+	var w: Dictionary = wstat(wid)
 	var need: int = int(w.mag) - int(mags[wid])
 	var take := mini(need, int(reserve[w.ammo]))
 	mags[wid] = int(mags[wid]) + take
@@ -467,12 +485,18 @@ func try_heal() -> void:
 		return
 	var bag: Backpack = raid.bag
 	var pick := ""
-	if max_hp - hp >= 60.0 and bag.find_first("medkit") >= 0:
+	if max_hp - hp >= 60.0 and bag.find_first("potion_big") >= 0:
+		pick = "potion_big"
+	elif max_hp - hp >= 60.0 and bag.find_first("medkit") >= 0:
 		pick = "medkit"
+	elif bag.find_first("potion_heal") >= 0:
+		pick = "potion_heal"
 	elif bag.find_first("bandage") >= 0:
 		pick = "bandage"
 	elif bag.find_first("medkit") >= 0:
 		pick = "medkit"
+	elif bag.find_first("potion_big") >= 0:
+		pick = "potion_big"
 	if pick == "":
 		raid.notify("회복 아이템이 없다", DB.C_MUTED)
 		return
@@ -486,7 +510,7 @@ func use_item(id: String) -> bool:
 	if idx < 0:
 		return false
 	heal_item = id
-	heal_total = 2.0 if id == "medkit" else (1.3 if it.cat == "med" else float(it.get("eat", 0.8)))
+	heal_total = 2.0 if id == "medkit" else float(it.get("eat", 1.3 if it.cat == "med" else 0.8))
 	if hid == "marshmallow":
 		heal_total *= 0.5
 	heal_t = heal_total
@@ -506,6 +530,11 @@ func _finish_heal() -> void:
 		stamina = minf(100.0, stamina + float(u.stamina))
 		exhausted = false
 	match str(u.get("buff", "")):
+		"seed6": buffs["seed"] = 6.0
+		"iron": buffs["iron"] = 15.0
+		"swift": buffs["swift"] = 10.0
+		"focus": buffs["focus"] = 15.0
+		"shadow": cloak_t = 6.0
 		"seed": buffs["seed"] = 3.0
 		"carrot": buffs["carrot"] = 8.0
 		"nut": buffs["nut"] = 10.0
@@ -556,7 +585,7 @@ func equip_from_bag(idx: int) -> bool:
 		else:
 			weapons.append(wid)
 			cur = weapons.size() - 1
-		var w: Dictionary = DB.WEAPONS[wid]
+		var w: Dictionary = wstat(wid)
 		var n := mini(int(w.mag), int(reserve.get(w.ammo, 0)))
 		mags[wid] = n
 		reserve[w.ammo] = int(reserve.get(w.ammo, 0)) - n
@@ -587,6 +616,10 @@ func take_damage(amount: float, from_pos: Vector2) -> void:
 		return
 	if buffs.has("nut"):
 		amount *= 0.8
+	if buffs.has("iron"):
+		amount *= 0.65
+	amount *= float(GameState.diff("enemy_dmg"))
+	amount = _armor_absorb(amount)
 	cloak_t = 0.0
 	hp -= amount
 	flash = 1.0
@@ -608,6 +641,54 @@ func take_damage(amount: float, from_pos: Vector2) -> void:
 		shadow_node.visible = false
 		died.emit()
 
+## 갑옷이 피해를 막는다 (내구도가 닳는다, 다 닳으면 효과 없음)
+func _armor_absorb(amount: float) -> float:
+	var out := amount
+	for slot in ["vest", "helmet"]:
+		var aid: String = vest if slot == "vest" else helmet
+		if aid == "":
+			continue
+		var dur: float = vest_dur if slot == "vest" else helmet_dur
+		if dur <= 0.0:
+			continue
+		var blocked := amount * float(DB.ITEMS[aid].prot)
+		out -= blocked
+		dur = maxf(0.0, dur - blocked * 1.5 - 1.0)
+		if slot == "vest":
+			vest_dur = dur
+		else:
+			helmet_dur = dur
+		if dur <= 0.0:
+			raid.notify("%s이(가) 부서졌다!" % DB.ITEMS[aid].name, DB.C_DANGER)
+			Sfx.play("impact_hard", -2.0)
+	if out < amount:
+		Sfx.play("impact_hard", -14.0, 0.2)
+	return maxf(out, amount * 0.3)
+
+## 가방의 갑옷을 바로 입는다 (입고 있던 것은 가방으로)
+func equip_armor_from_bag(idx: int) -> bool:
+	var bag: Backpack = raid.bag
+	if idx < 0 or idx >= bag.entries.size():
+		return false
+	var id: String = bag.entries[idx].id
+	var it: Dictionary = DB.ITEMS.get(id, {})
+	if str(it.get("cat", "")) != "armor":
+		return false
+	bag.remove_at(idx)
+	var old: String = helmet if it.slot == "helmet" else vest
+	if it.slot == "helmet":
+		helmet = id
+		helmet_dur = float(it.dur)
+	else:
+		vest = id
+		vest_dur = float(it.dur)
+	if old != "":
+		_stow(old)
+	Sfx.play("switch", -4.0)
+	raid.notify("%s 착용!" % it.name, DB.C_LEGEND)
+	weapon_changed.emit()
+	return true
+
 # ── 햄스터다움: 속도·은신·간식 ───────────────────────
 func speed_mul() -> float:
 	var m := float(hdata.get("speed", 1.0))
@@ -618,6 +699,11 @@ func speed_mul() -> float:
 		m *= 0.5
 	if buffs.has("carrot"):
 		m *= 1.25
+	if buffs.has("swift"):
+		m *= 1.3
+	for aid in [helmet, vest]:
+		if aid != "":
+			m *= float(DB.ITEMS[aid].get("spd", 1.0))
 	if buffs.has("rally"):
 		m *= 1.1
 	return m

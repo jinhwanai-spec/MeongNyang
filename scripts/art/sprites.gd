@@ -207,6 +207,9 @@ static func item_tex(id: String) -> Texture2D:
 		if t:
 			return t
 	if not SpriteData.DATA.items.has(id):
+		# 새 아이템(물약·갑옷·부품·재료)은 3D로 렌더한 아이콘
+		if ResourceLoader.exists(BASE + "icons/%s.png" % id):
+			return _load(BASE + "icons/%s.png" % id)
 		return null
 	return _load(BASE + "items/%s.png" % id)
 

@@ -25,6 +25,13 @@ func setup(r: Raid, t: String, pos: Vector2) -> void:
 		return
 	var c: Dictionary = DB.CONTAINERS[t]
 	var n := randi_range(int(c.slots[0]), int(c.slots[1]))
+	# 난이도: 전리품 양
+	var lm := float(GameState.diff("loot"))
+	var extra := float(n) * (lm - 1.0)
+	if lm >= 1.0:
+		n += int(extra) + (1 if randf() < fposmod(extra, 1.0) else 0)
+	elif randf() < -extra:
+		n = maxi(0, n - 1)
 	for i in n:
 		items.append(_roll(c.table))
 	if t == "dumpster":
@@ -74,7 +81,11 @@ func _refresh_prop() -> void:
 	prop_spr.position = Vector2(0, -DB.TILE * 0.5)
 	add_child(prop_spr)
 
+var lost_bag := false   # 지난 원정에서 쓰러진 자리에 남은 내 가방
+
 func display_name() -> String:
+	if lost_bag:
+		return "내 가방 (지난 원정)"
 	if is_drop:
 		return "유실물 꾸러미"
 	return DB.CONTAINERS[type].name

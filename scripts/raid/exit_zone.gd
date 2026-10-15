@@ -9,6 +9,7 @@ var locked := false
 var lock_text := ""
 var t := 0.0
 var progress := 0.0
+var flat_3d := false   # 3D 화면: 맨홀·트럭·글씨는 3D 모델이 그린다 (바닥 표시만)
 
 func contains(p: Vector2) -> bool:
 	return rect.has_point(p)
@@ -37,6 +38,8 @@ func _draw() -> void:
 			if k % 2 == 0:
 				draw_line(a.lerp(b, k / float(n)), a.lerp(b, (k + 1) / float(n)), Color(c, 0.75), 3)
 	var cc := r.get_center()
+	if flat_3d:
+		return
 	if label.begins_with("A"):
 		# 맨홀
 		draw_circle(cc, 30, Art.OUTLINE)

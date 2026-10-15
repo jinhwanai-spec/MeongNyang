@@ -10,9 +10,18 @@ var ammo := {}         # 탄 종류 -> 발수
 var crafted := {}      # 레시피 id -> 제작 횟수
 var stats := {"raids": 0, "extracts": 0, "deaths": 0, "kills": 0, "best_haul": 0}
 var tutorial_done := false
+# 난이도 (프리셋 또는 직접 설정) — DB.DIFFICULTY 참고
+var difficulty := {"preset": "normal", "bag_rule": "two", "enemy_dmg": 1.0, "enemy_hp": 1.0, "loot": 1.0}
+# 쓰러진 자리에 남은 가방들 [{pos: [x, y], items: [...], raids: 0}]
+var lost_bags: Array = []
+# 총 부품: 무기 id -> {슬롯: 부품 id}
+var mods := {}
+# 갑옷 보유 수 / 내구도
+var armor := {}
+var armor_dur := {}    # 갑옷 id -> 남은 내구도 (가장 최근에 입은 것)
 
 # 원정 출발 시 고른 장비
-var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds": 2, "snacks": 2}
+var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds": 2, "snacks": 2, "helmet": "", "vest": ""}
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
 # 직전 원정 결과 (결과 화면용)
 var last_result := {}
@@ -29,15 +38,22 @@ func new_game() -> void:
 	ammo = {"pistol": 40, "shell": 15, "bolt": 0, "rifle": 0}
 	crafted = {}
 	stats = {"raids": 0, "extracts": 0, "deaths": 0, "kills": 0, "best_haul": 0}
-	loadout = {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds": 2, "snacks": 2}
+	loadout = {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds": 2, "snacks": 2, "helmet": "", "vest": ""}
 	hamster = "baragi"
 	tutorial_done = false
+	difficulty = DB.DIFFICULTY.normal.duplicate()
+	difficulty.preset = "normal"
+	lost_bags = []
+	mods = {}
+	armor = {"vest_1": 1}
+	armor_dur = {}
 	save_game()
 
 # ── 저장 ─────────────────────────────────────────────
 func save_game() -> void:
 	var data := {"coins": coins, "stash": stash, "weapons": weapons, "ammo": ammo, "crafted": crafted,
-		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster}
+		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster,
+		"difficulty": difficulty, "lost_bags": lost_bags, "mods": mods, "armor": armor, "armor_dur": armor_dur}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "\t"))
@@ -58,7 +74,40 @@ func load_game() -> bool:
 	crafted = _int_dict(d.get("crafted", {}))
 	stats = _int_dict(d.get("stats", stats))
 	var lo: Dictionary = d.get("loadout", loadout)
-	loadout = {"primary": str(lo.get("primary", "")), "sidearm": str(lo.get("sidearm", "pistol")), "melee": str(lo.get("melee", "bat")), "meds": int(lo.get("meds", 2)), "snacks": int(lo.get("snacks", 2))}
+	loadout = {"primary": str(lo.get("primary", "")), "sidearm": str(lo.get("sidearm", "pistol")), "melee": str(lo.get("melee", "bat")), "meds": int(lo.get("meds", 2)), "snacks": int(lo.get("snacks", 2)),
+		"helmet": str(lo.get("helmet", "")), "vest": str(lo.get("vest", ""))}
+	var df = d.get("difficulty", {})
+	difficulty = DB.DIFFICULTY.normal.duplicate()
+	difficulty.preset = "normal"
+	if typeof(df) == TYPE_DICTIONARY:
+		for k in df:
+			difficulty[str(k)] = df[k]
+	lost_bags = []
+	var lb = d.get("lost_bags", [])
+	if typeof(lb) == TYPE_ARRAY:
+		for b in lb:
+			if typeof(b) == TYPE_DICTIONARY and b.has("pos") and b.has("items"):
+				var its := []
+				for it in b.items:
+					if DB.ITEMS.has(str(it)):
+						its.append(str(it))
+				lost_bags.append({"pos": [float(b.pos[0]), float(b.pos[1])], "items": its, "raids": int(b.get("raids", 0))})
+	mods = {}
+	var md = d.get("mods", {})
+	if typeof(md) == TYPE_DICTIONARY:
+		for wid in md:
+			if typeof(md[wid]) == TYPE_DICTIONARY:
+				var one := {}
+				for slot in md[wid]:
+					if DB.ATTACHMENTS.has(str(md[wid][slot])):
+						one[str(slot)] = str(md[wid][slot])
+				mods[str(wid)] = one
+	armor = _int_dict(d.get("armor", {}))
+	armor_dur = {}
+	var ad = d.get("armor_dur", {})
+	if typeof(ad) == TYPE_DICTIONARY:
+		for k in ad:
+			armor_dur[str(k)] = float(ad[k])
 	hamster = str(d.get("hamster", "baragi"))
 	if not DB.HAMSTERS.has(hamster):
 		hamster = "baragi"
@@ -102,6 +151,63 @@ func stash_value() -> int:
 func weapon_count(id: String) -> int:
 	return int(weapons.get(id, 0))
 
+# ── 난이도 ───────────────────────────────────────────
+func diff(key: String) -> Variant:
+	return difficulty.get(key, DB.DIFFICULTY.normal.get(key))
+
+func set_difficulty_preset(p: String) -> void:
+	if p == "custom":
+		difficulty.preset = "custom"
+	elif DB.DIFFICULTY.has(p):
+		difficulty = DB.DIFFICULTY[p].duplicate()
+		difficulty.preset = p
+	save_game()
+
+func set_difficulty_value(key: String, v: Variant) -> void:
+	difficulty[key] = v
+	difficulty.preset = "custom"
+	save_game()
+
+# ── 총 부품 ──────────────────────────────────────────
+func mod_of(wid: String, slot: String) -> String:
+	return str(mods.get(wid, {}).get(slot, ""))
+
+## 부품을 끼운다 (보관함에서 1개 사용, 원래 끼워져 있던 부품은 보관함으로)
+func install_mod(wid: String, att: String) -> bool:
+	if not DB.ATTACHMENTS.has(att) or not DB.att_fits(att, wid):
+		return false
+	var item := "att_" + att
+	if not remove_item(item, 1):
+		return false
+	var slot: String = DB.ATTACHMENTS[att].slot
+	var old := mod_of(wid, slot)
+	if old != "":
+		add_item("att_" + old)
+	if not mods.has(wid):
+		mods[wid] = {}
+	mods[wid][slot] = att
+	save_game()
+	return true
+
+func remove_mod(wid: String, slot: String) -> void:
+	var old := mod_of(wid, slot)
+	if old == "":
+		return
+	add_item("att_" + old)
+	mods[wid].erase(slot)
+	save_game()
+
+## 부품을 반영한 총 성능
+func weapon_stats(wid: String) -> Dictionary:
+	return DB.apply_mods(wid, mods.get(wid, {}))
+
+# ── 갑옷 ─────────────────────────────────────────────
+func armor_max(aid: String) -> float:
+	return float(DB.ITEMS.get(aid, {}).get("dur", 100))
+
+func armor_left(aid: String) -> float:
+	return float(armor_dur.get(aid, armor_max(aid)))
+
 func validate_loadout() -> void:
 	if loadout.primary != "" and weapon_count(loadout.primary) <= 0:
 		loadout.primary = ""
@@ -110,6 +216,10 @@ func validate_loadout() -> void:
 	if str(loadout.get("melee", "bat")) != "bat" and weapon_count(str(loadout.melee)) <= 0:
 		loadout.melee = "bat"
 	loadout.meds = clampi(int(loadout.meds), 0, int(stash.get("bandage", 0)))
+	for slot in ["helmet", "vest"]:
+		var aid := str(loadout.get(slot, ""))
+		if aid != "" and int(armor.get(aid, 0)) <= 0:
+			loadout[slot] = ""
 
 ## 완전 파산 방지: 기본 권총·탄약·식량은 항상 지급
 func ensure_starter_kit() -> Array:
@@ -166,12 +276,26 @@ func begin_raid() -> Dictionary:
 			kit.snacks.append(sid)
 			want -= 1
 	kit.hamster = hamster
+	# 갑옷: 입고 나간 것은 원정 꾸러미로 (사망 시 가방에 남는다)
+	for slot in ["helmet", "vest"]:
+		var aid := str(loadout.get(slot, ""))
+		kit[slot] = ""
+		if aid != "" and int(armor.get(aid, 0)) > 0:
+			armor[aid] = int(armor[aid]) - 1
+			kit[slot] = aid
+			kit[slot + "_dur"] = armor_left(aid)
+	kit.mods = mods.duplicate(true)
 	stats.raids = int(stats.raids) + 1
 	save_game()
 	return kit
 
 ## 탈출 성공: 장비·남은 탄약·배낭을 보관함으로
-func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Array, melee: String = "bat") -> void:
+func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Array, melee: String = "bat", worn: Dictionary = {}) -> void:
+	for slot in worn:
+		var aid := str(worn[slot][0])
+		if aid != "":
+			armor[aid] = int(armor.get(aid, 0)) + 1
+			armor_dur[aid] = float(worn[slot][1])
 	for wid in kit_weapons:
 		weapons[wid] = weapon_count(wid) + 1
 	if melee != "bat" and melee != "":
@@ -184,6 +308,8 @@ func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Arra
 			ammo[it.ammo] = int(ammo.get(it.ammo, 0)) + int(it.amount)
 		elif it.cat == "weapon":
 			weapons[it.weapon] = weapon_count(it.weapon) + 1   # 주워 온 무기는 무기고로
+		elif it.cat == "armor":
+			armor[id] = int(armor.get(id, 0)) + 1
 		else:
 			add_item(id)
 	stats.extracts = int(stats.extracts) + 1
@@ -191,6 +317,27 @@ func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Arra
 
 func finish_raid_death() -> void:
 	stats.deaths = int(stats.deaths) + 1
+	save_game()
+
+# ── 쓰러진 자리의 가방 ───────────────────────────────
+## 원정이 끝날 때: 이번 원정에 놓여 있던 가방들의 남은 내용물(remaining)과,
+## 죽었다면 새 가방(new_bag)을 규칙에 따라 정리한다.
+## 규칙: instant = 죽으면 바로 사라짐 / two = 회수 못 하고 또 죽으면 이전 가방은 사라짐 / keep = 회수할 때까지 남음(최대 3개)
+func settle_lost_bags(remaining: Array, died: bool, new_bag: Dictionary) -> void:
+	var rule := str(diff("bag_rule"))
+	var kept := []
+	for b in remaining:
+		if (b.items as Array).is_empty():
+			continue
+		if died and rule != "keep":
+			continue   # 두 번 연속 쓰러짐 → 이전 가방은 사라진다
+		b.raids = int(b.get("raids", 0)) + 1
+		kept.append(b)
+	if died and rule != "instant" and not (new_bag.get("items", []) as Array).is_empty():
+		kept.append(new_bag)
+	while kept.size() > 3:
+		kept.pop_front()
+	lost_bags = kept
 	save_game()
 
 # ── 입력 ─────────────────────────────────────────────

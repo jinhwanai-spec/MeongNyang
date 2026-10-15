@@ -35,6 +35,11 @@ var tracers := {}           # Projectile -> MeshInstance3D
 var _pp0 := Vector2.ZERO
 var _pp1 := Vector2.ZERO
 var env: Environment
+var shutter3d: Node3D
+var shutter_panel: Node3D
+var exit3d := {}            # ExitZone -> {root, beam, ...}
+var player_model: Node3D
+var extracting := false
 
 func build(r: Raid) -> void:
 	raid = r
@@ -61,6 +66,7 @@ func build(r: Raid) -> void:
 				if n is CanvasItem:
 					n.visibility_layer = L_OVERLAY
 	get_tree().node_added.connect(_on_node_added)
+	_build_gates()
 	_warmup()
 	var fx3 := FX3D.new()
 	add_child(fx3)
@@ -389,6 +395,8 @@ func _register(n: Node) -> void:
 		var mc := ModelChar.new()
 		add_child(mc)
 		mc.setup(n)
+		if n is Player:
+			player_model = mc
 	elif n is Player or n is RemotePlayer:
 		var c := CharBillboard.new()
 		add_child(c)
@@ -484,6 +492,7 @@ func _process(delta: float) -> void:
 	ov_cam.position = oc * T
 	ov_quad.position = Vector3(oc.x, 0.025, oc.y)
 	_update_tracers()
+	_update_gates(delta)
 	# 벽 뚫기
 	var vs := get_viewport().get_visible_rect().size
 	var p3 := Vector3(pp.x / T, 0.0, pp.y / T)
@@ -493,6 +502,109 @@ func _process(delta: float) -> void:
 		m.set_shader_parameter("pscreen", sp / vs)
 		m.set_shader_parameter("aspect", vs.x / vs.y)
 
+
+# ── 셔터·탈출구 3D ────────────────────────────────────
+func _build_gates() -> void:
+	if raid.shutter:
+		var sp := raid.shutter.position / T
+		shutter3d = ProcModels.shutter_door(float(raid.shutter.tiles), WALL_H)
+		shutter3d.position = Vector3(sp.x + 0.5, 0, sp.y + raid.shutter.tiles * 0.5)
+		add_child(shutter3d)
+		shutter_panel = shutter3d.get_node("panel")
+		raid.shutter.visibility_layer = L_HIDDEN
+	for ex in raid.exits:
+		var c: Vector2 = ex.rect.get_center() / T
+		var root := Node3D.new()
+		root.position = Vector3(c.x, 0, c.y)
+		add_child(root)
+		var info := {"root": root}
+		if ex.label.begins_with("A"):
+			var mh := ProcModels.manhole()
+			root.add_child(mh)
+			info.model = mh
+		else:
+			var tr := ProcModels.truck()
+			tr.position = Vector3(0.2, 0, 0.6)
+			root.add_child(tr)
+			info.model = tr
+		var col := Color("#7CFF8A") if not ex.locked else Color("#FF5A4A")
+		var bm := ProcModels.light_beam(col, 7.0, 0.55 if ex.label.begins_with("A") else 0.8)
+		root.add_child(bm)
+		info.beam = bm
+		info.locked = ex.locked
+		var lb := Label3D.new()
+		lb.text = ex.label + (" (잠김)" if ex.locked else "")
+		lb.font = FX.font()
+		lb.font_size = 34
+		lb.outline_size = 10
+		lb.modulate = col
+		lb.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		lb.fixed_size = true
+		lb.pixel_size = 0.0007
+		lb.position = Vector3(0, 2.8 if ex.label.begins_with("A") else 3.4, 0)
+		root.add_child(lb)
+		info.label = lb
+		exit3d[ex] = info
+		ex.flat_3d = true
+
+func _update_gates(delta: float) -> void:
+	if shutter_panel and raid.shutter:
+		var k: float = raid.shutter.open_k
+		shutter_panel.position.y = k * (WALL_H - 0.15)
+		shutter_panel.scale.y = 1.0 - k * 0.92
+		if raid.shutter.opening and k < 1.0:
+			shutter_panel.position.x = sin(Time.get_ticks_msec() * 0.05) * 0.01
+	for ex in exit3d:
+		var info: Dictionary = exit3d[ex]
+		if info.locked != ex.locked:
+			info.locked = ex.locked
+			var col := Color("#7CFF8A") if not ex.locked else Color("#FF5A4A")
+			info.beam.queue_free()
+			var bm := ProcModels.light_beam(col, 7.0, 0.8)
+			info.root.add_child(bm)
+			info.beam = bm
+			info.label.text = ex.label
+			info.label.modulate = col
+		var t := Time.get_ticks_msec() * 0.001
+		(info.beam as Node3D).scale = Vector3.ONE * (1.0 + sin(t * 2.5) * 0.06)
+		# 탈출 중이면 빛기둥이 밝아진다
+		var active: bool = raid.extract_active and raid.extract_zone == ex
+		(info.beam as Node3D).scale.y = 1.4 if active else 1.0
+
+## 탈출 성공 연출: A 맨홀이면 햄스터가 쏙 들어가고, B 트럭이면 트럭에 타고 떠난다
+func play_extract(ex: ExitZone) -> void:
+	if extracting or not exit3d.has(ex):
+		return
+	extracting = true
+	var info: Dictionary = exit3d[ex]
+	var root: Node3D = info.root
+	if is_instance_valid(player_model):
+		player_model.set("frozen", true)
+	if ex.label.begins_with("A"):
+		var mh: Node3D = info.model
+		var lid: Node3D = mh.get_node("lid")
+		var tw := create_tween()
+		tw.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+		tw.tween_property(lid, "position", Vector3(0.9, 0.05, 0.4), 0.35).set_trans(Tween.TRANS_BACK)
+		if is_instance_valid(player_model):
+			var tw2 := create_tween()
+			tw2.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+			tw2.tween_property(player_model, "position", Vector3(root.position.x, 0.25, root.position.z), 0.4).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+			tw2.tween_property(player_model, "position:y", -1.6, 0.55).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			tw2.tween_callback(func(): Sfx.play("splash", -4.0))
+		FX.fx3d.dust(Vector2(root.position.x, root.position.z) * T, Vector2.ZERO, 8)
+	else:
+		var tr: Node3D = info.model
+		if is_instance_valid(player_model):
+			var tw3 := create_tween()
+			tw3.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+			tw3.tween_property(player_model, "position", root.position + tr.position + Vector3(0, 0.3, -2.2), 0.45)
+			tw3.tween_property(player_model, "scale", Vector3.ONE * 0.01, 0.2)
+		var tw4 := create_tween()
+		tw4.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+		tw4.tween_interval(0.7)
+		tw4.tween_callback(func(): Sfx.play("door", -2.0))
+		tw4.tween_property(tr, "position:z", tr.position.z + 9.0, 1.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 # ── 총알·화살: 총 높이에서 날아가는 3D 빛줄기 ─────────
 static var _tr_mats := {}

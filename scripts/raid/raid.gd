@@ -16,6 +16,8 @@ var next_eid := 1
 var kit: Dictionary
 var player: Player
 var bag: Backpack
+var lost_bag_nodes: Array = []   # 지난 원정에서 쓰러진 자리에 남은 가방들 (LootContainer)
+var lost_bag_data: Array = []
 var world: Node2D
 var fx_layer: Node2D
 var hud: HUD
@@ -266,6 +268,7 @@ func _spawn_entities() -> void:
 		sp.set_meta("prop_off", Vector2(0, -0.25))
 		sp.set_meta("prop_scale", float(d[3]))
 		world.add_child(sp)
+	_spawn_lost_bags()
 	var ea := _make_exit("A 맨홀", a_cells, 6.0)
 	ea.locked = false
 	var eb := _make_exit("B 하역장", b_cells, 4.0)
@@ -316,6 +319,62 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 	spr.position = Vector2(0, -T * 0.5)
 	holder.add_child(spr)
 	world.add_child(holder)
+
+## 지난 원정에서 쓰러진 자리의 가방 (협동 중에는 없음)
+func _spawn_lost_bags() -> void:
+	if Net.active:
+		return
+	for b in GameState.lost_bags:
+		var lb := LootContainer.new()
+		lb.setup(self, "drop", Vector2(float(b.pos[0]), float(b.pos[1])))
+		lb.items = (b.items as Array).duplicate()
+		lb.lost_bag = true
+		lb.drop_color = Color("#D9822B")
+		world.add_child(lb)
+		lost_bag_nodes.append(lb)
+		lost_bag_data.append(b)
+	if not lost_bag_nodes.is_empty():
+		get_tree().create_timer(2.5).timeout.connect(func():
+			if is_instance_valid(hud):
+				hud.show_hint("지난번에 쓰러진 자리에 가방이 남아 있다! 노란 표시를 따라가 회수하자", 8.0))
+
+## 쓰러질 때 들고 있던 것 전부 → 가방 아이템 목록
+func _death_bag_items(lost: Array) -> Array:
+	var out := []
+	for wid in player.weapons:
+		if DB.ITEMS.has("w_" + str(wid)):
+			out.append("w_" + str(wid))
+	if player.melee_id != "bat" and DB.ITEMS.has("w_" + player.melee_id):
+		out.append("w_" + player.melee_id)
+	for aid in [player.helmet, player.vest]:
+		if aid != "":
+			out.append(aid)
+	var ammo_left := player.reserve.duplicate()
+	for wid in player.mags:
+		var at: String = DB.WEAPONS[wid].ammo
+		ammo_left[at] = int(ammo_left.get(at, 0)) + int(player.mags[wid])
+	for at in ammo_left:
+		var iid := "ammo_" + str(at)
+		if not DB.ITEMS.has(iid):
+			continue
+		var per := int(DB.ITEMS[iid].amount)
+		var n := int(ammo_left[at])
+		while n > 0:
+			out.append(iid)
+			n -= per
+	for id in lost:
+		out.append(id)
+	return out
+
+## 이번 원정에 놓여 있던 가방의 남은 내용물
+func _remaining_lost_bags() -> Array:
+	var out := []
+	for i in lost_bag_nodes.size():
+		var n = lost_bag_nodes[i]
+		var d: Dictionary = (lost_bag_data[i] as Dictionary).duplicate()
+		d.items = (n.items as Array).duplicate() if is_instance_valid(n) else []
+		out.append(d)
+	return out
 
 ## 마우스가 가리키는 게임 좌표 (3D 화면이면 바닥과 만나는 점)
 func mouse_world() -> Vector2:
@@ -825,8 +884,23 @@ func _end(survived: bool, reason: String) -> void:
 		var at: String = DB.WEAPONS[wid].ammo
 		result.ammo_left[at] = int(result.ammo_left.get(at, 0)) + int(player.mags[wid])
 	GameState.stats.kills = int(GameState.stats.kills) + kills
+	if not Net.active:
+		var new_bag := {}
+		if not survived:
+			var bp := player.global_position
+			var c := cell_of(bp)
+			if LevelData.is_solid_code(LevelData.code(c.x, c.y)):
+				var o := _nearest_open(c)
+				bp = Vector2(o.x * T + T * 0.5, o.y * T + T * 0.8)
+			new_bag = {"pos": [bp.x, bp.y], "items": _death_bag_items(lost), "raids": 0}
+		GameState.settle_lost_bags(_remaining_lost_bags(), not survived, new_bag)
+		result["bag_rule"] = str(GameState.diff("bag_rule"))
+		result["bag_left"] = not survived and str(GameState.diff("bag_rule")) != "instant"
+	if survived and view3d and extract_zone:
+		view3d.play_extract(extract_zone)
 	if survived:
-		GameState.finish_raid_extract(player.weapons, result.ammo_left, bag_ids, player.melee_id)
+		var worn := {"helmet": [player.helmet, player.helmet_dur], "vest": [player.vest, player.vest_dur]}
+		GameState.finish_raid_extract(player.weapons, result.ammo_left, bag_ids, player.melee_id, worn)
 		GameState.stats.best_haul = maxi(int(GameState.stats.best_haul), bag.total_value())
 		Sfx.play("extract", 0.0)
 		player.set_mood("happy", 10.0)

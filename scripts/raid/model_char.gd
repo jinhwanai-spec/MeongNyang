@@ -7,6 +7,8 @@ extends Node3D
 const T := float(DB.TILE)
 const HAMSTER := "res://assets/models/hamster_meshy.glb"
 const HAMSTER_RIG := "res://assets/models/hamster_rigged.glb"
+## 총을 떼어 낸 햄스터 (손에 실제 무기 모델을 쥐여 준다)
+const HAMSTER_NOGUN := "res://assets/models/hamster_nogun.scn"
 const WALK_REF := 215.0    # 이 속도에서 걷기 애니메이션 배속 WALK_RATE
 const WALK_RATE := 1.75
 const RUN_REF := 305.0
@@ -28,6 +30,7 @@ var base_scale := 0.95
 var ap: AnimationPlayer
 var anim_now := ""
 var sp_s := 0.0
+var frozen := false    # 탈출 연출 중: 위치를 연출(트윈)에 맡긴다
 
 static func available() -> bool:
 	return ResourceLoader.exists(HAMSTER) or ResourceLoader.exists(HAMSTER_RIG)
@@ -35,6 +38,8 @@ static func available() -> bool:
 ## play_idle: 메뉴·대기실처럼 혼자 서 있는 모델이면 대기 애니메이션을 바로 재생
 static func load_model(play_idle: bool = false) -> Node3D:
 	var path := HAMSTER_RIG if ResourceLoader.exists(HAMSTER_RIG) else HAMSTER
+	if ResourceLoader.exists(HAMSTER_NOGUN):
+		path = HAMSTER_NOGUN
 	var m := (load(path) as PackedScene).instantiate() as Node3D
 	for mi in m.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
@@ -67,6 +72,7 @@ func setup(e: Node2D) -> void:
 	ap = anim_player(model)
 	if ap:
 		ap.play("idle")
+	_setup_gear()
 	add_child(CharBillboard.blob_shadow(0.8))
 	if e is RemotePlayer:
 		label = Label3D.new()
@@ -104,6 +110,8 @@ func _process(delta: float) -> void:
 	t += delta
 	if not is_instance_valid(ent) or bool(ent.get("dead")):
 		_death(delta)
+		return
+	if frozen:
 		return
 	var pos := _smooth_pos()
 	var vel := (pos - last_pos) / maxf(delta, 0.001)
@@ -151,6 +159,164 @@ func _process(delta: float) -> void:
 	body.scale = Vector3(pop, crouch * pop, pop)
 	model.visible = _f("burrow_t") <= 0.0
 	_set_alpha(0.35 if _f("cloak_t") > 0.0 else 1.0)
+	_update_gear(delta)
+
+# ── 장비: 손에 든 총 / 근접 무기 / 헬멧 / 조끼 ────────
+var skel: Skeleton3D
+var chest_att: Node3D
+var head_att: Node3D
+var gun_hold: Node3D
+var gun_node: Node3D
+var gun_key := ""
+var melee_hold: Node3D
+var melee_node: Node3D
+var melee_key := ""
+var back_hold: Node3D
+var vest_node: Node3D
+var vest_key := ""
+var helmet_node: Node3D
+var helmet_key := ""
+var laser: MeshInstance3D
+
+func _setup_gear() -> void:
+	if not ResourceLoader.exists(HAMSTER_NOGUN):
+		return
+	var sk := model.find_children("*", "Skeleton3D", true, false)
+	if sk.is_empty():
+		return
+	skel = sk[0]
+	chest_att = _bone_att("chest")
+	head_att = _bone_att("head")
+	if chest_att == null:
+		return
+	gun_hold = Node3D.new()
+	gun_hold.position = Vector3(-0.17, -0.02, 0.36)
+	gun_hold.rotation = Vector3(0.05, 0.3, 0)
+	chest_att.add_child(gun_hold)
+	melee_hold = Node3D.new()
+	melee_hold.position = Vector3(-0.19, 0.0, 0.38)
+	chest_att.add_child(melee_hold)
+	back_hold = Node3D.new()
+	back_hold.position = Vector3(0.12, -0.12, -0.34)
+	back_hold.rotation = Vector3(-PI * 0.5 + 0.25, 0, 0.9)
+	chest_att.add_child(back_hold)
+
+func _bone_att(bone: String) -> Node3D:
+	if skel.find_bone(bone) < 0:
+		return null
+	var ba := BoneAttachment3D.new()
+	ba.bone_name = bone
+	skel.add_child(ba)
+	return ba
+
+## 지금 들고 있는 장비 (원정 플레이어 / 은신처 / 협동 동료 공통)
+func _gear() -> Dictionary:
+	var g := {"gun": "", "melee": "bat", "helmet": "", "vest": "", "mods": {}}
+	if ent.has_method("current_weapon"):
+		g.gun = str(ent.current_weapon())
+	elif ent.get("weapon") != null:
+		g.gun = str(ent.get("weapon"))
+	if ent is LobbyPlayer:
+		g.melee = str(GameState.loadout.get("melee", "bat"))
+		g.helmet = str(GameState.loadout.get("helmet", ""))
+		g.vest = str(GameState.loadout.get("vest", ""))
+		g.mods = GameState.mods
+	else:
+		if ent.get("melee_id") != null:
+			g.melee = str(ent.get("melee_id"))
+		if ent.get("helmet") != null:
+			g.helmet = str(ent.get("helmet"))
+			g.vest = str(ent.get("vest"))
+		if ent.get("mods") != null:
+			g.mods = ent.get("mods")
+	return g
+
+func _update_gear(_delta: float) -> void:
+	if chest_att == null or not is_instance_valid(ent):
+		return
+	var g := _gear()
+	var gun: String = g.gun if DB.WEAPONS.has(g.gun) else ""
+	var mods: Dictionary = g.mods.get(gun, {}) if gun != "" else {}
+	var gk := gun + str(mods)
+	if gk != gun_key:
+		gun_key = gk
+		if gun_node:
+			gun_node.queue_free()
+			gun_node = null
+		laser = null
+		if gun != "":
+			gun_node = EnemyModel.weapon_scene(gun)
+			if gun_node:
+				ProcModels.attach_mods(gun_node, gun, mods)
+				gun_hold.add_child(gun_node)
+				if mods.values().has("laser"):
+					_add_laser()
+	var mel: String = g.melee if DB.MELEES.has(g.melee) else "bat"
+	if mel != melee_key:
+		melee_key = mel
+		if melee_node:
+			melee_node.queue_free()
+		melee_node = EnemyModel.weapon_scene(mel)
+		if melee_node:
+			melee_hold.add_child(melee_node)
+	# 근접: 휘두를 때(또는 총이 없을 때) 손에, 아니면 등에 멘다
+	var ma := _f("melee_anim")
+	var swinging := ma > 0.0
+	if melee_node:
+		var in_hand := swinging or gun_node == null
+		var want_parent: Node3D = melee_hold if in_hand else back_hold
+		if melee_node.get_parent() != want_parent:
+			melee_node.reparent(want_parent, false)
+			melee_node.transform = Transform3D.IDENTITY
+		if in_hand:
+			if swinging:
+				var k := 1.0 - ma / 0.22
+				k = 1.0 - pow(1.0 - k, 2.0)
+				melee_hold.rotation = Vector3(lerpf(-1.9, 0.7, k), lerpf(-0.9, 1.0, k), lerpf(0.4, -0.3, k))
+			else:
+				melee_hold.rotation = Vector3(-1.0, 0.25, 0.1)
+	if gun_node:
+		gun_node.visible = not swinging
+	# 갑옷
+	var vk: String = g.vest
+	if vk != vest_key:
+		vest_key = vk
+		if vest_node:
+			vest_node.queue_free()
+			vest_node = null
+		if vk != "" and DB.ITEMS.has(vk):
+			vest_node = ProcModels.vest(int(DB.ITEMS[vk].tier))
+			vest_node.position = Vector3(0, -0.03, -0.07)
+			chest_att.add_child(vest_node)
+	var hk: String = g.helmet
+	if hk != helmet_key and head_att:
+		helmet_key = hk
+		if helmet_node:
+			helmet_node.queue_free()
+			helmet_node = null
+		if hk != "" and DB.ITEMS.has(hk):
+			helmet_node = ProcModels.helmet(int(DB.ITEMS[hk].tier))
+			helmet_node.position = Vector3(0, 0.22, 0.02)
+			helmet_node.scale = Vector3.ONE * 1.15
+			head_att.add_child(helmet_node)
+
+## 레이저 지시기: 총구 방향으로 빨간 선
+func _add_laser() -> void:
+	laser = MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(0.008, 0.008, 6.0)
+	laser.mesh = bm
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_color = Color(1, 0.1, 0.1, 0.55)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.emission_enabled = true
+	m.emission = Color(1, 0.1, 0.1)
+	m.emission_energy_multiplier = 3.0
+	laser.material_override = m
+	laser.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	laser.position = Vector3(0, -0.04, 3.0)
+	gun_node.add_child(laser)
 
 ## 속도에 맞춰 대기/걷기/달리기, 발이 미끄러지지 않게 배속 조절, 뒤로 걸으면 거꾸로
 func _animate(v2: Vector2, sp: float, dodge: float) -> void:

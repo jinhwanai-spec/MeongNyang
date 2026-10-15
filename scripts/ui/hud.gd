@@ -206,7 +206,7 @@ func _draw_status(p: Player, vs: Vector2) -> void:
 		chips.append(["투명 %.0f" % ceilf(p.cloak_t), Color("#B8A6F0")])
 	if p.scout_t > 0.0:
 		chips.append(["정찰 %.0f" % ceilf(p.scout_t), Color("#F0A050")])
-	var BN := {"rally": "작전 개시", "carrot": "당근 질주", "nut": "견과 방어", "seed": "씨앗 기력"}
+	var BN := {"rally": "작전 개시", "carrot": "당근 질주", "nut": "견과 방어", "seed": "씨앗 기력", "iron": "강철 피부", "swift": "질풍", "focus": "집중"}
 	for b in p.buffs.keys():
 		chips.append(["%s %.0f" % [BN.get(b, b), ceilf(float(p.buffs[b]))], DB.C_LEGEND])
 	if raid.bag.load_ratio() > 0.75:
@@ -234,6 +234,19 @@ func _draw_status(p: Player, vs: Vector2) -> void:
 		_txt(r.position + Vector2(160, 68), "탈진", 11, DB.C_DANGER, false)
 	if p.muddy > 0.0:
 		_txt(Vector2(r.position.x + 86, r.end.y + 18), "진흙 발자국이 남는 중", 13, Color("#C9A27A"))
+	# 갑옷 내구도 (상태창 위)
+	var ay := r.position.y - 22.0
+	for aslot in ["helmet", "vest"]:
+		var aid: String = p.helmet if aslot == "helmet" else p.vest
+		if aid == "":
+			continue
+		var dur: float = p.helmet_dur if aslot == "helmet" else p.vest_dur
+		var mx := float(DB.ITEMS[aid].dur)
+		var ar := Rect2(Vector2(r.position.x + 236, ay), Vector2(94, 16))
+		Sprites.draw_fit(canvas, Sprites.ui_tex("shield"), Rect2(Vector2(r.position.x + 214, ay - 2), Vector2(18, 18)))
+		_txt(Vector2(r.position.x + 84, ay + 13), DB.ITEMS[aid].name, 12, DB.C_MUTED, true, HORIZONTAL_ALIGNMENT_RIGHT, 126)
+		_bar(ar, dur / mx, Color("#8FB3C9") if dur > 0.0 else DB.C_DANGER)
+		ay -= 20.0
 
 func _draw_weapon(p: Player, vs: Vector2) -> void:
 	var r := Rect2(Vector2(vs.x - 318, vs.y - 104), Vector2(300, 86))
@@ -242,7 +255,7 @@ func _draw_weapon(p: Player, vs: Vector2) -> void:
 	if wid == "":
 		_txt(r.position + Vector2(20, 50), "근접 무기만 보유 (V)", 18, DB.C_MUTED)
 		return
-	var w: Dictionary = DB.WEAPONS[wid]
+	var w: Dictionary = p.wstat(wid)
 	canvas.draw_circle(r.position + Vector2(52, 44), 34, Color(1, 1, 1, 0.04))
 	Art.draw_weapon_icon(canvas, wid, r.position + Vector2(52, 44), 1.5)
 	_txt(r.position + Vector2(104, 26), w.name, 15, DB.C_MUTED, false, HORIZONTAL_ALIGNMENT_LEFT, -1, font_b)
@@ -271,8 +284,15 @@ func _draw_hotbar(p: Player, vs: Vector2) -> void:
 	var slots := []
 	for i in p.weapons.size():
 		slots.append({"key": str(i + 1), "w": p.weapons[i], "sel": i == p.cur})
-	slots.append({"key": "V", "icon": "w_knife", "sel": p.melee_cd > 0.0})
-	slots.append({"key": "Q", "item": "medkit" if raid.bag.count("medkit") > 0 else "bandage", "n": raid.bag.count("bandage") + raid.bag.count("medkit")})
+	slots.append({"key": "V", "icon": "w_" + p.melee_id, "sel": p.melee_cd > 0.0})
+	var qn := 0
+	var qfirst := "bandage"
+	for qid in ["potion_big", "medkit", "potion_heal", "bandage"]:
+		var qc: int = raid.bag.count(qid)
+		if qc > 0 and qn == 0:
+			qfirst = qid
+		qn += qc
+	slots.append({"key": "Q", "item": qfirst, "n": qn})
 	var sn := 0
 	var sfirst := "sunflower_seed"
 	for sid in ["sunflower_seed", "nut_mix", "cheese", "carrot_juice", "canned_food", "churu", "energy_drink"]:
@@ -350,9 +370,10 @@ func _draw_equipment(p: Player, vs: Vector2) -> void:
 	_bar(Rect2(r.position + Vector2(14, 34), Vector2(172, 8)), float(used) / total, DB.C_HERO if used < total else DB.C_DANGER)
 	_txt(r.position + Vector2(14, 66), "전리품 가치", 13, DB.C_MUTED, false, HORIZONTAL_ALIGNMENT_LEFT, -1, font_b)
 	_txt(r.position + Vector2(14, 66), "%s 냥" % _fmt(bag.total_value()), 15, DB.C_LEGEND, false, HORIZONTAL_ALIGNMENT_RIGHT, 172)
-	var meds := bag.count("bandage") + bag.count("medkit")
+	var pots := bag.count("potion_heal") + bag.count("potion_big")
+	var meds := bag.count("bandage") + bag.count("medkit") + pots
 	_txt(r.position + Vector2(14, 96), "Q 회복", 13, DB.C_MUTED, false, HORIZONTAL_ALIGNMENT_LEFT, -1, font_b)
-	_txt(r.position + Vector2(14, 96), "붕대 %d · 구급상자 %d" % [bag.count("bandage"), bag.count("medkit")], 13, DB.C_TEXT if meds > 0 else DB.C_DANGER, false, HORIZONTAL_ALIGNMENT_RIGHT, 172)
+	_txt(r.position + Vector2(14, 96), "붕대 %d · 구급 %d · 물약 %d" % [bag.count("bandage"), bag.count("medkit"), pots], 13, DB.C_TEXT if meds > 0 else DB.C_DANGER, false, HORIZONTAL_ALIGNMENT_RIGHT, 172)
 	_txt(Vector2(x + 2, y - 10), "Tab 배낭 열기", 12, Color(1, 1, 1, 0.45), true)
 
 static func _fmt(n: int) -> String:
@@ -391,6 +412,11 @@ func _minimap_marks(p: Player, mr: Rect2, k: float, dot: float) -> void:
 		var er := Rect2(mr.position + ex.rect.position / T * k, ex.rect.size / T * k)
 		canvas.draw_rect(er, Color(DB.C_DANGER if ex.locked else Color("#6CCB5F"), 0.85))
 		_txt(er.position + Vector2(er.size.x * 0.5 - 4 * dot, er.size.y * 0.5 + 5 * dot), ex.label.substr(0, 1), int(12 * dot), Color.WHITE)
+	for lb in raid.lost_bag_nodes:
+		if is_instance_valid(lb) and not (lb.searched and lb.items.is_empty()):
+			var bp: Vector2 = mr.position + lb.global_position / T * k
+			canvas.draw_circle(bp, 5.0 * dot, Art.OUTLINE)
+			canvas.draw_circle(bp, 3.8 * dot, Color("#F2C14E"))
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if e.dead:
 			continue
@@ -485,13 +511,30 @@ func _draw_exit_arrows(p: Player, vs: Vector2) -> void:
 		canvas.draw_colored_polygon(pts, col)
 		var dist := int(d.length() / DB.TILE)
 		_txt(edge - dir * 22 + Vector2(-30, 6), "%s %dm" % [ex.label.substr(0, 1), dist], 14, col, true, HORIZONTAL_ALIGNMENT_CENTER, 60)
+	# 내 가방 (쓰러진 자리)
+	for lb in raid.lost_bag_nodes:
+		if not is_instance_valid(lb) or (lb.searched and lb.items.is_empty()):
+			continue
+		var d2: Vector2 = lb.global_position - center
+		if absf(d2.x) < half.x * 0.9 and absf(d2.y) < half.y * 0.9:
+			continue
+		var dir2 := d2.normalized()
+		var edge2 := vs * 0.5 + Vector2(dir2.x * (vs.x * 0.5 - 70), dir2.y * (vs.y * 0.5 - 70))
+		edge2.x = clampf(edge2.x, 60, vs.x - 60)
+		edge2.y = clampf(edge2.y, 150, vs.y - 140)
+		var bcol := Color("#F2C14E")
+		canvas.draw_circle(edge2, 13, Color(0, 0, 0, 0.5))
+		var bt := Sprites.fx_tex("bag")
+		if bt:
+			Sprites.draw_fit(canvas, bt, Rect2(edge2 - Vector2(11, 11), Vector2(22, 22)))
+		_txt(edge2 - dir2 * 26 + Vector2(-40, 6), "내 가방 %dm" % int(d2.length() / DB.TILE), 13, bcol, true, HORIZONTAL_ALIGNMENT_CENTER, 80)
 
 func _draw_crosshair(p: Player) -> void:
 	var m := canvas.get_local_mouse_position()
 	var wid := p.current_weapon()
 	var spread := 8.0 + p.recoil * 1.5
 	if wid != "":
-		spread += float(DB.WEAPONS[wid].spread) * 0.6
+		spread += float(p.wstat(wid).spread) * 0.6
 	var col := Color(1, 1, 1, 0.9)
 	for a in [0.0, PI * 0.5, PI, PI * 1.5]:
 		var d := Vector2.from_angle(a)

@@ -4,11 +4,18 @@ extends Node3D
 ## 로비(걸어 다니기)와 메인화면 배경이 함께 쓴다.
 
 const STATIONS := {
-	"st_prep": ["출발 준비", "용병·무기·간식 고르기", 0],
-	"st_craft": ["작업대", "나비의 제작", 1],
-	"st_market": ["냥이 시장", "팔고 사기", 2],
-	"st_stash": ["보관함", "모은 물건", 3],
+	"st_prep": ["출발 준비", "용병·무기·갑옷·난이도", 0],
+	"st_craft": ["무기 제작소", "총·탄약·부품 만들기 / 부품 장착", 1],
+	"st_potion": ["물약 제작소", "물약·구급상자 달이기", 2],
+	"st_armor": ["갑옷 제작소", "헬멧·조끼 만들기 / 수리", 3],
+	"st_market": ["냥이 시장", "팔고 사기", 4],
+	"st_stash": ["보관함", "모은 물건", 5],
 	"st_door": ["출구", "나가면 원정 시작", -1],
+}
+## 블렌더 방에 없는 새 장소 (코드로 세운 제작소)
+const EXTRA_MARKERS := {
+	"st_potion": Vector3(12.6, 0, 2.7), "npc_potion": Vector3(13.25, 0, 3.75),
+	"st_armor": Vector3(9.6, 0, 7.6), "npc_armor": Vector3(10.6, 0, 8.6),
 }
 
 var room: Node3D
@@ -24,6 +31,10 @@ func _ready() -> void:
 	room = (load("res://assets/models/hideout.glb") as PackedScene).instantiate()
 	add_child(room)
 	_read_markers(room)
+	for k in EXTRA_MARKERS:
+		if not markers.has(k):
+			markers[k] = EXTRA_MARKERS[k]
+	_stations()
 	_env()
 	_npcs()
 	_labels()
@@ -39,6 +50,22 @@ func _read_markers(n: Node) -> void:
 			elif nm.begins_with("st_") or nm.begins_with("npc_") or nm.begins_with("light_") or nm == "spawn":
 				markers[nm] = p
 		_read_markers(c)
+
+## 제작소 소품 (코드로 만든 3D) + 충돌
+func _stations() -> void:
+	var potion := ProcModels.potion_lab()
+	potion.position = markers["st_potion"] + Vector3(0.8, 0, -0.75)
+	potion.rotation.y = -PI * 0.5
+	add_child(potion)
+	colliders.append([Vector2(13.35, 2.2), Vector2(0.55, 1.2)])
+	var forge := ProcModels.armor_forge()
+	forge.position = markers["st_armor"] + Vector3(0.9, 0, 0.9)
+	forge.rotation.y = PI
+	add_child(forge)
+	colliders.append([Vector2(10.4, 8.5), Vector2(0.9, 0.55)])
+	var rack := ProcModels.weapon_wall(["assault_rifle", "shotgun", "sniper", "smg", "katana"])
+	rack.position = Vector3(7.2, 0, 0.62)
+	add_child(rack)
 
 func marker(n: String) -> Vector3:
 	return markers.get(n, Vector3(7, 0, 6))
@@ -112,6 +139,9 @@ func _npcs() -> void:
 	if EnemyModel.available("cat") and EnemyModel.available("hyena"):
 		npcs.append(_npc3d("cat", marker("npc_navi"), 0.35))
 		npcs.append(_npc3d("hyena", marker("npc_market"), -0.3))
+		npcs.append(_npc3d("cat", marker("npc_potion"), -1.2))
+		if EnemyModel.available("bulldog"):
+			npcs.append(_npc3d("bulldog", marker("npc_armor"), PI + 0.5))
 	else:
 		npcs.append(_npc("cat_white", "idle", marker("npc_navi")))
 		npcs.append(_npc("cat_tabby", "idle", marker("npc_market")))

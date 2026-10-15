@@ -12,6 +12,8 @@ var toast: Label
 var toast_t := 0.0
 var prep_box: VBoxContainer
 var craft_box: VBoxContainer
+var potion_box: VBoxContainer
+var armor_box: VBoxContainer
 var market_box: VBoxContainer
 var stash_box: VBoxContainer
 var market_mult := {}
@@ -87,7 +89,9 @@ func _ready() -> void:
 	tabs.tab_changed.connect(func(_i): Sfx.play("click", -10.0))
 	rv.add_child(tabs)
 	prep_box = _tab("출발 준비")
-	craft_box = _tab("작업대")
+	craft_box = _tab("무기 제작소")
+	potion_box = _tab("물약 제작소")
+	armor_box = _tab("갑옷 제작소")
 	market_box = _tab("냥이 시장")
 	stash_box = _tab("보관함")
 	toast = UITheme.label("", 16, DB.C_LEGEND)
@@ -130,11 +134,13 @@ func show_toast(s: String, c: Color = DB.C_LEGEND) -> void:
 
 func refresh() -> void:
 	coin_label.text = "%s 냥  " % HUD._fmt(GameState.coins)
-	for box in [prep_box, craft_box, market_box, stash_box]:
+	for box in [prep_box, craft_box, potion_box, armor_box, market_box, stash_box]:
 		for c in box.get_children():
 			c.queue_free()
 	_build_prep()
-	_build_craft()
+	_build_station(craft_box, "weapon")
+	_build_station(potion_box, "potion")
+	_build_station(armor_box, "armor")
 	_build_market()
 	_build_stash()
 
@@ -193,6 +199,8 @@ func _build_prep() -> void:
 	hc.add_child(sk)
 	_benefit(hc, "특성: " + str(hd.trait))
 
+	_build_difficulty(prep_box)
+
 	var w := _card(prep_box)
 	w.add_child(UITheme.label("주무기", 17, DB.C_TEXT))
 	var row := HFlowContainer.new()
@@ -241,6 +249,29 @@ func _build_prep() -> void:
 			GameState.save_game()
 			refresh())
 		row3.add_child(b3)
+	for aslot in ["helmet", "vest"]:
+		w.add_child(UITheme.label("헬멧" if aslot == "helmet" else "조끼", 17, DB.C_TEXT))
+		var arow := HFlowContainer.new()
+		arow.add_theme_constant_override("h_separation", 8)
+		arow.add_theme_constant_override("v_separation", 6)
+		w.add_child(arow)
+		var none := UITheme.button("없음", 15, str(lo.get(aslot, "")) == "")
+		none.pressed.connect(func():
+			GameState.loadout[aslot] = ""
+			GameState.save_game()
+			refresh())
+		arow.add_child(none)
+		for k in 3:
+			var aid := "%s_%d" % [aslot, k + 1]
+			if int(GameState.armor.get(aid, 0)) <= 0:
+				continue
+			var ab := UITheme.button("%s ×%d (%d%%)" % [DB.ITEMS[aid].name, int(GameState.armor[aid]), int(round(GameState.armor_left(aid) / GameState.armor_max(aid) * 100))], 15, str(lo.get(aslot, "")) == aid)
+			ab.tooltip_text = DB.ITEMS[aid].desc
+			ab.pressed.connect(func():
+				GameState.loadout[aslot] = aid
+				GameState.save_game()
+				refresh())
+			arow.add_child(ab)
 	var mrow := HBoxContainer.new()
 	mrow.add_theme_constant_override("separation", 8)
 	w.add_child(mrow)
@@ -303,6 +334,16 @@ func _build_prep() -> void:
 	rl2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	risk.add_child(rl2)
 	risk.add_child(UITheme.label("보관함·코인·제작품은 안전하게 남는다.", 14, DB.C_MUTED))
+	var rule := str(GameState.diff("bag_rule"))
+	var bag_txt := "쓰러지면 들고 있던 것은 전부 가방에 담겨 그 자리에 남는다 — 다음 원정에서 회수! (%s)" % DB.BAG_RULES[rule]
+	if rule == "instant":
+		bag_txt = "어려운 규칙: 쓰러지면 가방이 바로 사라진다."
+	var bl := UITheme.label(bag_txt, 14, DB.C_LEGEND)
+	bl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	risk.add_child(bl)
+	for b in GameState.lost_bags:
+		var lb := UITheme.label("● 회수 못 한 가방: 물건 %d개 · 지도에 노란 가방 표시" % (b.items as Array).size(), 14, Color("#F2C14E"))
+		risk.add_child(lb)
 	if lo.primary == "" and lo.sidearm == "":
 		_benefit(risk, "무장 없이 출발: 잃을 건 없지만 근접 공격(V)만 가능")
 	elif lo.primary == "crossbow":
@@ -314,6 +355,51 @@ func _build_prep() -> void:
 	keys.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prep_box.add_child(keys)
 
+# ── 난이도 ───────────────────────────────────────────
+func _build_difficulty(box: VBoxContainer) -> void:
+	var c := _card(box, Color(DB.C_RARE, 0.5))
+	var h := HBoxContainer.new()
+	c.add_child(h)
+	var t := UITheme.label("난이도", 17, DB.C_TEXT, true)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(t)
+	var pr := str(GameState.diff("preset"))
+	for p in ["easy", "normal", "hard", "custom"]:
+		var b := UITheme.button(DB.DIFFICULTY_NAMES[p], 14, pr == p)
+		b.pressed.connect(func():
+			GameState.set_difficulty_preset(p)
+			Sfx.play("pick", -6.0)
+			refresh())
+		h.add_child(b)
+	# 항목별 직접 조절 (누를 때마다 다음 값)
+	var g := HFlowContainer.new()
+	g.add_theme_constant_override("h_separation", 8)
+	g.add_theme_constant_override("v_separation", 6)
+	c.add_child(g)
+	var rule := str(GameState.diff("bag_rule"))
+	var rb := UITheme.button("쓰러지면 가방: %s" % DB.BAG_RULES[rule], 14)
+	rb.pressed.connect(func():
+		var i := DB.BAG_RULE_ORDER.find(rule)
+		GameState.set_difficulty_value("bag_rule", DB.BAG_RULE_ORDER[(i + 1) % DB.BAG_RULE_ORDER.size()])
+		refresh())
+	g.add_child(rb)
+	for key in ["enemy_dmg", "enemy_hp", "loot"]:
+		var nm: String = {"enemy_dmg": "적 공격력", "enemy_hp": "적 체력", "loot": "전리품 양"}[key]
+		var v := float(GameState.diff(key))
+		var b2 := UITheme.button("%s ×%.2f" % [nm, v], 14)
+		var k2: String = key
+		b2.pressed.connect(func():
+			var steps: Array = DB.DIFF_STEPS[k2]
+			var idx := 0
+			for i in steps.size():
+				if absf(float(steps[i]) - v) < 0.01:
+					idx = i
+			GameState.set_difficulty_value(k2, steps[(idx + 1) % steps.size()])
+			refresh())
+		g.add_child(b2)
+	var hint := UITheme.label("프리셋을 고르거나 버튼을 눌러 항목별로 바꾸면 '직접 설정'이 된다.", 12, DB.C_MUTED)
+	c.add_child(hint)
+
 ## 보유한 무기 목록 (슬롯별, "" = 없음)
 func _owned_weapons(slot: String) -> Array:
 	var out := [""]
@@ -323,23 +409,40 @@ func _owned_weapons(slot: String) -> Array:
 	return out
 
 # ── 작업대 ───────────────────────────────────────────
-func _build_craft() -> void:
-	var head := UITheme.label("기술 고양이 '나비'의 작업대 — 재료는 원정에서 모아 오자", 15, DB.C_MUTED)
+const STATION_INFO := {
+	"weapon": ["cat_tabby", "기술 고양이 '나비'의 무기 제작소 — 총·탄약·총 부품을 만들고, 총에 부품을 끼운다"],
+	"potion": ["cat_white", "약초 냥이 '쑥냥'의 물약 제작소 — 약초와 빈 병으로 물약을 달인다"],
+	"armor": ["cat_black", "대장장이 흑냥이 '무쇠'의 갑옷 제작소 — 헬멧과 조끼를 두드려 만든다"],
+}
+
+func _build_station(box: VBoxContainer, station: String) -> void:
+	var info: Array = STATION_INFO[station]
+	var head := UITheme.label(str(info[1]), 15, DB.C_MUTED)
 	head.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	head.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var hh := HBoxContainer.new()
 	hh.add_theme_constant_override("separation", 10)
-	hh.add_child(_npc_face("cat_tabby"))
+	hh.add_child(_npc_face(str(info[0])))
 	hh.add_child(head)
-	craft_box.add_child(hh)
+	box.add_child(hh)
+	if station == "weapon":
+		_build_mods(box)
+	elif station == "armor":
+		_build_armor_list(box)
+	var sub := UITheme.label("제작", 19, DB.C_HERO, true)
+	box.add_child(sub)
 	for rec in DB.RECIPES:
+		if str(rec.get("station", "weapon")) != station:
+			continue
 		var can := GameState.has_items(rec.cost) and GameState.coins >= int(rec.coins)
-		var c := _card(craft_box, Color(DB.C_HERO, 0.7) if can else Color(1, 1, 1, 0.06))
+		var c := _card(box, Color(DB.C_HERO, 0.7) if can else Color(1, 1, 1, 0.06))
 		var h := HBoxContainer.new()
 		h.add_theme_constant_override("separation", 12)
 		c.add_child(h)
 		if rec.kind == "weapon":
 			h.add_child(ItemIcon.make(rec.id, 52, true))
+		elif rec.kind == "repair":
+			h.add_child(ItemIcon.make("metal_sheet", 52))
 		else:
 			h.add_child(ItemIcon.make(rec.get("item", "ammo_" + str(rec.get("ammo", ""))), 52))
 		var nv := VBoxContainer.new()
@@ -348,6 +451,10 @@ func _build_craft() -> void:
 		var have_n := ""
 		if rec.kind == "weapon":
 			have_n = "  (보유 %d)" % GameState.weapon_count(rec.id)
+		elif rec.kind == "armor":
+			have_n = "  (보유 %d)" % int(GameState.armor.get(rec.item, 0))
+		elif rec.kind == "item":
+			have_n = "  (보유 %d)" % int(GameState.stash.get(rec.item, 0))
 		nv.add_child(UITheme.label(rec.name + have_n, 19, DB.C_TEXT, true))
 		if rec.kind == "weapon":
 			var wl := UITheme.label(DB.WEAPONS[rec.id].desc, 13, DB.C_MUTED)
@@ -398,11 +505,121 @@ func _craft(rec: Dictionary) -> void:
 			GameState.ammo[rec.ammo] = int(GameState.ammo.get(rec.ammo, 0)) + int(rec.amount)
 		"item":
 			GameState.add_item(rec.item, int(rec.amount))
+		"armor":
+			GameState.armor[rec.item] = int(GameState.armor.get(rec.item, 0)) + 1
+			GameState.armor_dur[rec.item] = GameState.armor_max(rec.item)
+			var aslot: String = DB.ITEMS[rec.item].slot
+			if str(GameState.loadout.get(aslot, "")) == "":
+				GameState.loadout[aslot] = rec.item
+		"repair":
+			GameState.armor_dur = {}
 	GameState.crafted[rec.id] = int(GameState.crafted.get(rec.id, 0)) + 1
 	GameState.save_game()
 	Sfx.play("craft", -2.0)
 	show_toast("%s 제작 완료!%s" % [rec.name, " (석궁 화살 6발 보너스)" if rec.id == "crossbow" else ""], Color("#6CCB5F"))
 	refresh()
+
+# ── 총 부품 장착 (무기 제작소) ───────────────────────
+func _stat_line(w: Dictionary) -> String:
+	return "피해 %d×%d · 장탄 %d · 퍼짐 %.1f° · 반동 %.1f · 재장전 %.1f초 · 소음 %d" % [int(round(float(w.dmg))), int(w.pellets), int(w.mag), float(w.spread), float(w.recoil), float(w.reload), int(float(w.noise))]
+
+func _build_mods(box: VBoxContainer) -> void:
+	var c := _card(box, Color(DB.C_RARE, 0.6))
+	c.add_child(UITheme.label("총 부품 장착", 19, DB.C_RARE, true))
+	var guide := UITheme.label("총마다 끼울 수 있는 부품이 다르다. 끼운 부품은 그 종류의 총 전부에 적용되고, 원정에서 주운 같은 총에도 붙는다.", 13, DB.C_MUTED)
+	guide.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	c.add_child(guide)
+	var owned := []
+	for wid in DB.WEAPONS:
+		if GameState.weapon_count(wid) > 0 or GameState.loadout.primary == wid or GameState.loadout.sidearm == wid:
+			owned.append(wid)
+	if owned.is_empty():
+		c.add_child(UITheme.label("가진 총이 없다.", 14, DB.C_MUTED))
+		return
+	for wid in owned:
+		var gc := _card(box)
+		var gh := HBoxContainer.new()
+		gh.add_theme_constant_override("separation", 12)
+		gc.add_child(gh)
+		gh.add_child(ItemIcon.make(wid, 52, true))
+		var gv := VBoxContainer.new()
+		gv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		gh.add_child(gv)
+		gv.add_child(UITheme.label(DB.WEAPONS[wid].name, 18, DB.C_TEXT, true))
+		var st := UITheme.label(_stat_line(GameState.weapon_stats(wid)), 13, Color("#6CCB5F") if not GameState.mods.get(wid, {}).is_empty() else DB.C_MUTED)
+		st.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		gv.add_child(st)
+		for slot in DB.ATT_SLOTS:
+			var fits := []
+			for att in DB.ATTACHMENTS:
+				if DB.ATTACHMENTS[att].slot == slot and DB.att_fits(att, wid):
+					fits.append(att)
+			if fits.is_empty():
+				continue
+			var row := HFlowContainer.new()
+			row.add_theme_constant_override("h_separation", 6)
+			row.add_theme_constant_override("v_separation", 4)
+			gc.add_child(row)
+			var cur := GameState.mod_of(wid, slot)
+			var sl := UITheme.label("%s: %s" % [DB.ATT_SLOT_NAMES[slot], DB.ATTACHMENTS[cur].name if cur != "" else "없음"], 14, DB.C_LEGEND if cur != "" else DB.C_MUTED)
+			sl.custom_minimum_size = Vector2(190, 0)
+			row.add_child(sl)
+			for att in fits:
+				if att == cur:
+					continue
+				var have := int(GameState.stash.get("att_" + att, 0))
+				var b := UITheme.button("%s 끼우기 (%d)" % [DB.ATTACHMENTS[att].name, have], 13, have > 0)
+				b.disabled = have <= 0
+				b.tooltip_text = DB.ITEMS["att_" + att].desc
+				var a2: String = att
+				b.pressed.connect(func():
+					if GameState.install_mod(wid, a2):
+						Sfx.play("craft", -6.0)
+						show_toast("%s에 %s 장착!" % [DB.WEAPONS[wid].name, DB.ATTACHMENTS[a2].name], Color("#6CCB5F"))
+						refresh())
+				row.add_child(b)
+			if cur != "":
+				var rb := UITheme.button("빼기", 13)
+				var s2: String = slot
+				rb.pressed.connect(func():
+					GameState.remove_mod(wid, s2)
+					Sfx.play("click", -6.0)
+					refresh())
+				row.add_child(rb)
+
+# ── 갑옷 목록 (갑옷 제작소) ───────────────────────────
+func _build_armor_list(box: VBoxContainer) -> void:
+	var c := _card(box, Color(DB.C_LEGEND, 0.5))
+	c.add_child(UITheme.label("내 갑옷", 19, DB.C_LEGEND, true))
+	var any := false
+	for aid in ["helmet_1", "helmet_2", "helmet_3", "vest_1", "vest_2", "vest_3"]:
+		var n := int(GameState.armor.get(aid, 0))
+		if n <= 0:
+			continue
+		any = true
+		var it: Dictionary = DB.ITEMS[aid]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		c.add_child(row)
+		row.add_child(ItemIcon.make(aid, 44, false, n))
+		var v := VBoxContainer.new()
+		v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(v)
+		v.add_child(UITheme.label(it.name, 16, DB.rarity_color(int(it.r)), true))
+		var left := GameState.armor_left(aid)
+		var mx := GameState.armor_max(aid)
+		v.add_child(UITheme.label("피해 -%d%% · 내구도 %d/%d" % [int(round(float(it.prot) * 100)), int(left), int(mx)], 13, DB.C_MUTED if left > mx * 0.3 else DB.C_DANGER))
+		var worn: bool = str(GameState.loadout.get(it.slot, "")) == aid
+		var b := UITheme.button("착용 중" if worn else "착용", 14, worn)
+		b.pressed.connect(func():
+			GameState.loadout[it.slot] = "" if worn else aid
+			GameState.save_game()
+			Sfx.play("pick", -6.0)
+			refresh())
+		row.add_child(b)
+	if not any:
+		c.add_child(UITheme.label("갑옷이 없다. 아래에서 만들거나 시장에서 사자.", 14, DB.C_MUTED))
+	_benefit(c, "입고 나간 갑옷은 쓰러지면 가방과 함께 그 자리에 남는다")
 
 # ── 냥이 시장 ────────────────────────────────────────
 func _roll_market() -> void:
@@ -437,7 +654,7 @@ func _build_market() -> void:
 	var trend := HFlowContainer.new()
 	trend.add_theme_constant_override("h_separation", 14)
 	npc.add_child(trend)
-	var names := {"food": "식량", "med": "약품", "part": "부품", "valuable": "귀중품"}
+	var names := {"food": "식량", "med": "약품", "part": "재료", "valuable": "귀중품"}
 	for cat in names:
 		var m: float = market_mult[cat]
 		var col := Color("#6CCB5F") if m > 1.05 else (DB.C_DANGER if m < 0.95 else DB.C_MUTED)
@@ -501,7 +718,7 @@ func _build_market() -> void:
 		if s.kind == "weapon":
 			row2.add_child(ItemIcon.make(s.weapon, 40, true))
 		else:
-			row2.add_child(ItemIcon.make(s.id if s.kind != "ammo" else "ammo_" + str(s.ammo), 40))
+			row2.add_child(ItemIcon.make(str(s.get("item", s.id)) if s.kind != "ammo" else "ammo_" + str(s.ammo), 40))
 		var nl2 := UITheme.label(s.name, 15)
 		nl2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row2.add_child(nl2)
@@ -509,6 +726,7 @@ func _build_market() -> void:
 		match s.kind:
 			"ammo": own = "보유 %d" % int(GameState.ammo.get(s.ammo, 0))
 			"item": own = "보유 %d" % int(GameState.stash.get(s.item, 0))
+			"armor": own = "보유 %d" % int(GameState.armor.get(s.item, 0))
 			"weapon": own = "보유 %d" % GameState.weapon_count(s.weapon)
 		row2.add_child(UITheme.label(own, 13, DB.C_MUTED))
 		var bb := UITheme.button("%d냥" % int(s.price), 15, GameState.coins >= int(s.price))
@@ -530,6 +748,9 @@ func _buy(s: Dictionary) -> void:
 	match s.kind:
 		"ammo": GameState.ammo[s.ammo] = int(GameState.ammo.get(s.ammo, 0)) + int(s.amount)
 		"item": GameState.add_item(s.item, int(s.amount))
+		"armor":
+			GameState.armor[s.item] = int(GameState.armor.get(s.item, 0)) + 1
+			GameState.armor_dur[s.item] = GameState.armor_max(s.item)
 		"weapon":
 			GameState.weapons[s.weapon] = GameState.weapon_count(s.weapon) + 1
 			var wslot: String = str(DB.WEAPONS[s.weapon].slot) if DB.WEAPONS.has(s.weapon) else "melee"

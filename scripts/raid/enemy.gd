@@ -68,7 +68,7 @@ func setup(r: Raid, t: String, pos: Vector2) -> void:
 	raid = r
 	type = t
 	data = DB.ENEMIES[t]
-	hp = float(data.hp)
+	hp = float(data.hp) * float(GameState.diff("enemy_hp"))
 	max_hp = hp
 	radius = float(data.radius)
 	position = pos
