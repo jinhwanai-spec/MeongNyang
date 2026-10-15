@@ -5,6 +5,8 @@ extends Node2D
 signal finished(result: Dictionary)
 
 const T := DB.TILE
+const USE_3D := true   # 3D 화면 (false면 예전 2D/2.5D 화면)
+var view3d: View3D
 
 var kit: Dictionary
 var player: Player
@@ -63,6 +65,10 @@ func _ready() -> void:
 	_build_nav()
 	_spawn_entities()
 	_build_lighting()
+	if USE_3D:
+		view3d = View3D.new()
+		add_child(view3d)
+		view3d.build(self)
 	hud = HUD.new()
 	hud.raid = self
 	add_child(hud)
@@ -82,6 +88,7 @@ func _ready() -> void:
 # ── 월드 구성 ────────────────────────────────────────
 func _build_world() -> void:
 	var mr := MapRender.new()
+	mr.visible = not USE_3D
 	add_child(mr)
 	# 벽 충돌 (가로로 이어진 칸을 하나로 합침)
 	var walls := StaticBody2D.new()
@@ -107,7 +114,8 @@ func _build_world() -> void:
 	world = Node2D.new()
 	world.y_sort_enabled = true
 	add_child(world)
-	_build_wall_occluders()
+	if not USE_3D:
+		_build_wall_occluders()
 	fx_layer = Node2D.new()
 	fx_layer.z_index = 2
 	add_child(fx_layer)

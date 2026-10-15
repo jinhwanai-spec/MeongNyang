@@ -433,3 +433,83 @@ def build(px_per_tile=96):
     }
     save_meta(meta)
     log("OK map", meta["map"]["size"])
+
+def build_floor_top(px_per_tile=64):
+    """3D 게임용: 벽 없이 바닥만 정수리 시점(90°)으로 렌더 → floor.png (타일 격자와 1:1)"""
+    global MAP
+    MAP = read_map()
+    W, H = len(MAP[0]), len(MAP)
+    new_scene("MN_floor")
+    mn_lib.SCN.world.node_tree.nodes["Background"].inputs[0].default_value = (0.55, 0.65, 0.85, 1)
+    mn_lib.SCN.world.node_tree.nodes["Background"].inputs[1].default_value = 0.9
+    try:
+        mn_lib.SCN.eevee.taa_render_samples = 16
+    except Exception:
+        pass
+    M = materials()
+    build_floor(M)
+    build_dressing(M)
+    for ob in list(mn_lib.SCN.collection.all_objects):
+        if ob.name.startswith("walls_"):
+            bpy.data.objects.remove(ob, do_unlink=True)
+    # 평평하고 고른 조명 (그림자는 게임 3D 조명이 만든다)
+    sd = bpy.data.lights.new("flat_sun", "SUN")
+    sd.energy = 2.2
+    so = bpy.data.objects.new("flat_sun", sd)
+    so.rotation_euler = (math.radians(38), 0.0, math.radians(25))  # 비스듬히: 바닥 광택이 카메라로 반사되지 않게
+    link(so)
+    cam = ortho_cam("CamTop", (W / 2, -H / 2, 0), elev=90.0, scale=W, res=(W * px_per_tile, H * px_per_tile))
+    cam.location = Vector((W / 2, -H / 2, 30))
+    cam.rotation_mode = "XYZ"
+    cam.rotation_euler = (0, 0, 0)
+    cam.data.ortho_scale = W
+    out = os.path.join(OUT, "map")
+    os.makedirs(out, exist_ok=True)
+    render(os.path.join(out, "floor.png"))
+    log("OK floor_top", W, H)
+
+def build_wall_tex(h=2.6, ppu=128):
+    """3D 게임용 벽 텍스처: 스타일별 벽 옆면(폭 2 x 높이 h)과 윗면/옥상(2x2)을 정면에서 평평한 조명으로 렌더"""
+    global WALL_H
+    old = WALL_H
+    WALL_H = h
+    out = os.path.join(OUT, "tex")
+    os.makedirs(out, exist_ok=True)
+    jobs = [("wall_store", "side"), ("wall_storage", "side"), ("wall_concrete", "side"),
+            ("wall_store_top", "top"), ("wall_storage_top", "top"), ("wall_concrete_top", "top"), ("roof", "top")]
+    for name, kind in jobs:
+        new_scene("MN_tex")
+        wd = mn_lib.SCN.world.node_tree.nodes["Background"]
+        wd.inputs[0].default_value = (1, 1, 1, 1)
+        wd.inputs[1].default_value = 1.0
+        try:
+            mn_lib.SCN.view_settings.view_transform = "Standard"
+            mn_lib.SCN.view_settings.look = "None"
+            mn_lib.SCN.eevee.taa_render_samples = 8
+        except Exception:
+            pass
+        M = materials()
+        bm = bmesh.new()
+        if kind == "side":
+            vs = [bm.verts.new(v) for v in ((0, 0, 0), (2, 0, 0), (2, 0, h), (0, 0, h))]
+        else:
+            vs = [bm.verts.new(v) for v in ((0, 0, 0), (2, 0, 0), (2, 2, 0), (0, 2, 0))]
+        f = bm.faces.new(vs)
+        if kind == "side":
+            f.normal_flip() if f.normal.y > 0 else None
+        me = bpy.data.meshes.new("texplane")
+        bm.to_mesh(me)
+        bm.free()
+        ob = bpy.data.objects.new("texplane", me)
+        link(ob)
+        me.materials.append(M[name])
+        if kind == "side":
+            cam = ortho_cam("CamTex", (1, 0, h / 2), elev=0.0, scale=max(2.0, h), res=(int(ppu * 2), int(ppu * h)))
+        else:
+            cam = ortho_cam("CamTex", (1, 1, 0), elev=90.0, scale=2.0, res=(int(ppu * 2), int(ppu * 2)))
+            cam.location = Vector((1, 1, 30))
+            cam.rotation_mode = "XYZ"
+            cam.rotation_euler = (0, 0, 0)
+        render(os.path.join(out, name + ".png"))
+    WALL_H = old
+    log("OK wall_tex")

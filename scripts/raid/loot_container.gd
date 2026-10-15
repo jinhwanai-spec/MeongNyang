@@ -12,6 +12,8 @@ var drop_color := Color.WHITE
 var tile_size := Vector2(DB.TILE, DB.TILE)
 var anim := 0.0
 var _seed := 0.0
+var prop_spr: Sprite2D      # 3D 화면용: 세워 그릴 소품 스프라이트
+var _prop_shown := ""
 
 func setup(r: Raid, t: String, pos: Vector2) -> void:
 	raid = r
@@ -54,6 +56,23 @@ func _ready() -> void:
 	shape.shape = rect
 	shape.position = Vector2((tile_size.x - DB.TILE) * 0.5, -tile_size.y * 0.5 + 2)
 	add_child(shape)
+	if raid and raid.USE_3D:
+		_refresh_prop()
+
+## 3D 화면: 소품을 2D _draw 대신 스프라이트로 (View3D가 3D로 세운다)
+func _refresh_prop() -> void:
+	var want: String = ("s:" + SHEET_PROP[type]) if SHEET_PROP.has(type) else ("p:" + prop_name())
+	if want == _prop_shown and prop_spr:
+		return
+	_prop_shown = want
+	if prop_spr:
+		prop_spr.queue_free()
+	if want.begins_with("s:"):
+		prop_spr = Sprites.make_sprop_sprite(want.substr(2), 0.95)
+	else:
+		prop_spr = Sprites.make_prop_sprite(want.substr(2))
+	prop_spr.position = Vector2(0, -DB.TILE * 0.5)
+	add_child(prop_spr)
 
 func display_name() -> String:
 	if is_drop:
@@ -122,6 +141,10 @@ func prop_name() -> String:
 	return pair[1]
 
 func _process(delta: float) -> void:
+	if prop_spr:
+		_refresh_prop()
+		var empty3 := searched and items.is_empty()
+		prop_spr.modulate = Color(0.8, 0.8, 0.85) if empty3 else (Color(1.25, 1.2, 1.08) if highlighted else Color.WHITE)
 	if anim > 0.0:
 		anim = maxf(0.0, anim - delta * 3.0)
 		queue_redraw()
@@ -149,7 +172,7 @@ func _draw() -> void:
 		else:
 			Art.blob(self, Vector2(0, -10 - pop), 15, 11, drop_color.darkened(0.2))
 			draw_line(Vector2(-8, -20 - pop), Vector2(8, -20 - pop), Color("#F2C14E"), 3)
-	else:
+	elif prop_spr == null:
 		var center := Vector2(0, -T * 0.5 - pop)
 		var mod := Color(0.8, 0.8, 0.85) if empty else (Color(1.25, 1.2, 1.08) if hi else Color.WHITE)
 		if SHEET_PROP.has(type):
