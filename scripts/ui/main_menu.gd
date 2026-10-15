@@ -30,7 +30,7 @@ func _ready() -> void:
 	if Sprites.char_info(sheet).is_empty():
 		sheet = "hamster"
 	if ModelChar.available():
-		ham = ModelChar.load_model()
+		ham = ModelChar.load_model(true)
 		ham.position = center
 		ham.scale = Vector3.ONE * 1.25
 		v.add_child(ham)
@@ -194,4 +194,3 @@ func _process(delta: float) -> void:
 		# 카메라 쪽을 보면서 숨쉬고 가끔 고개 갸웃
 		ham.rotation.y = atan2(cam.position.x - ham.position.x, cam.position.z - ham.position.z) - 0.35
 		ham.rotation.z = sin(t * 0.9) * 0.05
-		ham.scale = Vector3(1.25, 1.25 * (1.0 + sin(t * 2.4) * 0.015), 1.25)

@@ -33,6 +33,8 @@ func _swap(n: Node) -> void:
 	move_child(n, 0)
 	fade.color.a = 1.0
 	var tw := create_tween()
+	if n is Raid:
+		tw.tween_interval(1.2)   # 어두운 화면 뒤에서 3D 셰이더를 미리 굽는 동안
 	tw.tween_property(fade, "color:a", 0.0, 0.35)
 
 func show_title() -> void:

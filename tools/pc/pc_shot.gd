@@ -39,6 +39,7 @@ func _process(_d: float) -> void:
 			"crouch": main.current.player.crouching = arg == "1"
 			"hideout": main.show_hideout()
 			"raid": main.start_raid()
+			"fps": print("FPS=%d refresh=%.1f physics=%d vsync=%d" % [Engine.get_frames_per_second(), DisplayServer.screen_get_refresh_rate(), Engine.physics_ticks_per_second, DisplayServer.window_get_vsync_mode()])
 			"mp": main.show_multiplayer()
 			"mp_host":
 				get_node("/root/Net").host()

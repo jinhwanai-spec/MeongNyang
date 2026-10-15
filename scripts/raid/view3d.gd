@@ -18,6 +18,7 @@ const L_OVERLAY := 1 << 1   # 바닥 투영으로 보일 2D (효과·표시)
 const L_HIDDEN := 1 << 2    # 3D 모델로 대체된 2D 그림 (어디에도 안 그림)
 const OV_TILES := 40.0      # 바닥 투영 범위 (타일)
 const OV_PX := 2048
+const AIM_H := 0.5          # 조준 평면 높이 (타일) — 화면에서 적 몸통을 가리키면 그 적을 노리게
 
 var raid: Raid
 var cam: Camera3D
@@ -28,6 +29,10 @@ var ov_cam: Camera2D
 var ov_quad: MeshInstance3D
 var cam_target := Vector3.ZERO
 var registered := {}
+var look_t := Vector3.ZERO
+var tracers := {}           # Projectile -> MeshInstance3D
+var _pp0 := Vector2.ZERO
+var _pp1 := Vector2.ZERO
 var env: Environment
 
 func build(r: Raid) -> void:
@@ -55,9 +60,54 @@ func build(r: Raid) -> void:
 				if n is CanvasItem:
 					n.visibility_layer = L_OVERLAY
 	get_tree().node_added.connect(_on_node_added)
+	_warmup()
 	if raid.player:
 		var p := raid.player.global_position
 		cam_target = Vector3(p.x / T, 0, p.y / T)
+
+func _enter_tree() -> void:
+	process_physics_priority = 100
+
+func _physics_process(_d: float) -> void:
+	if raid and raid.player:
+		_pp0 = _pp1 if _pp1 != Vector2.ZERO else raid.player.global_position
+		_pp1 = raid.player.global_position
+
+func _player_smooth() -> Vector2:
+	if _pp1 == Vector2.ZERO or _pp0.distance_squared_to(_pp1) > 140.0 * 140.0:
+		return raid.player.global_position
+	return _pp0.lerp(_pp1, Engine.get_physics_interpolation_fraction())
+
+## 셰이더 미리 굽기: 시작 직후 어두운 화면 뒤에서 모든 모델·빛줄기를 한 번씩 그려
+## 첫 몇 초의 끊김(셰이더 컴파일)을 없앤다
+func _warmup() -> void:
+	var w := Node3D.new()
+	add_child(w)
+	var paths := []
+	var d := DirAccess.open("res://assets/models/props")
+	if d:
+		for f in d.get_files():
+			if f.ends_with(".glb"):
+				paths.append("res://assets/models/props/" + f)
+	var i := 0
+	for p in paths:
+		var m := (load(p) as PackedScene).instantiate() as Node3D
+		m.scale = Vector3.ONE * 0.3
+		m.position = Vector3((i % 8) * 0.5 - 2.0, 0, (i / 8) * 0.5 - 1.0)
+		w.add_child(m)
+		i += 1
+	if ModelChar.available():
+		w.add_child(ModelChar.load_model(true))
+	var tr := MeshInstance3D.new()
+	tr.mesh = BoxMesh.new()
+	tr.material_override = _tracer_mat(Color(1.0, 0.86, 0.5))
+	w.add_child(tr)
+	var fl := OmniLight3D.new()
+	fl.omni_range = 2.0
+	w.add_child(fl)
+	var p0 := raid.player.global_position if raid.player else Vector2.ZERO
+	w.position = Vector3(p0.x / T, 0, p0.y / T)
+	get_tree().create_timer(1.1).timeout.connect(w.queue_free)
 
 func _exit_tree() -> void:
 	FX.NO_CORPSE = false
@@ -307,6 +357,10 @@ func _classify(n: Node) -> void:
 	if not is_instance_valid(n) or not (n is CanvasItem):
 		return
 	var ci := n as CanvasItem
+	if n is Projectile:
+		ci.visibility_layer = L_HIDDEN
+		_add_tracer(n as Projectile)
+		return
 	# 스프라이트(캐릭터·소품 그림)와 그 그림자는 3D 모델로 대체
 	if n is Sprite2D or (n.get_parent() is Sprite2D):
 		ci.visibility_layer = L_HIDDEN
@@ -378,14 +432,14 @@ func _overlay() -> void:
 	ov_quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(ov_quad)
 
-## 마우스가 가리키는 바닥 지점 (2D 게임 좌표)
+## 마우스가 가리키는 지점 (2D 게임 좌표). 바닥이 아니라 캐릭터 몸통 높이의 평면과 만나는 점.
 func mouse_ground() -> Vector2:
 	var mp := get_viewport().get_mouse_position()
 	var o := cam.project_ray_origin(mp)
 	var d := cam.project_ray_normal(mp)
 	if absf(d.y) < 0.0001:
 		return raid.player.global_position
-	var k := -o.y / d.y
+	var k := (AIM_H - o.y) / d.y
 	var g := o + d * k
 	return Vector2(g.x * T, g.z * T)
 
@@ -395,11 +449,16 @@ func world_to_screen(p: Vector2) -> Vector2:
 func _process(delta: float) -> void:
 	if raid == null or raid.player == null:
 		return
-	# 카메라: 플레이어 + 조준 방향으로 살짝 앞당김
-	var pp: Vector2 = raid.player.global_position
-	var aim := (mouse_ground() - pp).limit_length(4.0 * T) * 0.22
-	var want := Vector3((pp.x + aim.x) / T, 0, (pp.y + aim.y) / T)
-	cam_target = cam_target.lerp(want, 1.0 - exp(-7.0 * delta))
+	# 카메라: 플레이어(부드럽게 보간한 위치) + 마우스 쪽으로 살짝 앞당김.
+	# 앞당김은 '화면 좌표'로 계산해서 카메라↔조준점이 서로 끌고 다니지 않게 한다.
+	var pp: Vector2 = _player_smooth()
+	var vs0 := get_viewport().get_visible_rect().size
+	var mo := (get_viewport().get_mouse_position() - vs0 * 0.5) / vs0.y
+	mo = mo.limit_length(0.5)
+	var look := Vector2(mo.x, mo.y / sin(deg_to_rad(PITCH))) * 3.2
+	var want := Vector3(pp.x / T + look.x, 0, pp.y / T + look.y)
+	look_t = look_t.lerp(want - Vector3(pp.x / T, 0, pp.y / T), 1.0 - exp(-6.0 * delta))
+	cam_target = Vector3(pp.x / T, 0, pp.y / T) + look_t
 	var sh := raid.player.camera().offset / T * 0.6
 	var pr := deg_to_rad(PITCH)
 	cam.position = cam_target + Vector3(sh.x, sin(pr) * CAM_DIST, cos(pr) * CAM_DIST + sh.y)
@@ -408,6 +467,7 @@ func _process(delta: float) -> void:
 	var oc := Vector2(snappedf(cam_target.x, 0.25), snappedf(cam_target.z - 2.0, 0.25))
 	ov_cam.position = oc * T
 	ov_quad.position = Vector3(oc.x, 0.025, oc.y)
+	_update_tracers()
 	# 벽 뚫기
 	var vs := get_viewport().get_visible_rect().size
 	var p3 := Vector3(pp.x / T, 0.0, pp.y / T)
@@ -416,3 +476,59 @@ func _process(delta: float) -> void:
 		m.set_shader_parameter("ppos", p3)
 		m.set_shader_parameter("pscreen", sp / vs)
 		m.set_shader_parameter("aspect", vs.x / vs.y)
+
+
+# ── 총알·화살: 총 높이에서 날아가는 3D 빛줄기 ─────────
+static var _tr_mats := {}
+
+func _tracer_mat(c: Color) -> StandardMaterial3D:
+	var key := c.to_html()
+	if not _tr_mats.has(key):
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.albedo_color = c
+		m.emission_enabled = true
+		m.emission = c
+		m.emission_energy_multiplier = 3.0
+		_tr_mats[key] = m
+	return _tr_mats[key]
+
+func _add_tracer(p: Projectile) -> void:
+	if tracers.has(p):
+		return
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	var enemy := p.weapon == "enemy_bolt" or not p.from_player
+	var bolt := p.weapon == "crossbow"
+	bm.size = Vector3(0.05 if not bolt else 0.04, 0.05 if not bolt else 0.04, 1.0)
+	mi.mesh = bm
+	mi.material_override = _tracer_mat(Color(1.0, 0.35, 0.3) if enemy else (Color(0.95, 0.8, 0.55) if bolt else Color(1.0, 0.86, 0.5)))
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+	tracers[p] = mi
+	# 총구 섬광 (총 높이)
+	if p.travelled < 1.0:
+		var fl := OmniLight3D.new()
+		fl.light_color = Color(1.0, 0.8, 0.45) if not enemy else Color(1.0, 0.4, 0.3)
+		fl.light_energy = 3.0
+		fl.omni_range = 3.5
+		fl.position = Vector3(p.global_position.x / T, AIM_H + 0.05, p.global_position.y / T)
+		add_child(fl)
+		var tw := fl.create_tween()
+		tw.tween_property(fl, "light_energy", 0.0, 0.08)
+		tw.tween_callback(fl.queue_free)
+
+func _update_tracers() -> void:
+	for key in tracers.keys():
+		var mi: MeshInstance3D = tracers[key]
+		if not is_instance_valid(key):
+			mi.queue_free()
+			tracers.erase(key)
+			continue
+		var p: Projectile = key
+		var d := p.vel.normalized()
+		var length := clampf(p.travelled / T, 0.15, 0.9 if p.weapon != "crossbow" else 0.5)
+		var head := Vector3(p.global_position.x / T, AIM_H, p.global_position.y / T)
+		var dir3 := Vector3(d.x, 0, d.y)
+		mi.position = head - dir3 * length * 0.5
+		mi.basis = Basis.looking_at(dir3, Vector3.UP).scaled(Vector3(1, 1, length))

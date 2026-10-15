@@ -156,9 +156,11 @@ func camera() -> Camera2D:
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
+	if raid.view3d and gun.position.y != -8.0:
+		gun.position = Vector2(0, -8)
 	_timers(delta)
 	var mouse := raid.mouse_world()
-	var raw_aim := (mouse - (global_position + Vector2(0, -24)))
+	var raw_aim := (mouse - (global_position + aim_off()))
 	if raw_aim.length() > 4.0:
 		aim_dir = _aim_assist(raw_aim.normalized())
 	if absf(aim_dir.x) > 0.15:
@@ -258,11 +260,15 @@ func _timers(delta: float) -> void:
 		if heal_t <= 0.0:
 			_finish_heal()
 
+## 조준 기준점: 2D 화면은 몸통이 발보다 위(-24), 3D 화면은 몸통이 발 바로 위라 충돌 원 중심(-8)
+func aim_off() -> Vector2:
+	return Vector2(0, -8) if raid.view3d else Vector2(0, -24)
+
 func _aim_assist(dir: Vector2) -> Vector2:
 	# 조준선이 적을 가리키면 살짝 스냅
 	var best: Node2D = null
 	var best_dot := cos(deg_to_rad(9.0))
-	var origin := global_position + Vector2(0, -24)
+	var origin := global_position + aim_off()
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if e.dead:
 			continue

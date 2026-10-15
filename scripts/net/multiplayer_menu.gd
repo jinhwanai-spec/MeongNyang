@@ -203,7 +203,7 @@ func _stand_players() -> void:
 			sheet = "hamster"
 		var pos := center + Vector3((i - (list.size() - 1) * 0.5) * 1.3, 0, 0)
 		if ModelChar.available():
-			var mm := ModelChar.load_model()
+			var mm := ModelChar.load_model(true)
 			mm.position = pos
 			mm.rotation_degrees.y = 20.0
 			stand.add_child(mm)

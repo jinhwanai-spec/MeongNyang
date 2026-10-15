@@ -103,7 +103,7 @@ func _npcs() -> void:
 	npcs.append(_npc("cat_white", "idle", marker("npc_navi")))
 	npcs.append(_npc("cat_tabby", "idle", marker("npc_market")))
 	if ModelChar.available():
-		var sl := ModelChar.load_model()
+		var sl := ModelChar.load_model(true)
 		sl.position = marker("npc_sleep") + Vector3(0.2, 0.32, 0)
 		sl.rotation_degrees = Vector3(0, 30, 82)
 		sl.scale = Vector3.ONE * 0.8

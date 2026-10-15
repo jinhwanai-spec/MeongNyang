@@ -158,6 +158,9 @@ func _face_camera() -> void:
 		var d := c.global_position - global_position
 		pivot.rotation.y = atan2(d.x, d.z)
 
+func _enter_tree() -> void:
+	process_physics_priority = 100   # 캐릭터가 움직인 뒤에 기록
+
 func _process(delta: float) -> void:
 	t += delta
 	_face_camera()
@@ -167,7 +170,7 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(ent):
 		queue_free()
 		return
-	var pos := ent.global_position
+	var pos := _smooth_pos()
 	var vel := (pos - last_pos) / maxf(delta, 0.001)
 	last_pos = pos
 	position = Vector3(pos.x / T, 0, pos.y / T)
@@ -329,3 +332,22 @@ func _juice(delta: float, vel: Vector2) -> void:
 	# 그림자: 뜰 때 작아짐
 	blob.scale = Vector3.ONE * (1.0 - hop * 0.12 * minf(m, 1.0))
 	last_hop = hop
+
+# ── 물리 보간 (화면 주사율 ≠ 물리 60Hz 일 때 끊김 방지) ──
+var _p0 := Vector2.ZERO
+var _p1 := Vector2.ZERO
+var _interp_ready := false
+
+func _physics_process(_d: float) -> void:
+	if not is_instance_valid(ent):
+		return
+	_p0 = _p1 if _interp_ready else ent.global_position
+	_p1 = ent.global_position
+	_interp_ready = true
+
+func _smooth_pos() -> Vector2:
+	if not _interp_ready or not is_instance_valid(ent):
+		return ent.global_position
+	if _p1.distance_squared_to(_p0) > 140.0 * 140.0:
+		return _p1   # 순간이동은 그대로
+	return _p0.lerp(_p1, Engine.get_physics_interpolation_fraction())
