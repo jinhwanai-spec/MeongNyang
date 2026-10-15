@@ -522,6 +522,10 @@ func _draw_art() -> void:
 	# 정찰 표시 (솔방울 스킬)
 	if raid.player and raid.player.scout_t > 0.0:
 		art.draw_arc(Vector2(0, -radius), radius + 14, 0, TAU, 32, Color(1, 0.55, 0.3, 0.8), 2.5, true)
+	if raid.view3d:
+		# 3D 화면: 표시·이름표는 Char3D의 3D 라벨이 맡고, 공격 예고만 바닥에 그린다
+		_draw_windup()
+		return
 	# 경계 표시
 	if state == S.CHASE or (icon_t > 0.0 and state != S.PATROL):
 		_mark(Vector2(0, head_y), "!", DB.C_DANGER)
@@ -540,6 +544,9 @@ func _draw_art() -> void:
 		var bw := 40.0
 		art.draw_rect(Rect2(-bw * 0.5 - 1, 20, bw + 2, 6), Color(0, 0, 0, 0.7))
 		art.draw_rect(Rect2(-bw * 0.5, 21, bw * clampf(hp / max_hp, 0, 1), 4), DB.C_DANGER)
+	_draw_windup()
+
+func _draw_windup() -> void:
 	# 공격 예고
 	if windup > 0.0:
 		var k := 1.0 - windup / windup_total

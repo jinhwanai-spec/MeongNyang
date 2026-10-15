@@ -3,6 +3,7 @@ extends Node2D
 ## 짧게 살다 사라지는 시각 효과들 (총구 화염, 털 뭉치, 발자국, 획득 연출 등)
 
 static var _light_tex: Texture2D
+static var NO_CORPSE := false   # 3D 화면: 쓰러진 3D 모델이 대신한다
 static var _font: Font
 
 var kind := ""
@@ -58,6 +59,8 @@ static func muzzle(layer: Node, pos: Vector2, d: Vector2, big: bool) -> void:
 
 ## 쓰러진 고양이 (X눈) — 잠시 남았다가 사라짐
 static func corpse(layer: Node, pos: Vector2, char_kind: String, flip: bool, tint: Color) -> void:
+	if NO_CORPSE:
+		return
 	var f := _make(layer, "corpse", pos, 2.6)
 	f.text = char_kind
 	f.dir = Vector2(-1 if flip else 1, 0)

@@ -251,6 +251,9 @@ func _spawn_entities() -> void:
 	for d in SHEET_DECOR:
 		var sp := Sprites.make_sprop_sprite(d[0], float(d[3]))
 		sp.position = Vector2(float(d[1]) * T, float(d[2]) * T)
+		sp.set_meta("prop3d", str(SHEET_TO_3D.get(d[0], d[0])))
+		sp.set_meta("prop_off", Vector2(0, -0.25))
+		sp.set_meta("prop_scale", float(d[3]))
 		world.add_child(sp)
 	var ea := _make_exit("A 맨홀", a_cells, 6.0)
 	ea.locked = false
@@ -267,6 +270,9 @@ const SHEET_DECOR := [
 	["pallet", 40.5, 31.6, 0.9], ["tires", 44.5, 37.8, 0.9], ["barrier_orange", 51.2, 30.6, 0.8], ["crate_small", 18.6, 33.7, 0.8],
 	["cardboard", 20.4, 37.6, 0.8], ["trough", 37.5, 29.6, 0.8], ["rock", 56.2, 33.5, 0.8],
 ]
+
+## 시트 소품 이름 → 3D 모델 이름
+const SHEET_TO_3D := {"crate_blue": "crate", "cardboard": "box", "fence2": "fence", "barrier_orange": "barrier_stripe", "trough": "pallet"}
 
 const DECOR := {"s": "shelf_empty", "Q": "fridge_off", "C": "counter", "o": "crates", "X": "car", "f": "fence"}
 
@@ -287,10 +293,24 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 			sheet = "fence" if (x + y) % 2 == 0 else "fence2"
 	var holder := Node2D.new()
 	holder.position = Vector2(x * T + T * 0.5, y * T + T)
+	# 3D 모델 이름·방향
+	var m3: String = name_ if sheet == "" else str(SHEET_TO_3D.get(sheet, sheet))
+	holder.set_meta("prop3d", m3)
+	if c == "X":
+		holder.set_meta("prop_off", Vector2(0.5, -0.5))
+	var vert := LevelData.code(x, y - 1) == c or LevelData.code(x, y + 1) == c
+	if vert and c in ["f", "s", "Q"]:
+		holder.set_meta("prop_rot", 90.0)
 	var spr := Sprites.make_sprop_sprite(sheet) if sheet != "" else Sprites.make_prop_sprite(name_)
 	spr.position = Vector2(0, -T * 0.5)
 	holder.add_child(spr)
 	world.add_child(holder)
+
+## 마우스가 가리키는 게임 좌표 (3D 화면이면 바닥과 만나는 점)
+func mouse_world() -> Vector2:
+	if view3d:
+		return view3d.mouse_ground()
+	return get_global_mouse_position()
 
 func _make_exit(label: String, cells: Array, need: float) -> ExitZone:
 	var mn := Vector2i(9999, 9999)

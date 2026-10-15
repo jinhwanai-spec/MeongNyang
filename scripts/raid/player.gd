@@ -157,7 +157,7 @@ func _physics_process(delta: float) -> void:
 	if dead:
 		return
 	_timers(delta)
-	var mouse := get_global_mouse_position()
+	var mouse := raid.mouse_world()
 	var raw_aim := (mouse - (global_position + Vector2(0, -24)))
 	if raw_aim.length() > 4.0:
 		aim_dir = _aim_assist(raw_aim.normalized())
@@ -605,7 +605,7 @@ func use_skill() -> void:
 			FX.dust(raid.fx_layer, global_position, 8)
 			Sfx.play("pick", -2.0)
 		"bomb":
-			var target := global_position + (get_global_mouse_position() - global_position).limit_length(6.0 * DB.TILE)
+			var target := global_position + (raid.mouse_world() - global_position).limit_length(6.0 * DB.TILE)
 			SkillObj.spawn(raid, "bomb", global_position + Vector2(0, -20), target)
 			Sfx.play("swing", -2.0)
 		"mine":

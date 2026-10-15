@@ -2,47 +2,65 @@ class_name View3D
 extends Node3D
 ## 레이드 3D 화면.
 ## 게임 로직(이동·충돌·AI·전투)은 기존 2D 그대로 돌고, 이 노드가 그 상태를 3D로 그린다.
-##  - 바닥: 블렌더에서 위에서 렌더한 floor.png
-##  - 벽: LevelData로 만든 실제 3D 벽 (블렌더 구운 텍스처, 플레이어 앞 벽은 디더로 뚫림)
-##  - 캐릭터·소품: 2D Sprite2D를 그대로 따라 하는 세운 Sprite3D (진짜 그림자를 드리움)
-##  - 직교 카메라라서 바닥면은 화면에 '세로만 눌린' 모양이 된다 → 2D 카메라 세로 줌을 맞춰 두면
-##    마우스 조준·HUD·바닥 이펙트(총알·링·발자국)는 2D 그대로 정확히 겹친다.
+##  - 바닥: 블렌더에서 위에서 렌더한 floor.png / 벽: LevelData로 만든 3D 벽
+##  - 캐릭터: 블렌더 3D 모델(Char3D)을 부위별로 절차 애니메이션
+##  - 소품: 블렌더 3D 모델(GLB)
+##  - 총알·링·발자국 같은 2D 효과는 서브뷰포트로 그려 바닥에 투영한다
+##  - 원근 카메라 (덕코프식 비스듬한 시점)
 
 const T := float(DB.TILE)
-const ELEV := 52.0          # 카메라 내려다보는 각도
+const PITCH := 49.0         # 카메라 내려다보는 각도
+const CAM_DIST := 16.0
+const FOV := 34.0
 const WALL_H := 2.6         # 벽 높이 (타일 단위) — 햄스터보다 훨씬 높은 인간 세계
 const GLASS_LOW := 0.32
-const SPR_LAYER := 2        # 3D로 옮긴 2D 스프라이트는 이 레이어로 숨긴다
+const L_OVERLAY := 1 << 1   # 바닥 투영으로 보일 2D (효과·표시)
+const L_HIDDEN := 1 << 2    # 3D 모델로 대체된 2D 그림 (어디에도 안 그림)
+const OV_TILES := 40.0      # 바닥 투영 범위 (타일)
+const OV_PX := 2048
 
 var raid: Raid
 var cam: Camera3D
-var sin_e := sin(deg_to_rad(ELEV))
-var k_up := 1.0 / sin(deg_to_rad(ELEV))   # 세운 스프라이트를 화면에서 원래 키로 보이게
-var mirrors := {}           # Sprite2D -> Sprite3D
 var wall_mats: Array[ShaderMaterial] = []
 var old_mask := 0xFFFFFFFF
+var ov_vp: SubViewport
+var ov_cam: Camera2D
+var ov_quad: MeshInstance3D
+var cam_target := Vector3.ZERO
+var registered := {}
 
 func build(r: Raid) -> void:
 	raid = r
+	FX.NO_CORPSE = true
 	_env()
 	_floor()
 	_walls()
 	_lights()
 	cam = Camera3D.new()
-	cam.projection = Camera3D.PROJECTION_ORTHOGONAL
-	cam.keep_aspect = Camera3D.KEEP_HEIGHT
-	cam.near = 0.5
+	cam.fov = FOV
+	cam.near = 1.0
 	cam.far = 120.0
 	cam.current = true
 	add_child(cam)
-	# 3D로 옮긴 스프라이트는 2D 화면에서 숨긴다
+	_overlay()
 	old_mask = get_viewport().canvas_cull_mask
 	get_viewport().canvas_cull_mask = 1
-	for n in _all_children(raid.world):
-		_maybe_mirror(n)
+	for root in [raid.world, raid.fx_layer]:
+		for n in _all_children(root):
+			_classify(n)
+	for c in raid.get_children():
+		if c is ExitZone or c is Shutter:
+			c.visibility_layer = L_OVERLAY
+			for n in _all_children(c):
+				if n is CanvasItem:
+					n.visibility_layer = L_OVERLAY
 	get_tree().node_added.connect(_on_node_added)
+	if raid.player:
+		var p := raid.player.global_position
+		cam_target = Vector3(p.x / T, 0, p.y / T)
 
 func _exit_tree() -> void:
+	FX.NO_CORPSE = false
 	if get_viewport():
 		get_viewport().canvas_cull_mask = old_mask
 	if get_tree().node_added.is_connected(_on_node_added):
@@ -53,31 +71,35 @@ func _env() -> void:
 	var we := WorldEnvironment.new()
 	var e := Environment.new()
 	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color("#0B0F18")
+	e.background_color = Color("#1A2030")
 	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.55, 0.6, 0.82)
-	e.ambient_light_energy = 0.38
-	e.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	e.tonemap_exposure = 0.95
+	e.ambient_light_color = Color(0.72, 0.78, 0.95)
+	e.ambient_light_energy = 0.72
+	e.tonemap_mode = Environment.TONE_MAPPER_ACES
+	e.tonemap_exposure = 1.0
+	e.tonemap_white = 6.0
 	e.ssao_enabled = true
 	e.ssao_radius = 1.2
-	e.ssao_intensity = 2.2
+	e.ssao_intensity = 1.8
+	e.ssil_enabled = true
+	e.ssil_intensity = 0.6
 	e.glow_enabled = true
-	e.glow_intensity = 0.55
+	e.glow_intensity = 0.4
 	e.glow_bloom = 0.04
 	e.glow_hdr_threshold = 1.1
 	e.adjustment_enabled = true
-	e.adjustment_saturation = 1.08
+	e.adjustment_saturation = 1.12
 	e.adjustment_contrast = 1.04
 	we.environment = e
 	add_child(we)
 	var moon := DirectionalLight3D.new()
-	moon.light_color = Color(0.75, 0.82, 1.0)
-	moon.light_energy = 0.42
+	# 늦은 오후의 따뜻한 해 (부드러운 그림자)
+	moon.light_color = Color(1.0, 0.86, 0.68)
+	moon.light_energy = 1.25
 	moon.shadow_enabled = true
-	moon.shadow_blur = 1.5
+	moon.shadow_blur = 2.5
 	moon.directional_shadow_max_distance = 45.0
-	moon.rotation_degrees = Vector3(-58, 28, 0)
+	moon.rotation_degrees = Vector3(-48, -38, 0)
 	add_child(moon)
 
 func _lights() -> void:
@@ -115,7 +137,7 @@ func _floor() -> void:
 		m.albedo_texture = load(fp)
 	else:
 		m.albedo_color = Color("#3A3F48")
-	m.albedo_color = Color(0.78, 0.78, 0.8)
+	m.albedo_color = Color(0.92, 0.9, 0.88)
 	m.roughness = 0.9
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	mi.material_override = m
@@ -229,10 +251,10 @@ func _walls() -> void:
 					Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1))
 	var names := {"store": "wall_store", "storage": "wall_storage", "concrete": "wall_concrete"}
 	for st in ["store", "storage", "concrete"]:
-		_add_mesh(side[st], _wall_mat(names[st], 0.85))
+		_add_mesh(side[st], _wall_mat(names[st], 1.0))
 	for st in ["store", "storage", "concrete", "roof"]:
 		var tn: String = "roof" if st == "roof" else names[st] + "_top"
-		_add_mesh(top[st], _wall_mat(tn, 0.7))
+		_add_mesh(top[st], _wall_mat(tn, 0.9))
 	if has_glass:
 		var gm := StandardMaterial3D.new()
 		gm.albedo_color = Color(0.55, 0.75, 0.92, 0.28)
@@ -260,136 +282,130 @@ func _add_mesh(st: SurfaceTool, m: Material) -> MeshInstance3D:
 	add_child(mi)
 	return mi
 
-# ── 2D 스프라이트 → 3D 세운 스프라이트 ────────────────
+
+# ── 2D 노드 분류: 3D 모델로 대체 / 바닥 투영 ───────────
 func _all_children(n: Node) -> Array:
 	var out := []
+	if n == null:
+		return out
 	for c in n.get_children():
 		out.append(c)
 		out.append_array(_all_children(c))
 	return out
 
 func _on_node_added(n: Node) -> void:
-	if n is Sprite2D:
-		_maybe_mirror.call_deferred(n)
-
-func _maybe_mirror(n: Node) -> void:
-	if not (n is Sprite2D) or not is_instance_valid(n) or mirrors.has(n):
+	if raid == null:
 		return
-	if raid.world == null or not raid.world.is_ancestor_of(n):
-		return
-	var s2: Sprite2D = n
-	s2.visibility_layer = 1 << (SPR_LAYER - 1)
-	for c in s2.get_children():
-		if c is CanvasItem:
-			c.visibility_layer = 1 << (SPR_LAYER - 1)   # 스프라이트에 딸린 2D 바닥 그림자도 숨김 (3D 그림자로 대체)
-	var s3 := Sprite3D.new()
-	s3.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-	s3.alpha_scissor_threshold = 0.45
-	s3.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	s3.shaded = false
-	s3.double_sided = true
-	s3.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	s3.pixel_size = 1.0
-	add_child(s3)
-	mirrors[s2] = s3
-	_sync(s2, s3)
+	if (raid.world and raid.world.is_ancestor_of(n)) or (raid.fx_layer and raid.fx_layer.is_ancestor_of(n)):
+		_classify.call_deferred(n)
+	elif n.get_parent() == raid and (n is ExitZone or n is Shutter):
+		(n as CanvasItem).visibility_layer = L_OVERLAY
 
-func _entity_of(n: Node) -> Node2D:
-	var e := n
-	while e.get_parent() != null and e.get_parent() != raid.world:
-		e = e.get_parent()
-	return e as Node2D
-
-func _l(v: Vector2) -> Vector3:
-	# 2D 픽셀 벡터 → 3D (세운 평면, y는 화면 원래 키로 보이도록 k_up배)
-	return Vector3(v.x / T, -v.y / T * k_up, 0.0)
-
-func _sync(s2: Sprite2D, s3: Sprite3D) -> void:
-	var ent := _entity_of(s2)
-	if ent == null:
-		s3.visible = false
+func _classify(n: Node) -> void:
+	if not is_instance_valid(n) or not (n is CanvasItem):
 		return
-	var vis := s2.is_visible_in_tree()
-	var mod := s2.self_modulate
-	var p: Node = s2
-	while p != null and p != raid.world:
-		if p is CanvasItem:
-			mod *= (p as CanvasItem).modulate
-		p = p.get_parent()
-	if mod.a < 0.02 or s2.texture == null:
-		vis = false
-	s3.visible = vis
-	if not vis:
-		return
-	if s3.texture != s2.texture:
-		s3.texture = s2.texture
-	s3.hframes = s2.hframes
-	s3.vframes = s2.vframes
-	s3.frame = s2.frame
-	s3.region_enabled = s2.region_enabled
-	if s2.region_enabled:
-		s3.region_rect = s2.region_rect
-	s3.centered = s2.centered
-	# Sprite2D는 아래로, Sprite3D(비중앙)는 위로 자란다 → 프레임 높이만큼 보정
-	var fh0 := s2.region_rect.size.y if s2.region_enabled else (float(s2.texture.get_height()) / maxf(1.0, float(s2.vframes)))
-	if s2.centered:
-		s3.offset = Vector2(s2.offset.x, -s2.offset.y)
+	var ci := n as CanvasItem
+	# 스프라이트(캐릭터·소품 그림)와 그 그림자는 3D 모델로 대체
+	if n is Sprite2D or (n.get_parent() is Sprite2D):
+		ci.visibility_layer = L_HIDDEN
 	else:
-		s3.offset = Vector2(s2.offset.x, -(s2.offset.y + fh0))
-	s3.flip_h = s2.flip_h
-	s3.flip_v = s2.flip_v
-	# 피격 번쩍임
-	if s2.material is ShaderMaterial:
-		var f = (s2.material as ShaderMaterial).get_shader_parameter("flash")
-		if f != null and float(f) > 0.05:
-			mod = mod.lerp(Color(1.0, 0.55, 0.55, mod.a), clampf(float(f), 0.0, 1.0))
-	s3.modulate = Color(mod.r, mod.g, mod.b, mod.a)
-	var tr := s2.get_global_transform()
-	var foot := ent.global_position
-	var bx := _l(tr.x)
-	var by := -_l(tr.y)
-	s3.basis = Basis(bx, by, Vector3(0, 0, 1))
-	# 같은 캐릭터 안에서는 그리는 순서대로 카메라 쪽으로 아주 조금씩
-	var order := float(s2.z_index) * 0.02 + float(s2.get_index()) * 0.004
-	s3.position = Vector3(foot.x / T, 0.0, foot.y / T) + _l(tr.origin - foot) + Vector3(0, 0, 0.02 + order)
-	# 캐릭터가 아닌 소품은 그림 아래 끝을 바닥에 붙인다 (2D에선 타일 가운데에 떠 있게 그려짐)
-	if not (ent is CharacterBody2D):
-		var fh := s2.region_rect.size.y if s2.region_enabled else (float(s2.texture.get_height()) / maxf(1.0, float(s2.vframes)))
-		var local_bottom := s2.offset.y + (fh * 0.5 if s2.centered else fh)
-		var rb := (tr * Vector2(0, local_bottom)).y - foot.y
-		s3.position.y += rb / T * k_up
-	if mod.a < 0.98:
-		s3.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
-		s3.transparent = true
-	else:
-		s3.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+		ci.visibility_layer = L_OVERLAY
+	if n.get_parent() == raid.world:
+		_register(n)
+	# 캐릭터 2D 그림자는 숨김 (3D 그림자)
+	if n is Player:
+		(n as Player).shadow_node.visibility_layer = L_HIDDEN
 
-func _process(_delta: float) -> void:
+func _register(n: Node) -> void:
+	if registered.has(n):
+		return
+	registered[n] = true
+	if n is Player:
+		var c := Char3D.new()
+		add_child(c)
+		c.setup(n, "hamster")
+	elif n is Enemy:
+		var c2 := Char3D.new()
+		add_child(c2)
+		c2.setup(n, (n as Enemy).type)
+		for ch in n.get_children():
+			if ch is Node2D and not (ch is Sprite2D) and ch != (n as Enemy).art and ch != (n as Enemy).hand:
+				(ch as CanvasItem).visibility_layer = L_HIDDEN   # 2D 그림자
+	elif n is LootContainer:
+		var pr := Prop3D.new()
+		add_child(pr)
+		pr.setup_container(n)
+	elif n is Generator:
+		var pg := Prop3D.new()
+		add_child(pg)
+		pg.setup_static(n, "generator", 0.0, Vector2(0, -0.5))
+	elif n.has_meta("prop3d"):
+		var ps := Prop3D.new()
+		add_child(ps)
+		ps.setup_static(n, str(n.get_meta("prop3d")), float(n.get_meta("prop_rot", 0.0)), n.get_meta("prop_off", Vector2(0, -0.5)), float(n.get_meta("prop_scale", 1.0)))
+
+# ── 바닥 투영 레이어 ──────────────────────────────────
+func _overlay() -> void:
+	ov_vp = SubViewport.new()
+	ov_vp.size = Vector2i(OV_PX, OV_PX)
+	ov_vp.transparent_bg = true
+	ov_vp.world_2d = get_viewport().world_2d
+	ov_vp.canvas_cull_mask = L_OVERLAY
+	ov_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	ov_vp.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_LINEAR
+	add_child(ov_vp)
+	ov_cam = Camera2D.new()
+	ov_cam.zoom = Vector2.ONE * (OV_PX / (OV_TILES * T))
+	ov_cam.enabled = true
+	ov_vp.add_child(ov_cam)
+	ov_quad = MeshInstance3D.new()
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(OV_TILES, OV_TILES)
+	ov_quad.mesh = pm
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_texture = ov_vp.get_texture()
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
+	m.render_priority = 1
+	ov_quad.material_override = m
+	ov_quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(ov_quad)
+
+## 마우스가 가리키는 바닥 지점 (2D 게임 좌표)
+func mouse_ground() -> Vector2:
+	var mp := get_viewport().get_mouse_position()
+	var o := cam.project_ray_origin(mp)
+	var d := cam.project_ray_normal(mp)
+	if absf(d.y) < 0.0001:
+		return raid.player.global_position
+	var k := -o.y / d.y
+	var g := o + d * k
+	return Vector2(g.x * T, g.z * T)
+
+func world_to_screen(p: Vector2) -> Vector2:
+	return cam.unproject_position(Vector3(p.x / T, 0, p.y / T))
+
+func _process(delta: float) -> void:
 	if raid == null or raid.player == null:
 		return
-	# 카메라: 2D 카메라와 똑같은 화면이 되도록
-	var c2 := raid.player.camera()
-	var vs := get_viewport().get_visible_rect().size
-	var z := c2.zoom.x
-	c2.zoom = Vector2(z, z * sin_e)
-	# 2D가 실제로 그리는 화면 변환에서 화면 중앙의 바닥 좌표를 구한다 (조준 앞당김·흔들림 포함)
-	var center: Vector2 = get_viewport().get_canvas_transform().affine_inverse() * (vs * 0.5)
-	var tgt := Vector3(center.x / T, 0.0, center.y / T)
-	cam.size = vs.y / (T * z)
-	cam.position = tgt + Vector3(0, sin_e, cos(deg_to_rad(ELEV))) * 40.0
-	cam.look_at(tgt, Vector3.UP)
-	# 스프라이트 동기화
-	for s2 in mirrors.keys():
-		var s3: Sprite3D = mirrors[s2]
-		if not is_instance_valid(s2):
-			s3.queue_free()
-			mirrors.erase(s2)
-			continue
-		_sync(s2, s3)
-	# 벽 뚫기
+	# 카메라: 플레이어 + 조준 방향으로 살짝 앞당김
 	var pp: Vector2 = raid.player.global_position
+	var aim := (mouse_ground() - pp).limit_length(4.0 * T) * 0.22
+	var want := Vector3((pp.x + aim.x) / T, 0, (pp.y + aim.y) / T)
+	cam_target = cam_target.lerp(want, 1.0 - exp(-7.0 * delta))
+	var sh := raid.player.camera().offset / T * 0.6
+	var pr := deg_to_rad(PITCH)
+	cam.position = cam_target + Vector3(sh.x, sin(pr) * CAM_DIST, cos(pr) * CAM_DIST + sh.y)
+	cam.look_at(cam_target + Vector3(sh.x, 0, sh.y), Vector3.UP)
+	# 바닥 투영 레이어를 카메라 중심에 맞춤 (타일 단위로 눌러 붙여 흔들림 방지)
+	var oc := Vector2(snappedf(cam_target.x, 0.25), snappedf(cam_target.z - 2.0, 0.25))
+	ov_cam.position = oc * T
+	ov_quad.position = Vector3(oc.x, 0.025, oc.y)
+	# 벽 뚫기
+	var vs := get_viewport().get_visible_rect().size
 	var p3 := Vector3(pp.x / T, 0.0, pp.y / T)
-	var sp := cam.unproject_position(p3 + Vector3(0, 0.75 * k_up * 0.6, 0))
+	var sp := cam.unproject_position(p3 + Vector3(0, 0.6, 0))
 	for m in wall_mats:
 		m.set_shader_parameter("ppos", p3)
 		m.set_shader_parameter("pscreen", sp / vs)
