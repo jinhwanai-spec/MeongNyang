@@ -15,6 +15,7 @@ var recoverable := false
 var exclude: Array[RID] = []
 var origin := Vector2.ZERO
 var visual := false     # 다른 플레이어가 쏜 총알 (보이기만, 피해 없음)
+var whizzed := false
 
 func setup(r: Raid, pos: Vector2, dir: Vector2, speed: float, damage: float, dist: float, player_owned: bool, wid: String) -> void:
 	raid = r
@@ -65,13 +66,16 @@ func _physics_process(delta: float) -> void:
 			return
 		# 벽
 		FX.hit_spark(raid.fx_layer, hit.position, hit.normal, Color("#C9D1DA"))
-		Sfx.play_at("ricochet", hit.position, -12.0)
+		Sfx.play_at("impact_hard" if randf() < 0.7 else "ricochet", hit.position, -10.0, 0.15)
 		if recoverable:
 			raid.spawn_bolt_pickup(hit.position + hit.normal * 10.0)
 		queue_free()
 		return
 	global_position += step
 	travelled += step.length()
+	if not from_player and not whizzed and raid.player and global_position.distance_to(raid.player.global_position + Vector2(0, -20)) < 70.0:
+		whizzed = true
+		Sfx.play("whiz", -6.0, 0.15)
 	if travelled >= max_dist:
 		if recoverable:
 			raid.spawn_bolt_pickup(global_position)

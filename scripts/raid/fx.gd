@@ -3,7 +3,8 @@ extends Node2D
 ## 짧게 살다 사라지는 시각 효과들 (총구 화염, 털 뭉치, 발자국, 획득 연출 등)
 
 static var _light_tex: Texture2D
-static var NO_CORPSE := false   # 3D 화면: 쓰러진 3D 모델이 대신한다
+static var NO_CORPSE := false
+static var fx3d: FX3D       # 3D 화면이면 총구·탄피·불꽃·털을 3D로   # 3D 화면: 쓰러진 3D 모델이 대신한다
 static var _font: Font
 
 var kind := ""
@@ -45,6 +46,9 @@ static func _make(layer: Node, k: String, pos: Vector2, lifetime: float) -> FX:
 	return f
 
 static func muzzle(layer: Node, pos: Vector2, d: Vector2, big: bool) -> void:
+	if is_instance_valid(fx3d):
+		fx3d.muzzle(pos, d, big)
+		return
 	var f := _make(layer, "muzzle", pos, 0.07 if not big else 0.09)
 	f.dir = d
 	f.col = Color("#FFD27A")
@@ -81,6 +85,9 @@ static func explosion(layer: Node, pos: Vector2, radius: float) -> void:
 	c.z_index = -6
 
 static func shell(layer: Node, pos: Vector2, side: float) -> void:
+	if is_instance_valid(fx3d):
+		fx3d.shell(pos, side)
+		return
 	var f := _make(layer, "shell", pos, 0.6)
 	f.parts = [[Vector2.ZERO, Vector2(side * randf_range(60, 110), randf_range(-160, -110)), 3.0, randf() * TAU, randf_range(-14, 14)]]
 
@@ -107,6 +114,9 @@ static func heal_burst(layer: Node, pos: Vector2) -> void:
 		f.parts.append([Vector2(randf_range(-16, 16), randf_range(-6, 6)), Vector2(randf_range(-15, 15), randf_range(-70, -40)), randf_range(4, 7), 0.0, 0.0])
 
 static func fur_puff(layer: Node, pos: Vector2, c: Color, n: int = 16) -> void:
+	if is_instance_valid(fx3d):
+		fx3d.fur(pos, c, n)
+		return
 	var f := _make(layer, "fur", pos, 1.1)
 	f.col = c
 	for i in n:
@@ -124,6 +134,11 @@ static func rustle(layer: Node, pos: Vector2) -> void:
 		f.parts.append([Vector2(randf_range(-10, 10), 0), Vector2.from_angle(a) * randf_range(40, 110), randf_range(3, 6), randf() * TAU, randf_range(-8, 8)])
 
 static func hit_spark(layer: Node, pos: Vector2, d: Vector2, c: Color = Color.WHITE) -> void:
+	if is_instance_valid(fx3d):
+		fx3d.sparks(pos, d, c, 9)
+		if c == Color("#C9D1DA"):
+			fx3d.dust(pos, d)
+		return
 	var f := _make(layer, "spark", pos, 0.2)
 	f.col = c
 	for i in 5:

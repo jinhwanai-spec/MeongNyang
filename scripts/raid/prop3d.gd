@@ -12,6 +12,9 @@ var cur := ""
 var inst: Node3D
 var off := Vector2(0, -0.5)
 var sc := 1.0
+var wpn: Node3D          # 떨어진 꾸러미에 든 무기: 바닥에 눕혀 보여 준다
+var wpn_id := ""
+var _t := 0.0
 
 func setup_static(e: Node2D, name_: String, rot_deg: float, offset: Vector2, scale_k: float = 1.0) -> void:
 	ent = e
@@ -72,3 +75,51 @@ func _process(_delta: float) -> void:
 		_show(_cname())
 		if lc.is_drop:
 			_place()
+			_drop_weapon(_delta)
+
+func _drop_weapon(delta: float) -> void:
+	var wid := ""
+	for it in lc.items:
+		var d: Dictionary = DB.ITEMS.get(it, {})
+		if d.get("cat", "") == "weapon":
+			wid = String(d.get("weapon", ""))
+			break
+	if wid != wpn_id:
+		wpn_id = wid
+		if wpn:
+			wpn.queue_free()
+			wpn = null
+		if wid != "":
+			wpn = Node3D.new()
+			add_child(wpn)
+			var m := EnemyModel.weapon_scene(wid)
+			if m:
+				var holder := Node3D.new()
+				holder.rotation.z = PI * 0.5   # 옆으로 눕힘 (총구는 +Z)
+				m.position.z = -0.3
+				holder.add_child(m)
+				wpn.add_child(holder)
+			var glow := MeshInstance3D.new()
+			var q := QuadMesh.new()
+			q.size = Vector2(1.1, 1.1)
+			glow.mesh = q
+			glow.rotation.x = -PI * 0.5
+			glow.position.y = 0.02
+			var mat := StandardMaterial3D.new()
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+			mat.albedo_texture = FX.light_texture()
+			mat.albedo_color = Color(1.0, 0.8, 0.4, 0.55)
+			glow.material_override = mat
+			glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			wpn.add_child(glow)
+			wpn.position = Vector3(0.35, 0.0, 0.25)
+			wpn.rotation.y = randf() * TAU
+	if wpn:
+		_t += delta
+		var holder_y := 0.12 + sin(_t * 3.0) * 0.03
+		for c in wpn.get_children():
+			if not (c is MeshInstance3D):
+				(c as Node3D).position.y = holder_y
+		wpn.rotation.y += delta * 0.8

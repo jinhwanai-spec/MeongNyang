@@ -62,6 +62,9 @@ func build(r: Raid) -> void:
 					n.visibility_layer = L_OVERLAY
 	get_tree().node_added.connect(_on_node_added)
 	_warmup()
+	var fx3 := FX3D.new()
+	add_child(fx3)
+	FX.fx3d = fx3
 	FX.NO_CORPSE = EnemyModel.available("hyena") and EnemyModel.available("bulldog") and EnemyModel.available("cat")
 	if raid.player:
 		var p := raid.player.global_position
@@ -116,6 +119,7 @@ func _warmup() -> void:
 
 func _exit_tree() -> void:
 	FX.NO_CORPSE = false
+	FX.fx3d = null
 	if get_viewport():
 		get_viewport().canvas_cull_mask = old_mask
 	if get_tree().node_added.is_connected(_on_node_added):
@@ -501,7 +505,7 @@ func _tracer_mat(c: Color) -> StandardMaterial3D:
 		m.albedo_color = c
 		m.emission_enabled = true
 		m.emission = c
-		m.emission_energy_multiplier = 3.0
+		m.emission_energy_multiplier = 4.0
 		_tr_mats[key] = m
 	return _tr_mats[key]
 
@@ -512,9 +516,9 @@ func _add_tracer(p: Projectile) -> void:
 	var bm := BoxMesh.new()
 	var enemy := p.weapon == "enemy_bolt" or not p.from_player
 	var bolt := p.weapon == "crossbow"
-	bm.size = Vector3(0.05 if not bolt else 0.04, 0.05 if not bolt else 0.04, 1.0)
+	bm.size = Vector3(0.045 if not bolt else 0.05, 0.045 if not bolt else 0.05, 1.0)
 	mi.mesh = bm
-	mi.material_override = _tracer_mat(Color(1.0, 0.35, 0.3) if enemy else (Color(0.95, 0.8, 0.55) if bolt else Color(1.0, 0.86, 0.5)))
+	mi.material_override = _tracer_mat(Color(1.0, 0.35, 0.3) if enemy else (Color(0.95, 0.8, 0.55) if bolt else Color(1.0, 0.93, 0.7)))
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)
 	tracers[p] = mi
@@ -539,7 +543,7 @@ func _update_tracers() -> void:
 			continue
 		var p: Projectile = key
 		var d := p.vel.normalized()
-		var length := clampf(p.travelled / T, 0.15, 0.9 if p.weapon != "crossbow" else 0.5)
+		var length := clampf(p.travelled / T, 0.15, 1.1 if p.weapon != "crossbow" else 0.5)
 		var head := Vector3(p.global_position.x / T, AIM_H, p.global_position.y / T)
 		var dir3 := Vector3(d.x, 0, d.y)
 		mi.position = head - dir3 * length * 0.5

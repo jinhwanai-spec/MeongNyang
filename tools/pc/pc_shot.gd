@@ -73,6 +73,17 @@ func _process(_d: float) -> void:
 				for e in get_tree().get_nodes_in_group("enemy"):
 					if e.global_position.distance_to(main.current.player.global_position) < float(arg if arg != "" else "400"):
 						e.take_damage(999.0, main.current.player.global_position, 0.0)
+			"autofire":
+				var pl = main.current.player
+				var en = null
+				for e in get_tree().get_nodes_in_group("enemy"):
+					if en == null or e.global_position.distance_to(pl.global_position) < en.global_position.distance_to(pl.global_position):
+						en = e
+				if en:
+					pl.aim_dir = (en.global_position - pl.global_position).normalized()
+				pl.input_locked = true
+				pl.fire_cd = 0.0
+				pl._fire()
 			"alert":
 				for e in get_tree().get_nodes_in_group("enemy"):
 					if e.global_position.distance_to(main.current.player.global_position) < 700:

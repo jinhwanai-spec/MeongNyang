@@ -576,6 +576,11 @@ func take_damage(amount: float, from_pos: Vector2, kick_force: float) -> void:
 		return
 	var crit := not is_aware()
 	hp -= amount
+	if is_instance_valid(FX.fx3d):
+		FX.fx3d.damage_number(global_position, amount, crit, 1.25 if type != "bulldog" else 1.45)
+		if amount >= 40.0:
+			FX.fx3d.hitstop(0.03, 0.2)
+	Sfx.play_at("impact_flesh", global_position, -6.0, 0.12)
 	flash = 1.0
 	show_bar_t = 3.0
 	knock = (global_position - from_pos).normalized() * kick_force * (0.4 if type == "bulldog" else 1.0)
@@ -596,6 +601,8 @@ func _die() -> void:
 		Net.enemy_died(net_id, last_hitter)
 	remove_from_group("enemy")
 	FX.fur_puff(raid.fx_layer, center(), data.body, 20)
+	if is_instance_valid(FX.fx3d):
+		FX.fx3d.kill(global_position, data.body)
 	var tint: Color = {"cat_black": Color(0.38, 0.38, 0.44), "cat_white": Color(1.7, 1.7, 1.7)}.get(sprite_kind, Color.WHITE)
 	FX.corpse(raid.fx_layer, global_position, sprite_kind, facing < 0.0, tint)
 	Sfx.play_at("poof", global_position, -2.0)

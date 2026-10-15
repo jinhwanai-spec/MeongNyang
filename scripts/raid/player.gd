@@ -435,7 +435,7 @@ func _melee() -> void:
 	cloak_t = 0.0
 	melee_anim = 0.22
 	cancel_heal()
-	Sfx.play("swing", -4.0, 0.1)
+	Sfx.play("slash" if melee_id in ["knife", "machete", "katana", "spear"] else "swing", -4.0, 0.1)
 	raid.emit_noise(global_position, float(m.noise))
 	var origin := global_position + Vector2(0, -18)
 	var hit_any := false
@@ -455,8 +455,10 @@ func _melee() -> void:
 		e.take_damage(dmg, origin, float(m.kick))
 		hit_any = true
 	if hit_any:
-		raid.shake(5.0)
-		Sfx.play("melee_hit", -2.0, 0.1)
+		raid.shake(5.0 + float(m.dmg) * 0.06)
+		Sfx.play("melee_heavy" if float(m.dmg) >= 45.0 else "melee_hit", -2.0, 0.1)
+		if is_instance_valid(FX.fx3d):
+			FX.fx3d.hitstop(0.05 if float(m.dmg) >= 45.0 else 0.03, 0.12)
 	FX.swoosh(raid.fx_layer, origin, aim_dir)
 
 # ── 회복 ─────────────────────────────────────────────

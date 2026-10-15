@@ -203,6 +203,18 @@ func _process(delta: float) -> void:
 		return
 	var pos := _smooth_pos()
 	position = Vector3(pos.x / T, 0, pos.y / T)
+	# 화면 밖 먼 고양이는 그리기·애니메이션 쉬기 (성능)
+	var far := false
+	var r: Raid = ent.raid
+	if r and r.player:
+		far = pos.distance_squared_to(r.player.global_position) > 1100.0 * 1100.0
+	if far != not pivot.visible:
+		pivot.visible = not far
+		if ap:
+			ap.active = not far
+	if far:
+		_labels()
+		return
 	var v2: Vector2 = ent.velocity
 	sp_s = lerpf(sp_s, v2.length(), 1.0 - exp(-10.0 * delta))
 	var sp := sp_s

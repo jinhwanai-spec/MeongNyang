@@ -573,3 +573,118 @@ def weapon_icon(sc, ob, wid, res=(384, 192)):
     sc.render.filepath = os.path.join(ICON, "w_" + wid + ".png")
     bpy.ops.render.render(write_still=True, scene=sc.name)
     sc.render.film_transparent = False
+
+# ── 맵 소품 (Meshy) → 기존 소품 크기·위치에 맞춰 교체 ──
+PSRC = os.path.join(os.path.expanduser("~"), "Documents", "멍냥서바이벌_에셋", "1_Meshy_원본", "props")
+POUT = os.path.join(PROJ, "assets", "models", "props")
+PBAK = os.path.join(os.path.expanduser("~"), "Documents", "멍냥서바이벌_에셋", "2_게임용_모델", "props_예전_블렌더")
+
+def _bbox_objs(objs):
+    pts = [o.matrix_world @ Vector(c) for o in objs for c in o.bound_box]
+    mn = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
+    mx = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
+    return mn, mx
+
+def prop_process(name, rot=0.0, tex=1024, stretch=1.25):
+    """기존 props/<name>.glb 크기에 맞춰 Meshy 모델을 넣고 덮어쓰기 (예전 것은 백업)"""
+    from mathutils import Matrix
+    import shutil
+    sc = bpy.data.scenes.get("PRP") or bpy.data.scenes.new("PRP")
+    bpy.context.window.scene = sc
+    clear(sc)
+    os.makedirs(PBAK, exist_ok=True)
+    orig = os.path.join(POUT, name + ".glb")
+    bak = os.path.join(PBAK, name + ".glb")
+    if not os.path.exists(bak) and os.path.exists(orig):
+        shutil.copy(orig, bak)
+    bpy.ops.import_scene.gltf(filepath=bak)
+    omn, omx = _bbox_objs([o for o in sc.objects if o.type == "MESH"])
+    clear(sc)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(PSRC, name + ".glb"))
+    ms = [o for o in sc.objects if o.type == "MESH"]
+    for m in ms:
+        m.data = m.data.copy()
+        m.data.transform(m.matrix_world)
+        m.parent = None
+        m.matrix_world = Matrix.Identity(4)
+    for o in [o for o in sc.objects if o.type != "MESH"]:
+        bpy.data.objects.remove(o, do_unlink=True)
+    if len(ms) > 1:
+        for o in sc.objects:
+            o.select_set(o in ms)
+        bpy.context.view_layer.objects.active = ms[0]
+        with bpy.context.temp_override(active_object=ms[0], selected_editable_objects=ms, selected_objects=ms):
+            bpy.ops.object.join()
+    ob = [o for o in sc.objects if o.type == "MESH"][0]
+    mn, mx = world_bbox(ob)
+    ow, od, oh = omx.x - omn.x, omx.y - omn.y, omx.z - omn.z
+    mw, md = mx.x - mn.x, mx.y - mn.y
+    # 긴 가로축 맞추기
+    if (ow > od * 1.25 and md > mw * 1.25) or (od > ow * 1.25 and mw > md * 1.25):
+        ob.data.transform(Matrix.Rotation(math.radians(90), 4, "Z"))
+    if rot:
+        ob.data.transform(Matrix.Rotation(math.radians(rot), 4, "Z"))
+    mn, mx = world_bbox(ob)
+    mw, md, mh = mx.x - mn.x, mx.y - mn.y, mx.z - mn.z
+    # 축별 목표 비율 → 평균 배율 기준으로 ±25%까지만 늘이고 줄여 원래 충돌 크기에 가깝게
+    tx, ty, tz = ow / max(mw, 1e-4), od / max(md, 1e-4), oh / max(mh, 1e-4)
+    s = (tx * ty * tz) ** (1.0 / 3.0)
+    sx, sy, sz = [min(max(t, s / stretch), s * stretch) for t in (tx, ty, tz)]
+    c = (mn + mx) * 0.5
+    oc = (omn + omx) * 0.5
+    S = Matrix.Diagonal((sx, sy, sz, 1.0))
+    ob.data.transform(Matrix.Translation((oc.x, oc.y, omn.z)) @ S @ Matrix.Translation((-c.x, -c.y, -mn.z)))
+    ob.data.update()
+    ob.name = name
+    for m in ob.data.materials:
+        if m and m.node_tree:
+            for n in m.node_tree.nodes:
+                if n.type == "TEX_IMAGE" and n.image and n.image.size[0] > tex:
+                    n.image.scale(tex, tex)
+    for o in sc.objects:
+        o.select_set(False)
+    ob.select_set(True)
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.export_scene.gltf(filepath=orig, export_format="GLB", use_selection=True, export_yup=True,
+                              export_animations=False, export_image_format="JPEG", export_jpeg_quality=85,
+                              export_cameras=False, export_lights=False, use_active_scene=True)
+    nmn, nmx = world_bbox(ob)
+    return [round(v, 2) for v in (ow, od, oh)], [round(v, 2) for v in (nmx.x - nmn.x, nmx.y - nmn.y, nmx.z - nmn.z)], len(ob.data.polygons)
+
+
+def prop_sheet(names, path, res=180):
+    """예전(위) / 새(아래) 소품 비교 시트 — 게임 카메라처럼 앞(-Y) 위에서 내려다봄"""
+    from mathutils import Vector
+    sc = bpy.data.scenes.get("PSH") or bpy.data.scenes.new("PSH")
+    bpy.context.window.scene = sc
+    clear(sc)
+    sc.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items] else "BLENDER_EEVEE"
+    sc.world = sc.world or bpy.data.worlds.new("PSHW")
+    sc.world.color = (0.55, 0.55, 0.6)
+    step = 3.6
+    for i, n in enumerate(names):
+        for row, f in enumerate((os.path.join(PBAK, n + ".glb"), os.path.join(POUT, n + ".glb"))):
+            if not os.path.exists(f):
+                continue
+            before = set(sc.objects)
+            bpy.ops.import_scene.gltf(filepath=f)
+            new = [o for o in sc.objects if o not in before and o.parent is None]
+            for o in new:
+                o.location += Vector(((i % 8) * step, -(i // 8) * step * 2 - row * step, 0))
+    cam = bpy.data.objects.new("PSHC", bpy.data.cameras.new("PSHC"))
+    sc.collection.objects.link(cam)
+    cam.data.type = "ORTHO"
+    rows = (len(names) + 7) // 8
+    cam.data.ortho_scale = max(8 * step, rows * step * 2) + 1
+    cam.location = (3.5 * step, -(rows * step * 2) / 2 + step * 0.5 - 29.7, 29.7)
+    cam.rotation_euler = (math.radians(45), 0, 0)
+    sc.camera = cam
+    sun = bpy.data.objects.new("PSHS", bpy.data.lights.new("PSHS", "SUN"))
+    sun.data.energy = 3.5
+    sun.rotation_euler = (math.radians(40), math.radians(15), math.radians(20))
+    sc.collection.objects.link(sun)
+    sc.render.resolution_x = 8 * res
+    sc.render.resolution_y = int(8 * res * 0.75)
+    sc.render.filepath = path
+    bpy.ops.render.render(write_still=True, scene=sc.name)
+    return path
