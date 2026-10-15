@@ -234,19 +234,21 @@ func _draw_status(p: Player, vs: Vector2) -> void:
 		_txt(r.position + Vector2(160, 68), "탈진", 11, DB.C_DANGER, false)
 	if p.muddy > 0.0:
 		_txt(Vector2(r.position.x + 86, r.end.y + 18), "진흙 발자국이 남는 중", 13, Color("#C9A27A"))
-	# 갑옷 내구도 (상태창 위)
-	var ay := r.position.y - 22.0
+	# 갑옷 내구도 (상태창 오른쪽 옆)
+	var ay := r.position.y + 10.0
 	for aslot in ["helmet", "vest"]:
 		var aid: String = p.helmet if aslot == "helmet" else p.vest
 		if aid == "":
 			continue
 		var dur: float = p.helmet_dur if aslot == "helmet" else p.vest_dur
 		var mx := float(DB.ITEMS[aid].dur)
-		var ar := Rect2(Vector2(r.position.x + 236, ay), Vector2(94, 16))
-		Sprites.draw_fit(canvas, Sprites.ui_tex("shield"), Rect2(Vector2(r.position.x + 214, ay - 2), Vector2(18, 18)))
-		_txt(Vector2(r.position.x + 84, ay + 13), DB.ITEMS[aid].name, 12, DB.C_MUTED, true, HORIZONTAL_ALIGNMENT_RIGHT, 126)
-		_bar(ar, dur / mx, Color("#8FB3C9") if dur > 0.0 else DB.C_DANGER)
-		ay -= 20.0
+		var ax := r.end.x + 8.0
+		var ir := Rect2(Vector2(ax, ay), Vector2(30, 30))
+		UITheme.box(Color(0.08, 0.09, 0.12, 0.82), 6, Color(1, 1, 1, 0.12), 1).draw(canvas.get_canvas_item(), ir)
+		Art.draw_item_icon(canvas, aid, ir.grow(-3))
+		_bar(Rect2(Vector2(ax + 34, ay + 18), Vector2(52, 8)), dur / mx, Color("#8FB3C9") if dur > 0.0 else DB.C_DANGER)
+		_txt(Vector2(ax + 34, ay + 13), "%d%%" % int(round(dur / mx * 100.0)), 11, DB.C_MUTED, true)
+		ay += 36.0
 
 func _draw_weapon(p: Player, vs: Vector2) -> void:
 	var r := Rect2(Vector2(vs.x - 318, vs.y - 104), Vector2(300, 86))

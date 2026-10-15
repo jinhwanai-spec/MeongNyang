@@ -19,12 +19,13 @@ static func make(item_id: String, size: float = 56.0, is_weapon: bool = false, n
 		var it: Dictionary = DB.ITEMS[item_id]
 		ic.tooltip_text = "%s  [%s]\n판매가 %d냥\n%s" % [it.name, DB.RARITY_NAMES[int(it.r)], int(it.v), it.desc]
 	elif is_weapon:
-		ic.tooltip_text = "%s\n%s" % [DB.WEAPONS[item_id].name, DB.WEAPONS[item_id].desc]
+		var wd := DB.weapon_data(item_id)
+		ic.tooltip_text = "%s\n%s" % [wd.get("name", item_id), wd.get("desc", "")]
 	return ic
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	var rc := DB.rarity_color(int(DB.WEAPONS[id].r) if weapon else int(DB.ITEMS[id].r))
+	var rc := DB.rarity_color(int(DB.weapon_data(id).get("r", 0)) if weapon else int(DB.ITEMS.get(id, {}).get("r", 0)))
 	var border := DB.C_DANGER if danger else rc
 	UITheme.box(Color(rc.darkened(0.78), 0.95), 8, border, 2).draw(get_canvas_item(), r)
 	if dim:

@@ -296,8 +296,8 @@ func _update_gear(_delta: float) -> void:
 			helmet_node = null
 		if hk != "" and DB.ITEMS.has(hk):
 			helmet_node = ProcModels.helmet(int(DB.ITEMS[hk].tier))
-			helmet_node.position = Vector3(0, 0.22, 0.02)
-			helmet_node.scale = Vector3.ONE * 1.15
+			helmet_node.position = Vector3(0, 0.3, 0.02)
+			helmet_node.scale = Vector3.ONE * 1.28
 			head_att.add_child(helmet_node)
 
 ## 레이저 지시기: 총구 방향으로 빨간 선
