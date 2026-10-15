@@ -91,18 +91,15 @@ func _model(path: String, pos: Vector3, yaw_deg: float, sc: float) -> Node3D:
 
 var npc_pitch := 52.0
 
-func _npc(sheet: String, anim: String, pos: Vector3, sc: float = 1.0) -> CharBillboard:
-	var b := CharBillboard.new()
-	b.position = pos
-	add_child(b)
-	b.setup_static(sheet, anim, npc_pitch, sc)
-	return b
-
 func _npcs() -> void:
-	# 기술 고양이 나비 (작업대), 시장 상인 (줄무늬 고양이), 잠자는 동료 햄스터 — 시트 그림 그대로
-	npcs.append(_npc("cat_white", "idle", marker("npc_navi")))
-	npcs.append(_npc("cat_tabby", "idle", marker("npc_market")))
-	npcs.append(_npc("hamster", "sleep", marker("npc_sleep") + Vector3(0, 0.25, 0.2), 0.85))
+	# 기술 고양이 나비 (작업대), 시장 상인 (줄무늬 고양이), 잠자는 동료 햄스터
+	npcs.append(_model("res://assets/models/cat_cat.glb", marker("npc_navi"), 15.0, 0.95))
+	npcs.append(_model("res://assets/models/cat_hyena.glb", marker("npc_market"), 0.0, 0.95))
+	var sl := _model("res://assets/models/hamster.glb", marker("npc_sleep") + Vector3(0, 0.36, 0), 0.0, 0.8)
+	sl.rotation_degrees.z = 80.0
+	npcs.append(sl)
+	for n in npcs:
+		Char3D.toonify(n)
 
 func _labels() -> void:
 	for k in STATIONS:
@@ -126,3 +123,6 @@ func _process(delta: float) -> void:
 	t += delta
 	for k in labels:
 		(labels[k] as Label3D).position.y = markers[k].y + 2.0 + sin(t * 2.0 + k.length()) * 0.05
+	# NPC 숨쉬기
+	for i in mini(2, npcs.size()):
+		npcs[i].scale.y = 0.95 * (1.0 + sin(t * 2.2 + i) * 0.02)

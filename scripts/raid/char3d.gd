@@ -35,7 +35,7 @@ func setup(e: Node2D, k: String) -> void:
 	add_child(model)
 	base_scale = 0.9 if k == "hamster" else 0.95
 	model.scale = Vector3.ONE * base_scale
-	height = (1.28 if k == "hamster" else (1.95 if k == "bulldog" else 1.6)) * base_scale
+	height = (1.3 if k == "hamster" else (1.85 if k == "bulldog" else 1.55)) * base_scale
 	for n in ["body", "head", "arm_l", "arm_r", "leg_l", "leg_r"]:
 		var nd := model.find_child(n, true, false) as Node3D
 		if nd:
@@ -45,6 +45,19 @@ func setup(e: Node2D, k: String) -> void:
 	_collect(model)
 	if k == "hamster" and ent.get("hdata") is Dictionary and not (ent.get("hdata") as Dictionary).is_empty():
 		_recolor_fur(Color(str(ent.hdata.get("fur", "#E9A15E"))))
+	if ent is RemotePlayer:
+		var nl := Label3D.new()
+		nl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		nl.no_depth_test = true
+		nl.fixed_size = true
+		nl.pixel_size = 0.0006
+		nl.font = FX.font()
+		nl.font_size = 22
+		nl.outline_size = 8
+		nl.text = (ent as RemotePlayer).nickname
+		nl.modulate = Color("#9CFFB4")
+		nl.position = Vector3(0, height + 0.15, 0)
+		add_child(nl)
 	if k != "hamster":
 		label = Label3D.new()
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -78,8 +91,46 @@ func _collect(n: Node) -> void:
 	if n is MeshInstance3D:
 		meshes.append(n)
 		(n as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		toon_mesh(n as MeshInstance3D)
 	for c in n.get_children():
 		_collect(c)
+
+# ── 일러스트풍: 만화 명암(2단) + 진한 외곽선 ───────────
+static var _outline: ShaderMaterial
+static var _toon_cache := {}
+
+static func outline_mat() -> ShaderMaterial:
+	if _outline == null:
+		_outline = ShaderMaterial.new()
+		_outline.shader = load("res://scripts/raid/outline.gdshader")
+	return _outline
+
+static func toon_mesh(mi: MeshInstance3D) -> void:
+	if mi.mesh == null:
+		return
+	for i in mi.mesh.get_surface_count():
+		var src := mi.get_surface_override_material(i)
+		if src == null:
+			src = mi.mesh.surface_get_material(i)
+		if not (src is StandardMaterial3D):
+			continue
+		if not _toon_cache.has(src):
+			var d := (src as StandardMaterial3D).duplicate() as StandardMaterial3D
+			d.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
+			d.specular_mode = BaseMaterial3D.SPECULAR_TOON
+			d.roughness = maxf(d.roughness, 0.55)
+			d.metallic = 0.0
+			d.rim_enabled = true
+			d.rim = 0.18
+			d.rim_tint = 0.7
+			if not d.emission_enabled:
+				d.next_pass = outline_mat()
+			_toon_cache[src] = d
+		mi.set_surface_override_material(i, _toon_cache[src])
+
+static func toonify(root: Node) -> void:
+	for mi in root.find_children("*", "MeshInstance3D", true, false):
+		toon_mesh(mi as MeshInstance3D)
 
 func _recolor_fur(c: Color) -> void:
 	var cache := {}
@@ -94,6 +145,7 @@ func _recolor_fur(c: Color) -> void:
 					d.albedo_color = c
 					cache[m] = d
 				mi.set_surface_override_material(i, cache[m])
+		toon_mesh(mi)
 
 func _want_weapon() -> String:
 	if kind == "hamster":

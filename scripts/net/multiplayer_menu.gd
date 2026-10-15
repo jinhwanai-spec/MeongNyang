@@ -198,13 +198,24 @@ func _stand_players() -> void:
 	else:
 		list.append(GameState.hamster)
 	for i in list.size():
-		var sheet: String = "hamster_" + list[i]
-		if Sprites.char_info(sheet).is_empty():
-			sheet = "hamster"
-		var b := CharBillboard.new()
-		b.position = center + Vector3((i - (list.size() - 1) * 0.5) * 1.3, 0, 0)
-		stand.add_child(b)
-		b.setup_static(sheet, "idle_front", 30.0, 1.0)
+		var m := (load("res://assets/models/hamster.glb") as PackedScene).instantiate() as Node3D
+		m.position = center + Vector3((i - (list.size() - 1) * 0.5) * 1.3, 0, 0)
+		m.rotation_degrees.y = 15.0
+		stand.add_child(m)
+		var fur := Color(str(DB.HAMSTERS.get(list[i], DB.HAMSTERS.baragi).fur))
+		for mi in m.find_children("*", "MeshInstance3D", true, false):
+			var m3 := mi as MeshInstance3D
+			for si in m3.mesh.get_surface_count():
+				var mt := m3.mesh.surface_get_material(si)
+				if mt and mt.resource_name == "fur":
+					var d := (mt as StandardMaterial3D).duplicate() as StandardMaterial3D
+					d.albedo_color = fur
+					m3.set_surface_override_material(si, d)
+		var gp := (load("res://assets/models/w_rifle.glb") as PackedScene).instantiate()
+		var grip := m.find_child("grip", true, false)
+		if grip:
+			grip.add_child(gp)
+		Char3D.toonify(m)
 
 func _process(delta: float) -> void:
 	t += delta
