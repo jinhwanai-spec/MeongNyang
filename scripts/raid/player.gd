@@ -541,7 +541,7 @@ func _finish_heal() -> void:
 	if heal_item == "cheese":
 		raid.emit_noise(global_position, 200.0)  # 치즈 냄새
 	FX.heal_burst(raid.fx_layer, global_position + Vector2(0, -30))
-	Sfx.play("heal", -4.0)
+	Sfx.play("drink" if heal_item.begins_with("potion_") else "heal", -4.0)
 	set_mood("happy", 1.0)
 	heal_item = ""
 
@@ -660,9 +660,9 @@ func _armor_absorb(amount: float) -> float:
 			helmet_dur = dur
 		if dur <= 0.0:
 			raid.notify("%s이(가) 부서졌다!" % DB.ITEMS[aid].name, DB.C_DANGER)
-			Sfx.play("impact_hard", -2.0)
+			Sfx.play("armor_break", -2.0)
 	if out < amount:
-		Sfx.play("impact_hard", -14.0, 0.2)
+		Sfx.play("armor_hit", -8.0, 0.15)
 	return maxf(out, amount * 0.3)
 
 ## 가방의 갑옷을 바로 입는다 (입고 있던 것은 가방으로)
@@ -684,7 +684,7 @@ func equip_armor_from_bag(idx: int) -> bool:
 		vest_dur = float(it.dur)
 	if old != "":
 		_stow(old)
-	Sfx.play("switch", -4.0)
+	Sfx.play("equip_armor", -2.0)
 	raid.notify("%s 착용!" % it.name, DB.C_LEGEND)
 	weapon_changed.emit()
 	return true

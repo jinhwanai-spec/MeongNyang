@@ -98,7 +98,7 @@ func _build_minimap() -> void:
 			img.set_pixel(x, y, col)
 	minimap_tex = ImageTexture.create_from_image(img)
 	# 블렌더로 렌더한 맵이 있으면 그걸 축소해서 미니맵으로 사용 (실제 화면과 같은 모습)
-	var mm_path := "res://assets/sprites/map/map_top.png"  # 미니맵은 위에서 본 판
+	var mm_path: String = Regions.cur().minimap  # 미니맵은 위에서 본 판
 	if not ResourceLoader.exists(mm_path):
 		mm_path = MapRender.BAKED
 	if ResourceLoader.exists(mm_path):
@@ -438,8 +438,8 @@ func _draw_big_map(p: Player, vs: Vector2) -> void:
 	_panel(r.grow(10), 0.95)
 	canvas.draw_texture_rect(minimap_tex, r, false)
 	_minimap_marks(p, r, k, 2.0)
-	_txt(Vector2(r.position.x, r.position.y - 18), "멍냥마트 · 뒷골목", 22, DB.C_TEXT)
-	_txt(Vector2(r.position.x, r.end.y + 36), "초록 A: 맨홀 탈출(항상 열림)   ·   B: 하역장(창고 발전기를 켜야 열림)   ·   빨간 점: 감지된 적", 15, DB.C_MUTED, true, HORIZONTAL_ALIGNMENT_LEFT, -1, font_b)
+	_txt(Vector2(r.position.x, r.position.y - 18), str(Regions.cur().short), 22, DB.C_TEXT)
+	_txt(Vector2(r.position.x, r.end.y + 36), "초록 %s(항상 열림)   ·   %s(창고 발전기를 켜야 열림)   ·   노란 점: 내 가방   ·   빨간 점: 감지된 적" % [raid.exits[0].label, raid.exits[1].label], 15, DB.C_MUTED, true, HORIZONTAL_ALIGNMENT_LEFT, -1, font_b)
 
 func _draw_notes(vs: Vector2) -> void:
 	var y := 64.0
@@ -491,7 +491,7 @@ func _draw_extract(vs: Vector2) -> void:
 	var c := Vector2(vs.x * 0.5, 150)
 	var r := Rect2(c - Vector2(180, 30), Vector2(360, 68))
 	UITheme.box(Color(DB.C_UI_SOLID, 0.85), 16, Color(DB.C_LEGEND, 0.8), 3).draw(canvas.get_canvas_item(), r)
-	_txt(r.position + Vector2(0, 30), "탈출 중 · %.1f초" % raid.extract_t, 22, DB.C_LEGEND, false, HORIZONTAL_ALIGNMENT_CENTER, 360)
+	_txt(r.position + Vector2(0, 30), "탈출 중 · %.1f초" % maxf(0.0, raid.extract_t), 22, DB.C_LEGEND, false, HORIZONTAL_ALIGNMENT_CENTER, 360)
 	_bar(Rect2(r.position + Vector2(20, 44), Vector2(320, 12)), k, DB.C_LEGEND)
 
 func _draw_exit_arrows(p: Player, vs: Vector2) -> void:

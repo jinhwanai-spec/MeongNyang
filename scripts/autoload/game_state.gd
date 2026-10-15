@@ -23,6 +23,7 @@ var armor_dur := {}    # 갑옷 id -> 남은 내구도 (가장 최근에 입은 
 # 원정 출발 시 고른 장비
 var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds": 2, "snacks": 2, "helmet": "", "vest": ""}
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
+var region := "mart"      # 원정 지역 (Regions)
 # 직전 원정 결과 (결과 화면용)
 var last_result := {}
 
@@ -53,7 +54,7 @@ func new_game() -> void:
 func save_game() -> void:
 	var data := {"coins": coins, "stash": stash, "weapons": weapons, "ammo": ammo, "crafted": crafted,
 		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster,
-		"difficulty": difficulty, "lost_bags": lost_bags, "mods": mods, "armor": armor, "armor_dur": armor_dur}
+		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "mods": mods, "armor": armor, "armor_dur": armor_dur}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "\t"))
@@ -91,7 +92,7 @@ func load_game() -> bool:
 				for it in b.items:
 					if DB.ITEMS.has(str(it)):
 						its.append(str(it))
-				lost_bags.append({"pos": [float(b.pos[0]), float(b.pos[1])], "items": its, "raids": int(b.get("raids", 0))})
+				lost_bags.append({"pos": [float(b.pos[0]), float(b.pos[1])], "items": its, "raids": int(b.get("raids", 0)), "region": str(b.get("region", "mart"))})
 	mods = {}
 	var md = d.get("mods", {})
 	if typeof(md) == TYPE_DICTIONARY:
@@ -109,6 +110,9 @@ func load_game() -> bool:
 		for k in ad:
 			armor_dur[str(k)] = float(ad[k])
 	hamster = str(d.get("hamster", "baragi"))
+	region = str(d.get("region", "mart"))
+	if not Regions.DATA.has(region):
+		region = "mart"
 	if not DB.HAMSTERS.has(hamster):
 		hamster = "baragi"
 	tutorial_done = bool(d.get("tutorial_done", false))
@@ -276,6 +280,7 @@ func begin_raid() -> Dictionary:
 			kit.snacks.append(sid)
 			want -= 1
 	kit.hamster = hamster
+	kit.region = region
 	# 갑옷: 입고 나간 것은 원정 꾸러미로 (사망 시 가방에 남는다)
 	for slot in ["helmet", "vest"]:
 		var aid := str(loadout.get(slot, ""))
@@ -326,6 +331,10 @@ func finish_raid_death() -> void:
 func settle_lost_bags(remaining: Array, died: bool, new_bag: Dictionary) -> void:
 	var rule := str(diff("bag_rule"))
 	var kept := []
+	# 다른 지역에 놓인 가방은 이번 원정과 상관없이 그대로
+	for b in lost_bags:
+		if str(b.get("region", "mart")) != LevelData.region:
+			kept.append(b)
 	for b in remaining:
 		if (b.items as Array).is_empty():
 			continue

@@ -543,3 +543,101 @@ static func truck() -> Node3D:
 	for sx in [-0.5, 0.5]:
 		sphere(r, 0.08, Vector3(sx, 0.75, 1.86), mat(Color("#FFF2C0"), 0.2, 0.0, 3.0))
 	return r
+
+# ── 항구 소품 ────────────────────────────────────────
+const CONTAINER_COLORS := [Color("#B8452F"), Color("#2F6FA8"), Color("#3E8A55"), Color("#C9902F")]
+
+static func proc_prop(n: String) -> Node3D:
+	if n.begins_with("container"):
+		var i := int(n.get_slice("_", 1)) if n.contains("_") else 0
+		return shipping_container(CONTAINER_COLORS[i % CONTAINER_COLORS.size()])
+	if n == "boat":
+		return boat()
+	return backpack()
+
+## 선적 컨테이너 (가로 2칸, 원점 = 바닥 가운데). 골판 무늬 + 문짝 손잡이
+static func shipping_container(c: Color) -> Node3D:
+	var r := _root("container")
+	var body := mat(c, 0.6, 0.35)
+	var dark := mat(c.darkened(0.3), 0.6, 0.35)
+	var L := 1.96
+	var D := 0.92
+	var Hh := 1.25
+	box(r, Vector3(L, Hh, D), Vector3(0, Hh * 0.5, 0), body)
+	# 골판 (세로 홈)
+	var n := 14
+	for k in n:
+		var x := -L * 0.5 + 0.07 + k * (L - 0.14) / float(n - 1)
+		box(r, Vector3(0.04, Hh - 0.12, D + 0.03), Vector3(x, Hh * 0.5, 0), dark)
+	# 위·아래 테두리
+	box(r, Vector3(L + 0.04, 0.07, D + 0.05), Vector3(0, Hh - 0.03, 0), dark)
+	box(r, Vector3(L + 0.04, 0.07, D + 0.05), Vector3(0, 0.035, 0), dark)
+	# 문짝 쪽 손잡이 (앞쪽이 +Z 인 면 오른쪽 끝)
+	for k in 4:
+		box(r, Vector3(0.025, Hh - 0.2, 0.025), Vector3(L * 0.5 - 0.06 - k * 0.12, Hh * 0.5, D * 0.5 + 0.03), mat(Color("#2A2C30"), 0.4, 0.8))
+	# 글씨 (회사 이름)
+	var l := Label3D.new()
+	l.text = ["MEOW LINE", "NYANG SHIP", "PAW CARGO", "TUNA EXP"][CONTAINER_COLORS.find(c) % 4]
+	l.font = FX.font()
+	l.font_size = 48
+	l.outline_size = 0
+	l.modulate = Color(1, 1, 1, 0.85)
+	l.pixel_size = 0.004
+	l.position = Vector3(-0.2, Hh * 0.62, D * 0.5 + 0.03)
+	r.add_child(l)
+	return r
+
+## 선착장 탈출 보트
+static func boat() -> Node3D:
+	var r := _root("boat")
+	var hull := mat(Color("#E8E2D0"), 0.5)
+	var stripe := mat(Color("#D64545"), 0.5)
+	var wood := mat(Color("#8B5A2B"), 0.85)
+	capsule(r, 0.55, 2.6, Vector3(0, 0.25, 0), hull, Vector3(PI * 0.5, 0, 0), Vector3(1.0, 1.0, 0.55))
+	box(r, Vector3(1.05, 0.12, 2.3), Vector3(0, 0.5, 0), wood)
+	capsule(r, 0.57, 2.65, Vector3(0, 0.38, 0), stripe, Vector3(PI * 0.5, 0, 0), Vector3(1.0, 1.0, 0.12))
+	box(r, Vector3(0.7, 0.55, 0.6), Vector3(0, 0.82, -0.45), mat(Color("#3E5C8A"), 0.5))
+	box(r, Vector3(0.6, 0.25, 0.04), Vector3(0, 0.95, -0.14), glass(Color("#8FB3C9"), 0.2))
+	cyl(r, 0.12, 0.12, 0.4, Vector3(0, 0.45, -1.35), mat(Color("#2A2C30"), 0.5, 0.6))
+	var fl := OmniLight3D.new()
+	fl.light_color = Color("#7CFF8A")
+	fl.light_energy = 2.0
+	fl.omni_range = 4.0
+	fl.position = Vector3(0, 1.4, 0)
+	r.add_child(fl)
+	return r
+
+## 바다: 반짝이는 물결 면 (셰이더)
+static func water_plane(size: Vector2) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	var pm := PlaneMesh.new()
+	pm.size = size
+	pm.subdivide_width = 1
+	pm.subdivide_depth = 1
+	mi.mesh = pm
+	var sh := Shader.new()
+	sh.code = """shader_type spatial;
+render_mode blend_mix, specular_schlick_ggx, cull_disabled;
+uniform vec4 deep : source_color = vec4(0.07, 0.22, 0.34, 0.92);
+uniform vec4 shallow : source_color = vec4(0.16, 0.45, 0.55, 0.9);
+float h(vec2 p){ return sin(p.x*1.7+TIME*1.3)*0.5+sin(p.y*2.3-TIME*1.1)*0.5+sin((p.x+p.y)*3.1+TIME*2.0)*0.25; }
+void fragment(){
+	vec2 p = (INV_VIEW_MATRIX * vec4(VERTEX,1.0)).xz;
+	float w = h(p);
+	float e = 0.08;
+	vec3 n = normalize(vec3(h(p+vec2(e,0.0))-w, 4.0, h(p+vec2(0.0,e))-w));
+	NORMAL = (VIEW_MATRIX * vec4(n,0.0)).xyz;
+	vec3 c = mix(deep.rgb, shallow.rgb, 0.5+0.25*w);
+	float sparkle = pow(max(0.0, sin(p.x*7.0+TIME*3.0)*sin(p.y*6.0-TIME*2.5)), 24.0);
+	ALBEDO = c + vec3(sparkle*0.6);
+	ROUGHNESS = 0.08;
+	METALLIC = 0.1;
+	SPECULAR = 0.7;
+	ALPHA = deep.a;
+}
+"""
+	var m := ShaderMaterial.new()
+	m.shader = sh
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mi

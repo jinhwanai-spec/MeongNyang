@@ -171,14 +171,7 @@ func _env() -> void:
 
 func _lights() -> void:
 	# [타일 위치, 색, 반경(타일), 세기]
-	var L := [
-		[Vector2(14, 8), "#FFE9C4", 7.0, 1.6], [Vector2(23, 8), "#FFE9C4", 7.0, 1.6], [Vector2(31, 7), "#CFE8FF", 6.0, 1.4],
-		[Vector2(14, 13.5), "#FFE9C4", 6.0, 1.3], [Vector2(26, 13.5), "#FFE9C4", 6.0, 1.3], [Vector2(33, 13), "#FFD9A0", 5.0, 1.4],
-		[Vector2(44, 7), "#9FB6FF", 7.0, 1.6], [Vector2(22, 17.0), "#FF7FB0", 5.0, 2.2],
-		[Vector2(6.5, 19.3), "#FFD89A", 6.0, 2.4], [Vector2(17.5, 19.3), "#FFD89A", 6.0, 2.4], [Vector2(33.5, 19.3), "#FFD89A", 6.0, 2.4],
-		[Vector2(45.5, 19.3), "#FFD89A", 6.0, 2.4], [Vector2(54.5, 19.3), "#FFD89A", 6.0, 2.4],
-		[Vector2(20, 33), "#FFB070", 5.5, 2.0], [Vector2(42, 33), "#B0C8FF", 6.0, 1.8], [Vector2(54, 36), "#7CFF9A", 3.5, 1.6],
-	]
+	var L: Array = Regions.cur().lights
 	for l in L:
 		var o := OmniLight3D.new()
 		var p: Vector2 = l[0]
@@ -199,7 +192,7 @@ func _floor() -> void:
 	mi.mesh = pm
 	mi.position = Vector3(W * 0.5, 0.0, H * 0.5)
 	var m := StandardMaterial3D.new()
-	var fp := "res://assets/sprites/map/floor.png"
+	var fp: String = Regions.cur().floor
 	if ResourceLoader.exists(fp):
 		m.albedo_texture = load(fp)
 	else:
@@ -210,6 +203,22 @@ func _floor() -> void:
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)
+	_water()
+
+## 바다 칸(~): 가로로 이어진 칸마다 물결 면
+func _water() -> void:
+	for y in LevelData.height():
+		var x := 0
+		while x < LevelData.width():
+			if LevelData.code(x, y) == "~":
+				var x0 := x
+				while x < LevelData.width() and LevelData.code(x, y) == "~":
+					x += 1
+				var wp := ProcModels.water_plane(Vector2(x - x0, 1.0))
+				wp.position = Vector3((x0 + x) * 0.5, -0.02, y + 0.5)
+				add_child(wp)
+			else:
+				x += 1
 
 # ── 벽 ───────────────────────────────────────────────
 func _is_wall(x: int, y: int) -> bool:
@@ -236,7 +245,7 @@ func _height(x: int, y: int) -> float:
 	if _hcache.has(key):
 		return _hcache[key]
 	var h := WALL_H
-	if y == 16 and x >= 9 and x <= 36 and x != 30 and _style(x, y) == "store":
+	if y == int(Regions.cur().glass_row) and x >= 9 and x <= 36 and x != 30 and _style(x, y) == "store":
 		h = GLASS_LOW
 	elif _is_wall(x, y + 1) and y + 1 < LevelData.height():
 		# 남쪽으로 이어지는 벽(두꺼운 건물·세로 벽)은 북쪽 끝을 낮춰서
@@ -517,18 +526,29 @@ func _build_gates() -> void:
 		var root := Node3D.new()
 		root.position = Vector3(c.x, 0, c.y)
 		add_child(root)
-		var info := {"root": root}
-		if ex.label.begins_with("A"):
-			var mh := ProcModels.manhole()
-			root.add_child(mh)
-			info.model = mh
-		else:
-			var tr := ProcModels.truck()
-			tr.position = Vector3(0.2, 0, 0.6)
-			root.add_child(tr)
-			info.model = tr
+		var info := {"root": root, "kind": ex.kind}
+		match ex.kind:
+			"manhole":
+				var mh := ProcModels.manhole()
+				root.add_child(mh)
+				info.model = mh
+			"boat":
+				var bt := ProcModels.boat()
+				bt.position = Vector3(-4.2, 0.05, 0.6)
+				bt.rotation.y = PI * 0.5
+				root.add_child(bt)
+				info.model = bt
+				var fl := ProcModels.manhole().get_node("flare")
+				fl.get_parent().remove_child(fl)
+				fl.position = Vector3(1.4, 0, 0.8)
+				root.add_child(fl)
+			_:
+				var tr := ProcModels.truck()
+				tr.position = Vector3(0.2, 0, 0.6)
+				root.add_child(tr)
+				info.model = tr
 		var col := Color("#7CFF8A") if not ex.locked else Color("#FF5A4A")
-		var bm := ProcModels.light_beam(col, 7.0, 0.55 if ex.label.begins_with("A") else 0.8)
+		var bm := ProcModels.light_beam(col, 7.0, 0.8 if ex.kind == "truck" else 0.55)
 		root.add_child(bm)
 		info.beam = bm
 		info.locked = ex.locked
@@ -541,7 +561,7 @@ func _build_gates() -> void:
 		lb.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		lb.fixed_size = true
 		lb.pixel_size = 0.0007
-		lb.position = Vector3(0, 2.8 if ex.label.begins_with("A") else 3.4, 0)
+		lb.position = Vector3(0, 3.4 if ex.kind == "truck" else 2.8, 0)
 		root.add_child(lb)
 		info.label = lb
 		exit3d[ex] = info
@@ -580,12 +600,25 @@ func play_extract(ex: ExitZone) -> void:
 	var root: Node3D = info.root
 	if is_instance_valid(player_model):
 		player_model.set("frozen", true)
-	if ex.label.begins_with("A"):
+	if info.kind == "boat":
+		var bt: Node3D = info.model
+		if is_instance_valid(player_model):
+			var twb := create_tween()
+			twb.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+			twb.tween_property(player_model, "position", root.position + bt.position + Vector3(0, 0.45, 0), 0.5).set_trans(Tween.TRANS_QUAD)
+			twb.tween_callback(func(): player_model.reparent(bt, true))
+		var twc := create_tween()
+		twc.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+		twc.tween_interval(0.6)
+		twc.tween_callback(func(): Sfx.play("truck", -6.0, 0.3))
+		twc.tween_property(bt, "position:x", bt.position.x - 9.0, 1.8).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	elif info.kind == "manhole":
 		var mh: Node3D = info.model
 		var lid: Node3D = mh.get_node("lid")
 		var tw := create_tween()
 		tw.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
 		tw.tween_property(lid, "position", Vector3(0.9, 0.05, 0.4), 0.35).set_trans(Tween.TRANS_BACK)
+		Sfx.play("manhole", -2.0)
 		if is_instance_valid(player_model):
 			var tw2 := create_tween()
 			tw2.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
@@ -603,7 +636,7 @@ func play_extract(ex: ExitZone) -> void:
 		var tw4 := create_tween()
 		tw4.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
 		tw4.tween_interval(0.7)
-		tw4.tween_callback(func(): Sfx.play("door", -2.0))
+		tw4.tween_callback(func(): Sfx.play("truck", -2.0))
 		tw4.tween_property(tr, "position:z", tr.position.z + 9.0, 1.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 # ── 총알·화살: 총 높이에서 날아가는 3D 빛줄기 ─────────

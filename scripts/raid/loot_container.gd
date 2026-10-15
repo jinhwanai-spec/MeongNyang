@@ -26,7 +26,7 @@ func setup(r: Raid, t: String, pos: Vector2) -> void:
 	var c: Dictionary = DB.CONTAINERS[t]
 	var n := randi_range(int(c.slots[0]), int(c.slots[1]))
 	# 난이도: 전리품 양
-	var lm := float(GameState.diff("loot"))
+	var lm := float(GameState.diff("loot")) * float(Regions.cur().get("loot", 1.0))
 	var extra := float(n) * (lm - 1.0)
 	if lm >= 1.0:
 		n += int(extra) + (1 if randf() < fposmod(extra, 1.0) else 0)
@@ -114,6 +114,9 @@ func on_interact(_p: Node) -> void:
 	if not searched:
 		searched = true
 		anim = 1.0
+		if lost_bag:
+			Sfx.play("bag_found", -2.0)
+			raid.notify("지난번 내 가방을 찾았다!", DB.C_LEGEND)
 		Sfx.play_at("open", global_position, -4.0)
 		if not items.is_empty():
 			var best := best_rarity()

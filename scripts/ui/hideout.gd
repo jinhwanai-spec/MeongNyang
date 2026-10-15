@@ -162,13 +162,26 @@ func _benefit(parent: Control, text: String) -> void:
 func _build_prep() -> void:
 	var lo := GameState.loadout
 	var region := _card(prep_box, Color(DB.C_HERO, 0.6))
+	var rsel := HBoxContainer.new()
+	rsel.add_theme_constant_override("separation", 8)
+	region.add_child(rsel)
+	rsel.add_child(UITheme.label("원정 지역", 17, DB.C_TEXT, true))
+	for rid in Regions.ORDER:
+		var rb := UITheme.button(str(Regions.DATA[rid].short), 15, GameState.region == rid)
+		rb.pressed.connect(func():
+			GameState.region = rid
+			GameState.save_game()
+			Sfx.play("pick", -6.0)
+			refresh())
+		rsel.add_child(rb)
+	var rd: Dictionary = Regions.get_info(GameState.region)
 	var rh := HBoxContainer.new()
 	region.add_child(rh)
-	var rl := UITheme.label("지역 1 · 멍냥마트와 뒷골목", 21, DB.C_TEXT, true)
+	var rl := UITheme.label(str(rd.name), 21, DB.C_TEXT, true)
 	rl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rh.add_child(rl)
-	rh.add_child(UITheme.label("위험 ★★☆  보상 ★★☆", 15, DB.C_LEGEND))
-	var info := UITheme.label("제한 14분 · 탈출구 2곳 (A 맨홀: 항상 열림 / B 하역장: 발전기 필요)\n출몰: 길냥이 돌격병(빠름) · 중장갑 흑냥이(망치·돌진) · 흰냥 저격수(조준선 주의)", 14, DB.C_MUTED)
+	rh.add_child(UITheme.label("위험 %s  보상 %s" % [rd.danger, rd.reward], 15, DB.C_LEGEND))
+	var info := UITheme.label(str(rd.info), 14, DB.C_MUTED)
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	region.add_child(info)
 
@@ -515,7 +528,7 @@ func _craft(rec: Dictionary) -> void:
 			GameState.armor_dur = {}
 	GameState.crafted[rec.id] = int(GameState.crafted.get(rec.id, 0)) + 1
 	GameState.save_game()
-	Sfx.play("craft", -2.0)
+	Sfx.play({"weapon": "craft_weapon", "potion": "craft_potion", "armor": "craft_armor"}.get(str(rec.get("station", "weapon")), "craft"), -2.0)
 	show_toast("%s 제작 완료!%s" % [rec.name, " (석궁 화살 6발 보너스)" if rec.id == "crossbow" else ""], Color("#6CCB5F"))
 	refresh()
 
@@ -533,6 +546,7 @@ func _build_mods(box: VBoxContainer) -> void:
 	for wid in DB.WEAPONS:
 		if GameState.weapon_count(wid) > 0 or GameState.loadout.primary == wid or GameState.loadout.sidearm == wid:
 			owned.append(wid)
+	owned.sort_custom(func(x, y): return int(x == GameState.loadout.primary or x == GameState.loadout.sidearm) > int(y == GameState.loadout.primary or y == GameState.loadout.sidearm))
 	if owned.is_empty():
 		c.add_child(UITheme.label("가진 총이 없다.", 14, DB.C_MUTED))
 		return
@@ -541,7 +555,7 @@ func _build_mods(box: VBoxContainer) -> void:
 		var gh := HBoxContainer.new()
 		gh.add_theme_constant_override("separation", 12)
 		gc.add_child(gh)
-		gh.add_child(ItemIcon.make(wid, 52, true))
+		gh.add_child(GunPreview.make(wid, GameState.mods.get(wid, {})))
 		var gv := VBoxContainer.new()
 		gv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		gh.add_child(gv)
@@ -574,7 +588,7 @@ func _build_mods(box: VBoxContainer) -> void:
 				var a2: String = att
 				b.pressed.connect(func():
 					if GameState.install_mod(wid, a2):
-						Sfx.play("craft", -6.0)
+						Sfx.play("attach", -2.0)
 						show_toast("%s에 %s 장착!" % [DB.WEAPONS[wid].name, DB.ATTACHMENTS[a2].name], Color("#6CCB5F"))
 						refresh())
 				row.add_child(b)
@@ -614,7 +628,7 @@ func _build_armor_list(box: VBoxContainer) -> void:
 		b.pressed.connect(func():
 			GameState.loadout[it.slot] = "" if worn else aid
 			GameState.save_game()
-			Sfx.play("pick", -6.0)
+			Sfx.play("equip_armor", -4.0)
 			refresh())
 		row.add_child(b)
 	if not any:

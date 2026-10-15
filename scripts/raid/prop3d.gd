@@ -91,12 +91,17 @@ func _place() -> void:
 func _show(name_: String) -> void:
 	if name_ == cur:
 		return
-	var path := DIR % name_
-	if not ResourceLoader.exists(path):
-		path = DIR % "box"
 	cur = name_
 	if inst:
 		inst.queue_free()
+	if name_.begins_with("proc:"):
+		inst = ProcModels.proc_prop(name_.substr(5))
+		inst.scale = Vector3.ONE * sc
+		add_child(inst)
+		return
+	var path := DIR % name_
+	if not ResourceLoader.exists(path):
+		path = DIR % "box"
 	inst = (load(path) as PackedScene).instantiate()
 	inst.scale = Vector3.ONE * sc
 	add_child(inst)

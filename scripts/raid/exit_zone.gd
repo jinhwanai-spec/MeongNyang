@@ -9,6 +9,7 @@ var locked := false
 var lock_text := ""
 var t := 0.0
 var progress := 0.0
+var kind := "manhole"  # 3D 표식: manhole / truck / boat
 var flat_3d := false   # 3D 화면: 맨홀·트럭·글씨는 3D 모델이 그린다 (바닥 표시만)
 
 func contains(p: Vector2) -> bool:

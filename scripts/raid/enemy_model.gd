@@ -119,6 +119,7 @@ func setup(e: Enemy) -> void:
 			ap.seek(randf() * 1.5)
 			anim_now = "idle"
 	_attach_weapon(e.weapon)
+	_attach_armor(e.helmet, e.vest)
 	flash_mat = StandardMaterial3D.new()
 	flash_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	flash_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -150,8 +151,48 @@ func _attach_weapon(wid: String) -> void:
 		for mi in weapon_mesh.find_children("*", "MeshInstance3D", true, false):
 			meshes.append(mi)
 
+## 고양이 갑옷: 헬멧은 머리 끝 뼈, 조끼는 가슴 뼈를 따라가고 방향은 몸 정면 기준
+var armor_roots: Array = []    # [BoneAttachment 아래 Node3D, 크기]
+func _attach_armor(hid: String, vid: String) -> void:
+	var sk_list := model.find_children("*", "Skeleton3D", true, false)
+	if sk_list.is_empty():
+		return
+	var sk := sk_list[0] as Skeleton3D
+	var k := height / 1.15
+	if hid != "" and DB.ITEMS.has(hid) and sk.find_bone("Head") >= 0:
+		var ba := BoneAttachment3D.new()
+		ba.bone_name = "Head"
+		sk.add_child(ba)
+		var root := Node3D.new()
+		ba.add_child(root)
+		var h := ProcModels.helmet(int(DB.ITEMS[hid].tier))
+		h.position = Vector3(0, 0.25, 0.0)
+		root.add_child(h)
+		armor_roots.append([root, 0.92 * k])
+		for mi in h.find_children("*", "MeshInstance3D", true, false):
+			meshes.append(mi)
+	if vid != "" and DB.ITEMS.has(vid) and sk.find_bone("Spine02") >= 0:
+		var ba2 := BoneAttachment3D.new()
+		ba2.bone_name = "Spine02"
+		sk.add_child(ba2)
+		var root2 := Node3D.new()
+		ba2.add_child(root2)
+		var v := ProcModels.vest(int(DB.ITEMS[vid].tier))
+		v.position = Vector3(0, -0.02, 0.0)
+		root2.add_child(v)
+		armor_roots.append([root2, 0.72 * k])
+		for mi in v.find_children("*", "MeshInstance3D", true, false):
+			meshes.append(mi)
+
+func _orient_armor() -> void:
+	var b := pivot.global_basis.orthonormalized()
+	for ar in armor_roots:
+		var n: Node3D = ar[0]
+		n.global_basis = b.scaled(Vector3.ONE * float(ar[1]))
+
 ## 손 위치는 뼈를 따라가고, 방향은 몸 정면 기준으로 (총은 앞으로, 근접 무기는 위로 들고 있다가 휘두를 때 내려침)
 func _aim_weapon(delta: float) -> void:
+	_orient_armor()
 	if weapon_root == null:
 		return
 	var fwd := pivot.global_basis.orthonormalized()

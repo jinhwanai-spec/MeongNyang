@@ -49,6 +49,8 @@ var last_hitter := 1
 var net_pos := Vector2.ZERO
 var target: Node2D           # 노리는 햄스터 (가장 가까운 플레이어)
 var weapon := ""             # 들고 있는 무기 (죽으면 떨어뜨림)
+var helmet := ""             # 쓰고 있는 헬멧 / 입은 조끼 (피해를 줄이고, 죽으면 떨어뜨릴 수 있다)
+var vest := ""
 var gunner := false          # 총을 들었으면 거리를 두고 쏜다
 var _burst := 0
 var _burst_t := 0.0
@@ -81,6 +83,34 @@ func setup(r: Raid, t: String, pos: Vector2) -> void:
 	if not pool.is_empty():
 		weapon = pool[randi() % pool.size()]
 	gunner = DB.WEAPONS.has(weapon)
+	_roll_armor()
+
+## 종류별 갑옷: 흑냥이는 대부분 무장, 길냥이는 가끔, 저격수는 헬멧 위주
+const ARMOR_ROLL := {
+	"hyena": [[0.25, ["helmet_1", "helmet_1", "helmet_2"]], [0.3, ["vest_1", "vest_1", "vest_2"]]],
+	"bulldog": [[0.6, ["helmet_2", "helmet_2", "helmet_3"]], [0.8, ["vest_2", "vest_3", "vest_3"]]],
+	"cat": [[0.45, ["helmet_2", "helmet_3", "helmet_3"]], [0.25, ["vest_1", "vest_2"]]],
+}
+static var force_armor: Array = []   # 테스트용: [헬멧, 조끼] 강제
+func _roll_armor() -> void:
+	if force_armor.size() == 2:
+		helmet = str(force_armor[0])
+		vest = str(force_armor[1])
+		return
+	var rr: Array = ARMOR_ROLL.get(type, [])
+	if rr.size() < 2:
+		return
+	if randf() < float(rr[0][0]):
+		helmet = str((rr[0][1] as Array).pick_random())
+	if randf() < float(rr[1][0]):
+		vest = str((rr[1][1] as Array).pick_random())
+
+func armor_prot() -> float:
+	var p := 0.0
+	for aid in [helmet, vest]:
+		if aid != "":
+			p += float(DB.ITEMS[aid].prot)
+	return minf(p, 0.5)
 
 func _ready() -> void:
 	add_to_group("enemy")
@@ -575,6 +605,12 @@ func take_damage(amount: float, from_pos: Vector2, kick_force: float) -> void:
 		Net.send_hit(net_id, amount, from_pos, kick_force)
 		return
 	var crit := not is_aware()
+	var prot := armor_prot()
+	if prot > 0.0:
+		amount *= 1.0 - prot
+		if is_instance_valid(FX.fx3d) and randf() < 0.5:
+			FX.fx3d.sparks(global_position, (global_position - from_pos).normalized(), Color(1, 0.85, 0.5), 4, 0.9)
+			Sfx.play_at("impact_hard", global_position, -10.0, 0.15)
 	hp -= amount
 	if is_instance_valid(FX.fx3d):
 		FX.fx3d.damage_number(global_position, amount, crit, 1.25 if type != "bulldog" else 1.45)

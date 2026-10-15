@@ -71,6 +71,7 @@ func _ready() -> void:
 	if Net.in_raid:
 		Net.raid = self
 		seed(Net.raid_seed)   # 모두 같은 맵·같은 상자 내용
+	LevelData.set_region("mart" if Net.in_raid else str(kit.get("region", "mart")))
 	_build_world()
 	_build_nav()
 	_spawn_entities()
@@ -89,7 +90,7 @@ func _ready() -> void:
 	_build_pause()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	Sfx.music("raid")
-	notify("원정 시작 — 멍냥마트 뒷골목", DB.C_HERO)
+	notify("원정 시작 — " + str(Regions.cur().short), DB.C_HERO)
 	if not GameState.tutorial_done:
 		hud.show_hint("WASD 이동 · 마우스 조준 · 좌클릭 사격 · Shift 달리기", 8.0)
 	else:
@@ -261,7 +262,7 @@ func _spawn_entities() -> void:
 					a_cells.append(Vector2i(x, y))
 				"2":
 					b_cells.append(Vector2i(x, y))
-	for d in SHEET_DECOR:
+	for d in Regions.cur().decor:
 		var sp := Sprites.make_sprop_sprite(d[0], float(d[3]))
 		sp.position = Vector2(float(d[1]) * T, float(d[2]) * T)
 		sp.set_meta("prop3d", str(SHEET_TO_3D.get(d[0], d[0])))
@@ -269,11 +270,14 @@ func _spawn_entities() -> void:
 		sp.set_meta("prop_scale", float(d[3]))
 		world.add_child(sp)
 	_spawn_lost_bags()
-	var ea := _make_exit("A 맨홀", a_cells, 6.0)
+	var rx: Dictionary = Regions.cur().exits
+	var ea := _make_exit(str(rx.A[0]), a_cells, 6.0)
+	ea.kind = str(rx.A[1])
 	ea.locked = false
-	var eb := _make_exit("B 하역장", b_cells, 4.0)
+	var eb := _make_exit(str(rx.B[0]), b_cells, 4.0)
+	eb.kind = str(rx.B[1])
 	eb.locked = true
-	eb.lock_text = "창고의 비상 발전기를 켜야 열린다"
+	eb.lock_text = str(Regions.cur().lock)
 	exit_b = eb
 
 # 시트 소품으로 꾸미는 장식 (충돌 없음): [이름, 타일 x, 타일 y(발 위치), 크기]
@@ -288,12 +292,12 @@ const SHEET_DECOR := [
 ## 시트 소품 이름 → 3D 모델 이름
 const SHEET_TO_3D := {"crate_blue": "crate", "cardboard": "box", "fence2": "fence", "barrier_orange": "barrier_stripe", "trough": "pallet"}
 
-const DECOR := {"s": "shelf_empty", "Q": "fridge_off", "C": "counter", "o": "crates", "X": "car", "f": "fence"}
+const DECOR := {"s": "shelf_empty", "Q": "fridge_off", "C": "counter", "o": "crates", "X": "car", "f": "fence", "Z": "proc:container"}
 
 func _spawn_decor(c: String, x: int, y: int) -> void:
 	var name_: String = DECOR[c]
-	if c == "X":
-		if LevelData.code(x - 1, y) == "X":
+	if c == "X" or c == "Z":
+		if LevelData.code(x - 1, y) == c:
 			return
 		name_ = "car%d" % ((x * 7 + y * 3) % 3)
 	var sheet := ""
@@ -310,14 +314,17 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 	# 3D 모델 이름·방향
 	var m3: String = name_ if sheet == "" else str(SHEET_TO_3D.get(sheet, sheet))
 	holder.set_meta("prop3d", m3)
-	if c == "X":
+	if c == "X" or c == "Z":
 		holder.set_meta("prop_off", Vector2(0.5, -0.5))
+	if c == "Z":
+		holder.set_meta("prop3d", "proc:container_%d" % ((x * 3 + y * 7) % 4))
 	var vert := LevelData.code(x, y - 1) == c or LevelData.code(x, y + 1) == c
 	if vert and c in ["f", "s", "Q"]:
 		holder.set_meta("prop_rot", 90.0)
-	var spr := Sprites.make_sprop_sprite(sheet) if sheet != "" else Sprites.make_prop_sprite(name_)
-	spr.position = Vector2(0, -T * 0.5)
-	holder.add_child(spr)
+	if not name_.begins_with("proc:"):
+		var spr := Sprites.make_sprop_sprite(sheet) if sheet != "" else Sprites.make_prop_sprite(name_)
+		spr.position = Vector2(0, -T * 0.5)
+		holder.add_child(spr)
 	world.add_child(holder)
 
 ## 지난 원정에서 쓰러진 자리의 가방 (협동 중에는 없음)
@@ -325,6 +332,8 @@ func _spawn_lost_bags() -> void:
 	if Net.active:
 		return
 	for b in GameState.lost_bags:
+		if str(b.get("region", "mart")) != LevelData.region:
+			continue
 		var lb := LootContainer.new()
 		lb.setup(self, "drop", Vector2(float(b.pos[0]), float(b.pos[1])))
 		lb.items = (b.items as Array).duplicate()
@@ -667,7 +676,7 @@ func _update_storm(delta: float) -> void:
 		_reinforce()
 
 func _reinforce() -> void:
-	var spots := [Vector2(56, 22), Vector2(1, 24), Vector2(30, 1), Vector2(56, 30)]
+	var spots: Array = Regions.cur().reinforce
 	var s: Vector2 = spots[randi() % spots.size()]
 	var count := 2 if storm_k < 0.5 else 3
 	for i in count:
@@ -806,6 +815,11 @@ func on_enemy_killed(e: Enemy) -> void:
 				items.append(am)
 				if randf() < 0.5:
 					items.append(am)
+	# 입고 있던 갑옷도 떨어질 수 있다 (헬멧 50%, 조끼 60%)
+	if e.helmet != "" and randf() < 0.5:
+		items.append(e.helmet)
+	if e.vest != "" and randf() < 0.6:
+		items.append(e.vest)
 	if not items.is_empty():
 		var drop := LootContainer.new()
 		drop.setup(self, "drop", e.global_position)
@@ -892,7 +906,7 @@ func _end(survived: bool, reason: String) -> void:
 			if LevelData.is_solid_code(LevelData.code(c.x, c.y)):
 				var o := _nearest_open(c)
 				bp = Vector2(o.x * T + T * 0.5, o.y * T + T * 0.8)
-			new_bag = {"pos": [bp.x, bp.y], "items": _death_bag_items(lost), "raids": 0}
+			new_bag = {"pos": [bp.x, bp.y], "items": _death_bag_items(lost), "raids": 0, "region": LevelData.region}
 		GameState.settle_lost_bags(_remaining_lost_bags(), not survived, new_bag)
 		result["bag_rule"] = str(GameState.diff("bag_rule"))
 		result["bag_left"] = not survived and str(GameState.diff("bag_rule")) != "instant"
