@@ -102,7 +102,15 @@ func _npcs() -> void:
 	# 기술 고양이 나비 (작업대), 시장 상인 (줄무늬 고양이), 잠자는 동료 햄스터 — 시트 그림 그대로
 	npcs.append(_npc("cat_white", "idle", marker("npc_navi")))
 	npcs.append(_npc("cat_tabby", "idle", marker("npc_market")))
-	npcs.append(_npc("hamster", "sleep", marker("npc_sleep") + Vector3(0, 0.25, 0.2), 0.85))
+	if ModelChar.available():
+		var sl := ModelChar.load_model()
+		sl.position = marker("npc_sleep") + Vector3(0.2, 0.32, 0)
+		sl.rotation_degrees = Vector3(0, 30, 82)
+		sl.scale = Vector3.ONE * 0.8
+		add_child(sl)
+		npcs.append(sl)
+	else:
+		npcs.append(_npc("hamster", "sleep", marker("npc_sleep") + Vector3(0, 0.25, 0.2), 0.85))
 
 func _labels() -> void:
 	for k in STATIONS:

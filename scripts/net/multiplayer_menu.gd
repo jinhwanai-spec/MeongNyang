@@ -201,10 +201,17 @@ func _stand_players() -> void:
 		var sheet: String = "hamster_" + list[i]
 		if Sprites.char_info(sheet).is_empty():
 			sheet = "hamster"
-		var b := CharBillboard.new()
-		b.position = center + Vector3((i - (list.size() - 1) * 0.5) * 1.3, 0, 0)
-		stand.add_child(b)
-		b.setup_static(sheet, "idle_front", 30.0, 1.0)
+		var pos := center + Vector3((i - (list.size() - 1) * 0.5) * 1.3, 0, 0)
+		if ModelChar.available():
+			var mm := ModelChar.load_model()
+			mm.position = pos
+			mm.rotation_degrees.y = 20.0
+			stand.add_child(mm)
+		else:
+			var b := CharBillboard.new()
+			b.position = pos
+			stand.add_child(b)
+			b.setup_static(sheet, "idle_front", 30.0, 1.0)
 
 func _process(delta: float) -> void:
 	t += delta

@@ -322,7 +322,11 @@ func _register(n: Node) -> void:
 	if registered.has(n):
 		return
 	registered[n] = true
-	if n is Player or n is RemotePlayer:
+	if (n is Player or n is RemotePlayer) and ModelChar.available():
+		var mc := ModelChar.new()
+		add_child(mc)
+		mc.setup(n)
+	elif n is Player or n is RemotePlayer:
 		var c := CharBillboard.new()
 		add_child(c)
 		c.setup(n, PITCH)

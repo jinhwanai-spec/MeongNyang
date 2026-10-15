@@ -29,11 +29,17 @@ func _ready() -> void:
 	var sheet := "hamster_" + GameState.hamster
 	if Sprites.char_info(sheet).is_empty():
 		sheet = "hamster"
-	var hb := CharBillboard.new()
-	hb.position = center
-	v.add_child(hb)
-	hb.setup_static(sheet, "idle_front", 30.0, 1.25)
-	ham = hb
+	if ModelChar.available():
+		ham = ModelChar.load_model()
+		ham.position = center
+		ham.scale = Vector3.ONE * 1.25
+		v.add_child(ham)
+	else:
+		var hb := CharBillboard.new()
+		hb.position = center
+		v.add_child(hb)
+		hb.setup_static(sheet, "idle_front", 30.0, 1.25)
+		ham = hb
 	var spot := SpotLight3D.new()
 	spot.position = center + Vector3(0, 4.5, 1.5)
 	spot.rotation_degrees = Vector3(-75, 0, 0)
@@ -182,5 +188,10 @@ func _process(delta: float) -> void:
 	# 햄스터 숨쉬기·가끔 깡충 (가끔 반가운 표정)
 	var hop := maxf(0.0, sin(t * 1.3)) ** 12 * 0.25
 	ham.position.y = hop
-	var hb := ham as CharBillboard
-	hb.static_anim = "happy" if fmod(t, 6.0) > 5.2 else "idle_front"
+	if ham is CharBillboard:
+		(ham as CharBillboard).static_anim = "happy" if fmod(t, 6.0) > 5.2 else "idle_front"
+	else:
+		# 카메라 쪽을 보면서 숨쉬고 가끔 고개 갸웃
+		ham.rotation.y = atan2(cam.position.x - ham.position.x, cam.position.z - ham.position.z) - 0.35
+		ham.rotation.z = sin(t * 0.9) * 0.05
+		ham.scale = Vector3(1.25, 1.25 * (1.0 + sin(t * 2.4) * 0.015), 1.25)
