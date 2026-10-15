@@ -98,10 +98,23 @@ func _npc(sheet: String, anim: String, pos: Vector3, sc: float = 1.0) -> CharBil
 	b.setup_static(sheet, anim, npc_pitch, sc)
 	return b
 
+## 3D 고양이 NPC (적 모델과 같은 Meshy 모델, 대기 애니메이션) — 카메라 쪽을 보고 서 있음
+func _npc3d(tp: String, pos: Vector3, yaw: float) -> Node3D:
+	var m := EnemyModel.load_model(tp, true)
+	m.position = pos
+	m.rotation.y = yaw
+	m.scale = Vector3.ONE * float(EnemyModel.HEIGHT.get(tp, 1.2)) * 0.95
+	add_child(m)
+	return m
+
 func _npcs() -> void:
 	# 기술 고양이 나비 (작업대), 시장 상인 (줄무늬 고양이), 잠자는 동료 햄스터 — 시트 그림 그대로
-	npcs.append(_npc("cat_white", "idle", marker("npc_navi")))
-	npcs.append(_npc("cat_tabby", "idle", marker("npc_market")))
+	if EnemyModel.available("cat") and EnemyModel.available("hyena"):
+		npcs.append(_npc3d("cat", marker("npc_navi"), 0.35))
+		npcs.append(_npc3d("hyena", marker("npc_market"), -0.3))
+	else:
+		npcs.append(_npc("cat_white", "idle", marker("npc_navi")))
+		npcs.append(_npc("cat_tabby", "idle", marker("npc_market")))
 	if ModelChar.available():
 		var sl := ModelChar.load_model(true)
 		sl.position = marker("npc_sleep") + Vector3(0.2, 0.32, 0)

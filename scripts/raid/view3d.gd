@@ -61,6 +61,7 @@ func build(r: Raid) -> void:
 					n.visibility_layer = L_OVERLAY
 	get_tree().node_added.connect(_on_node_added)
 	_warmup()
+	FX.NO_CORPSE = EnemyModel.available("hyena") and EnemyModel.available("bulldog") and EnemyModel.available("cat")
 	if raid.player:
 		var p := raid.player.global_position
 		cam_target = Vector3(p.x / T, 0, p.y / T)
@@ -98,6 +99,9 @@ func _warmup() -> void:
 		i += 1
 	if ModelChar.available():
 		w.add_child(ModelChar.load_model(true))
+	for tp in ["hyena", "bulldog", "cat"]:
+		if EnemyModel.available(tp):
+			w.add_child(EnemyModel.load_model(tp, true))
 	var tr := MeshInstance3D.new()
 	tr.mesh = BoxMesh.new()
 	tr.material_override = _tracer_mat(Color(1.0, 0.86, 0.5))
@@ -384,6 +388,13 @@ func _register(n: Node) -> void:
 		var c := CharBillboard.new()
 		add_child(c)
 		c.setup(n, PITCH)
+	elif n is Enemy and EnemyModel.available((n as Enemy).type):
+		var em := EnemyModel.new()
+		add_child(em)
+		em.setup(n)
+		for ch in n.get_children():
+			if ch is Node2D and not (ch is Sprite2D) and ch != (n as Enemy).art and ch != (n as Enemy).hand:
+				(ch as CanvasItem).visibility_layer = L_HIDDEN   # 2D 그림자
 	elif n is Enemy:
 		var c2 := CharBillboard.new()
 		add_child(c2)
