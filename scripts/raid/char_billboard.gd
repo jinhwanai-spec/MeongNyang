@@ -20,6 +20,15 @@ var label: Label3D
 var mark: Label3D
 var height := 1.5
 var static_anim := ""       # NPC: 고정 애니메이션
+# 페이퍼마리오식 움직임
+var pivot: Node3D
+var shown_flip := false
+var pending_flip := false
+var turn_t := 0.0
+const TURN := 0.16
+var wp := 0.0               # 걸음 위상
+var last_hop := 0.0
+var sheet_kind := ""        # 뒤집을 때 발 기준점 계산용
 
 static func blob_shadow(w: float) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
@@ -45,8 +54,10 @@ static func blob_shadow(w: float) -> MeshInstance3D:
 	return mi
 
 func _make_sprite() -> void:
+	pivot = Node3D.new()
+	add_child(pivot)
 	s3 = Sprite3D.new()
-	s3.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	s3.billboard = BaseMaterial3D.BILLBOARD_DISABLED   # 카메라 쪽 회전은 직접 (기울기·뒤뚱거림을 얹기 위해)
 	s3.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	s3.alpha_scissor_threshold = 0.4
 	s3.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
@@ -55,7 +66,7 @@ func _make_sprite() -> void:
 	s3.centered = false
 	s3.pixel_size = 1.0 / T
 	s3.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(s3)
+	pivot.add_child(s3)
 
 ## 원정 캐릭터·로비 햄스터·다른 플레이어
 func setup(e: Node2D, cam_pitch_deg: float) -> void:
@@ -68,6 +79,7 @@ func setup(e: Node2D, cam_pitch_deg: float) -> void:
 	blob = blob_shadow(radius)
 	add_child(blob)
 	own = not (e.get("spr") is Sprite2D)
+	sheet_kind = str(e.get("SPRITE")) if e is Player else (str(e.get("sprite_kind")) if e is Enemy else "")
 	if own:
 		var hid: String = str((e.get("hdata") as Dictionary).get("_id", GameState.hamster)) if e.get("hdata") is Dictionary else GameState.hamster
 		if e is LobbyPlayer:
@@ -140,8 +152,15 @@ func _make_labels(text: String, col: Color) -> void:
 	mark.visible = false
 	add_child(mark)
 
+func _face_camera() -> void:
+	var c := get_viewport().get_camera_3d()
+	if c:
+		var d := c.global_position - global_position
+		pivot.rotation.y = atan2(d.x, d.z)
+
 func _process(delta: float) -> void:
 	t += delta
+	_face_camera()
 	if static_anim != "":
 		s3.frame = Sprites.char_frame(kind, static_anim, t * 6.0)
 		return
@@ -156,6 +175,7 @@ func _process(delta: float) -> void:
 		_own_anim(delta, vel)
 	else:
 		_mirror()
+	_juice(delta, vel)
 	if ent is Enemy:
 		_enemy_labels()
 	if label:
@@ -234,6 +254,7 @@ func _own_anim(delta: float, vel: Vector2) -> void:
 	var crouch := 0.86 if bool(ent.get("crouching")) else 1.0
 	s3.scale = Vector3(k / sq, k * sq * kv * crouch, 1)
 	s3.position = Vector3(0, bob * kv, 0)
+	s3.rotation.z = 0.0
 	var a := 0.35 if float(ent.get("cloak_t") if ent.get("cloak_t") != null else 0.0) > 0.0 else 1.0
 	var fl := float(ent.get("flash") if ent.get("flash") != null else 0.0)
 	var c := Color(1, 1, 1, a).lerp(Color(2.4, 2.4, 2.4, a), clampf(fl, 0.0, 1.0) * 0.7)
@@ -258,3 +279,53 @@ func _enemy_labels() -> void:
 		mark.visible = true
 	else:
 		mark.visible = false
+
+
+## 걸음에 맞춘 뒤뚱거림·통통 튀기·기울기, 방향 바꿀 때 종이 뒤집기
+func _juice(delta: float, vel: Vector2) -> void:
+	if not s3.visible:
+		return
+	var sp := vel.length()
+	var m := clampf(sp / 230.0, 0.0, 1.3)
+	var dodging := float(ent.get("dodge_t") if ent.get("dodge_t") != null else 0.0) > 0.0
+	# 종이 뒤집기: 원하는 방향(s3.flip_h)이 바뀌면 납작해졌다가 반대로 펴진다
+	var want := s3.flip_h
+	if want != shown_flip and turn_t <= 0.0:
+		turn_t = TURN
+		pending_flip = want
+	var sx := 1.0
+	if turn_t > 0.0:
+		turn_t -= delta
+		var p := 1.0 - maxf(turn_t, 0.0) / TURN
+		if p >= 0.5:
+			shown_flip = pending_flip
+		sx = maxf(0.08, absf(cos(p * PI)))
+	if shown_flip != s3.flip_h:
+		s3.flip_h = shown_flip
+		var kk := sheet_kind if sheet_kind != "" else kind
+		var info := Sprites.char_info(kk)
+		if not info.is_empty():
+			var ax: float = info.anchor[0]
+			if shown_flip:
+				ax = float(info.frame[0]) - ax
+			s3.offset.x = -ax
+	# 걸음: 한 걸음마다 좌우로 기울고, 발 디딜 때 살짝 눌림
+	if sp > 25.0 and not dodging:
+		wp += delta * (2.4 + sp / T * 0.9)
+	else:
+		wp = lerpf(wp, roundf(wp), 1.0 - exp(-10.0 * delta))
+	var hop := absf(sin(wp * PI))
+	var waddle := sin(wp * PI) * 0.085 * minf(m, 1.0)
+	var lean := clampf(-vel.x / T * 0.018, -0.13, 0.13)
+	if dodging:
+		lean *= 2.0
+	s3.rotation.z += waddle + lean
+	s3.position.y += hop * 0.07 * minf(m, 1.0)
+	var squash := 1.0
+	if m > 0.2 and hop < 0.25:
+		squash = 1.0 - (0.25 - hop) * 0.28
+	s3.scale.x *= sx * (2.0 - squash)
+	s3.scale.y *= squash
+	# 그림자: 뜰 때 작아짐
+	blob.scale = Vector3.ONE * (1.0 - hop * 0.12 * minf(m, 1.0))
+	last_hop = hop

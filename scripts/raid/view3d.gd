@@ -32,7 +32,6 @@ var env: Environment
 
 func build(r: Raid) -> void:
 	raid = r
-	FX.NO_CORPSE = true   # 쓰러진 3D 모델이 대신한다
 	_env()
 	_floor()
 	_walls()
@@ -324,13 +323,13 @@ func _register(n: Node) -> void:
 		return
 	registered[n] = true
 	if n is Player or n is RemotePlayer:
-		var c := Char3D.new()
+		var c := CharBillboard.new()
 		add_child(c)
-		c.setup(n, "hamster")
+		c.setup(n, PITCH)
 	elif n is Enemy:
-		var c2 := Char3D.new()
+		var c2 := CharBillboard.new()
 		add_child(c2)
-		c2.setup(n, (n as Enemy).type)
+		c2.setup(n, PITCH)
 		for ch in n.get_children():
 			if ch is Node2D and not (ch is Sprite2D) and ch != (n as Enemy).art and ch != (n as Enemy).hand:
 				(ch as CanvasItem).visibility_layer = L_HIDDEN   # 2D 그림자
