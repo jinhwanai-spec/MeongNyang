@@ -100,6 +100,14 @@ func _process(_d: float) -> void:
 					gs3.mods[kv3[0]] = {}
 				gs3.mods[kv3[0]][DB.ATTACHMENTS[kv3[1]].slot] = kv3[1]
 			"give": get_node("/root/GameState").add_item(arg, 3)
+			"region": get_node("/root/GameState").region = arg
+			"extract":
+				var rr = main.current
+				rr.extract_zone = rr.exits[int(arg)]
+				rr._end(true, rr.exits[int(arg)].label)
+			"earmor":
+				var ea := arg.split(",")
+				Enemy.force_armor = [ea[0], ea[1]]
 			"ammo": get_node("/root/GameState").ammo[arg] = 200
 			"diff": get_node("/root/GameState").set_difficulty_preset(arg)
 			"die":

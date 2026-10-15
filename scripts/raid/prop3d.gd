@@ -125,6 +125,33 @@ func _process(_delta: float) -> void:
 		if lc.is_drop:
 			_place()
 			_drop_weapon(_delta)
+			_drop_armor(_delta)
+
+## 떨어진 꾸러미에 갑옷이 있으면 헬멧/조끼 모델도 옆에 보여 준다
+var arm: Node3D
+var arm_id := ""
+func _drop_armor(delta: float) -> void:
+	var aid := ""
+	for it in lc.items:
+		if str(DB.ITEMS.get(it, {}).get("cat", "")) == "armor":
+			aid = str(it)
+			break
+	if aid != arm_id:
+		arm_id = aid
+		if arm:
+			arm.queue_free()
+			arm = null
+		if aid != "":
+			arm = Node3D.new()
+			add_child(arm)
+			var it: Dictionary = DB.ITEMS[aid]
+			var m: Node3D = ProcModels.helmet(int(it.tier)) if it.slot == "helmet" else ProcModels.vest(int(it.tier))
+			m.scale = Vector3.ONE * (0.75 if it.slot == "helmet" else 0.6)
+			m.position.y = 0.05 if it.slot == "helmet" else 0.22
+			arm.add_child(m)
+			arm.position = Vector3(-0.4, 0.0, 0.3)
+	if arm:
+		arm.rotation.y += delta * 0.6
 
 func _drop_weapon(delta: float) -> void:
 	var wid := ""

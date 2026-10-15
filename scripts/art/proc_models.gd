@@ -354,6 +354,8 @@ static func potion_lab() -> Node3D:
 	for k in 3:
 		cyl(r, 0.04, 0.04, 0.4, Vector3(1.15, 0.05, 0.1), wood_d, Vector3(PI * 0.5, TAU * k / 3.0, 0))
 	sphere(r, 0.12, Vector3(1.15, 0.09, 0.1), mat(Color("#FF8A2A"), 0.4, 0.0, 3.0), Vector3(1, 0.6, 1))
+	r.add_child(embers(Vector3(1.15, 0.66, 0.1), Color("#7CFF9C"), 16, 0.7, 0.06))
+	r.add_child(smoke(Vector3(1.15, 0.75, 0.1), Color(0.8, 1.0, 0.85, 0.25)))
 	var gl := OmniLight3D.new()
 	gl.light_color = Color("#7CFF9C")
 	gl.light_energy = 1.6
@@ -404,6 +406,8 @@ static func armor_forge() -> Node3D:
 	fl.position = Vector3(0.55, 0.6, 0.6)
 	r.add_child(fl)
 	r.set_meta("fire_light", fl)
+	r.add_child(embers(Vector3(0.55, 0.45, 0.3), Color("#FFB040"), 24, 1.2))
+	r.add_child(smoke(Vector3(0.55, 1.95, -0.15)))
 	# 갑옷 거치대 (마네킹)
 	var stand := Node3D.new()
 	stand.position = Vector3(-1.25, 0, -0.1)
@@ -618,8 +622,8 @@ static func water_plane(size: Vector2) -> MeshInstance3D:
 	var sh := Shader.new()
 	sh.code = """shader_type spatial;
 render_mode blend_mix, specular_schlick_ggx, cull_disabled;
-uniform vec4 deep : source_color = vec4(0.07, 0.22, 0.34, 0.92);
-uniform vec4 shallow : source_color = vec4(0.16, 0.45, 0.55, 0.9);
+uniform vec4 deep : source_color = vec4(0.12, 0.33, 0.46, 0.9);
+uniform vec4 shallow : source_color = vec4(0.22, 0.58, 0.66, 0.9);
 float h(vec2 p){ return sin(p.x*1.7+TIME*1.3)*0.5+sin(p.y*2.3-TIME*1.1)*0.5+sin((p.x+p.y)*3.1+TIME*2.0)*0.25; }
 void fragment(){
 	vec2 p = (INV_VIEW_MATRIX * vec4(VERTEX,1.0)).xz;
@@ -641,3 +645,66 @@ void fragment(){
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi
+
+
+# ── 작은 입자 (불티·거품·연기) ────────────────────────
+static func embers(pos: Vector3, c: Color, n: int = 20, life: float = 1.0, size: float = 0.035) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.position = pos
+	p.amount = n
+	p.lifetime = life
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 0.12
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 25.0
+	p.initial_velocity_min = 0.4
+	p.initial_velocity_max = 0.9
+	p.gravity = Vector3(0, 0.3, 0)
+	p.scale_amount_min = 0.6
+	p.scale_amount_max = 1.2
+	var sm := SphereMesh.new()
+	sm.radius = size
+	sm.height = size * 2.0
+	sm.radial_segments = 6
+	sm.rings = 3
+	p.mesh = sm
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.albedo_color = c
+	m.emission_enabled = true
+	m.emission = c
+	m.emission_energy_multiplier = 3.0
+	p.material_override = m
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	p.color_ramp = g
+	return p
+
+static func smoke(pos: Vector3, c: Color = Color(0.55, 0.55, 0.58, 0.3)) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.position = pos
+	p.amount = 10
+	p.lifetime = 2.2
+	p.direction = Vector3(0, 1, 0)
+	p.spread = 12.0
+	p.initial_velocity_min = 0.25
+	p.initial_velocity_max = 0.45
+	p.gravity = Vector3(0.05, 0.05, 0)
+	p.scale_amount_min = 0.8
+	p.scale_amount_max = 1.6
+	var q := QuadMesh.new()
+	q.size = Vector2(0.35, 0.35)
+	p.mesh = q
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	m.albedo_texture = FX.light_texture()
+	m.albedo_color = c
+	m.vertex_color_use_as_albedo = true
+	p.material_override = m
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	g.offsets = PackedFloat32Array([0.0, 0.25, 1.0])
+	p.color_ramp = g
+	return p

@@ -15,7 +15,7 @@ const STATIONS := {
 ## 블렌더 방에 없는 새 장소 (코드로 세운 제작소)
 const EXTRA_MARKERS := {
 	"st_potion": Vector3(12.6, 0, 2.7), "npc_potion": Vector3(13.25, 0, 3.75),
-	"st_armor": Vector3(9.6, 0, 7.6), "npc_armor": Vector3(10.6, 0, 8.6),
+	"st_armor": Vector3(9.6, 0, 7.6), "npc_armor": Vector3(12.05, 0, 8.25),
 }
 
 var room: Node3D
@@ -26,6 +26,7 @@ var sun: DirectionalLight3D
 var labels := {}
 var t := 0.0
 var npcs: Array[Node3D] = []
+var forge_light: OmniLight3D
 
 func _ready() -> void:
 	room = (load("res://assets/models/hideout.glb") as PackedScene).instantiate()
@@ -59,8 +60,9 @@ func _stations() -> void:
 	add_child(potion)
 	colliders.append([Vector2(13.35, 2.2), Vector2(0.55, 1.2)])
 	var forge := ProcModels.armor_forge()
+	forge_light = forge.get_meta("fire_light")
 	forge.position = markers["st_armor"] + Vector3(0.9, 0, 0.9)
-	forge.rotation.y = PI
+	forge.rotation.y = 0.0
 	add_child(forge)
 	colliders.append([Vector2(10.4, 8.5), Vector2(0.9, 0.55)])
 	var rack := ProcModels.weapon_wall(["assault_rifle", "shotgun", "sniper", "smg", "katana"])
@@ -141,7 +143,7 @@ func _npcs() -> void:
 		npcs.append(_npc3d("hyena", marker("npc_market"), -0.3))
 		npcs.append(_npc3d("cat", marker("npc_potion"), -1.2))
 		if EnemyModel.available("bulldog"):
-			npcs.append(_npc3d("bulldog", marker("npc_armor"), PI + 0.5))
+			npcs.append(_npc3d("bulldog", marker("npc_armor"), -0.7))
 	else:
 		npcs.append(_npc("cat_white", "idle", marker("npc_navi")))
 		npcs.append(_npc("cat_tabby", "idle", marker("npc_market")))
@@ -175,6 +177,8 @@ func _labels() -> void:
 
 func _process(delta: float) -> void:
 	t += delta
+	if forge_light:
+		forge_light.light_energy = 2.0 + sin(t * 13.0) * 0.25 + sin(t * 7.3) * 0.2
 	for k in labels:
 		(labels[k] as Label3D).position.y = markers[k].y + 2.0 + sin(t * 2.0 + k.length()) * 0.05
 

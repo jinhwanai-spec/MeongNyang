@@ -350,13 +350,13 @@ static func weapon_data(wid: String) -> Dictionary:
 const ENEMIES := {
 	"hyena": {"name": "길냥이 돌격병", "tier": 1, "hp": 34.0, "speed": 175.0, "chase_speed": 265.0, "radius": 15.0, "vision": 430.0, "fov": 130.0,
 		"attack": "bite", "dmg": 8.0, "attack_range": 42.0, "attack_cd": 0.7, "eye": Color("#F2C14E"), "name_color": Color("#E6E6E6"),
-		"body": Color("#A9A9AD"), "group_call": 520.0, "loot": [["canned_food", 0.25], ["toy_mouse", 0.15], ["ammo_pistol", 0.35]]},
+		"body": Color("#A9A9AD"), "group_call": 520.0, "loot": [["canned_food", 0.25], ["toy_mouse", 0.15], ["ammo_pistol", 0.35], ["cloth", 0.2], ["att_red_dot", 0.05], ["att_quick_mag", 0.04]]},
 	"bulldog": {"name": "중장갑 흑냥이", "tier": 2, "hp": 150.0, "speed": 95.0, "chase_speed": 150.0, "radius": 22.0, "vision": 380.0, "fov": 110.0,
 		"attack": "hammer", "dmg": 24.0, "attack_range": 62.0, "attack_cd": 1.45, "eye": Color("#F2994A"), "name_color": Color("#F2994A"),
-		"body": Color("#3A3A42"), "group_call": 650.0, "loot": [["kibble", 0.5], ["ammo_shell", 0.6], ["spring", 0.3], ["bandage", 0.4]]},
+		"body": Color("#3A3A42"), "group_call": 650.0, "loot": [["kibble", 0.5], ["ammo_shell", 0.6], ["spring", 0.3], ["bandage", 0.4], ["metal_sheet", 0.3], ["gunpowder", 0.25], ["att_compensator", 0.06], ["att_foregrip", 0.06]]},
 	"cat": {"name": "흰냥 저격수", "tier": 2, "hp": 60.0, "speed": 120.0, "chase_speed": 175.0, "radius": 15.0, "vision": 620.0, "fov": 100.0,
 		"attack": "bolt", "dmg": 16.0, "attack_range": 470.0, "attack_cd": 1.7, "eye": Color("#D64545"), "name_color": Color("#D64545"),
-		"body": Color("#F3F0EA"), "group_call": 560.0, "loot": [["ammo_bolt", 0.6], ["churu", 0.4], ["rope", 0.35], ["silver_bell", 0.1]]},
+		"body": Color("#F3F0EA"), "group_call": 560.0, "loot": [["ammo_bolt", 0.6], ["churu", 0.4], ["rope", 0.35], ["silver_bell", 0.1], ["lens", 0.15], ["herb", 0.2], ["att_scope_4x", 0.05], ["att_suppressor", 0.05]]},
 }
 
 # ── 파밍 상자 (지도 기호 → 종류) ──────────────────────
