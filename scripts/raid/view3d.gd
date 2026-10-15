@@ -11,6 +11,7 @@ extends Node3D
 const T := float(DB.TILE)
 const PITCH := 49.0         # 카메라 내려다보는 각도
 const CAM_DIST := 16.0
+var cam_dist := CAM_DIST   # 테스트·연출용으로 바꿀 수 있음
 const FOV := 34.0
 const WALL_H := 2.6         # 벽 높이 (타일 단위) — 햄스터보다 훨씬 높은 인간 세계
 const GLASS_LOW := 0.32
@@ -472,7 +473,7 @@ func _process(delta: float) -> void:
 	cam_target = Vector3(pp.x / T, 0, pp.y / T) + look_t
 	var sh := raid.player.camera().offset / T * 0.6
 	var pr := deg_to_rad(PITCH)
-	cam.position = cam_target + Vector3(sh.x, sin(pr) * CAM_DIST, cos(pr) * CAM_DIST + sh.y)
+	cam.position = cam_target + Vector3(sh.x, sin(pr) * cam_dist, cos(pr) * cam_dist + sh.y)
 	cam.look_at(cam_target + Vector3(sh.x, 0, sh.y), Vector3.UP)
 	# 바닥 투영 레이어를 카메라 중심에 맞춤 (타일 단위로 눌러 붙여 흔들림 방지)
 	var oc := Vector2(snappedf(cam_target.x, 0.25), snappedf(cam_target.z - 2.0, 0.25))

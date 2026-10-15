@@ -12,7 +12,7 @@ var stats := {"raids": 0, "extracts": 0, "deaths": 0, "kills": 0, "best_haul": 0
 var tutorial_done := false
 
 # 원정 출발 시 고른 장비
-var loadout := {"primary": "shotgun", "sidearm": "pistol", "meds": 2, "snacks": 2}
+var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds": 2, "snacks": 2}
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
 # 직전 원정 결과 (결과 화면용)
 var last_result := {}
@@ -26,10 +26,10 @@ func new_game() -> void:
 	coins = 150
 	stash = {"bandage": 2, "canned_food": 1, "rope": 1, "sunflower_seed": 3, "cheese": 1}
 	weapons = {"pistol": 1, "shotgun": 1}
-	ammo = {"pistol": 40, "shell": 15, "bolt": 0}
+	ammo = {"pistol": 40, "shell": 15, "bolt": 0, "rifle": 0}
 	crafted = {}
 	stats = {"raids": 0, "extracts": 0, "deaths": 0, "kills": 0, "best_haul": 0}
-	loadout = {"primary": "shotgun", "sidearm": "pistol", "meds": 2, "snacks": 2}
+	loadout = {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds": 2, "snacks": 2}
 	hamster = "baragi"
 	tutorial_done = false
 	save_game()
@@ -58,12 +58,12 @@ func load_game() -> bool:
 	crafted = _int_dict(d.get("crafted", {}))
 	stats = _int_dict(d.get("stats", stats))
 	var lo: Dictionary = d.get("loadout", loadout)
-	loadout = {"primary": str(lo.get("primary", "")), "sidearm": str(lo.get("sidearm", "pistol")), "meds": int(lo.get("meds", 2)), "snacks": int(lo.get("snacks", 2))}
+	loadout = {"primary": str(lo.get("primary", "")), "sidearm": str(lo.get("sidearm", "pistol")), "melee": str(lo.get("melee", "bat")), "meds": int(lo.get("meds", 2)), "snacks": int(lo.get("snacks", 2))}
 	hamster = str(d.get("hamster", "baragi"))
 	if not DB.HAMSTERS.has(hamster):
 		hamster = "baragi"
 	tutorial_done = bool(d.get("tutorial_done", false))
-	for k in ["pistol", "shell", "bolt"]:
+	for k in ["pistol", "shell", "bolt", "rifle"]:
 		if not ammo.has(k):
 			ammo[k] = 0
 	return true
@@ -107,6 +107,8 @@ func validate_loadout() -> void:
 		loadout.primary = ""
 	if loadout.sidearm != "" and weapon_count(loadout.sidearm) <= 0:
 		loadout.sidearm = ""
+	if str(loadout.get("melee", "bat")) != "bat" and weapon_count(str(loadout.melee)) <= 0:
+		loadout.melee = "bat"
 	loadout.meds = clampi(int(loadout.meds), 0, int(stash.get("bandage", 0)))
 
 ## 완전 파산 방지: 기본 권총·탄약·식량은 항상 지급
@@ -137,7 +139,11 @@ func snack_count() -> int:
 
 func begin_raid() -> Dictionary:
 	validate_loadout()
-	var kit := {"weapons": [], "ammo": {"pistol": 0, "shell": 0, "bolt": 0}, "meds": 0}
+	var kit := {"weapons": [], "ammo": {"pistol": 0, "shell": 0, "bolt": 0, "rifle": 0}, "meds": 0, "melee": "bat"}
+	var mel := str(loadout.get("melee", "bat"))
+	if mel != "bat" and DB.MELEES.has(mel) and weapon_count(mel) > 0:
+		weapons[mel] = weapon_count(mel) - 1
+		kit.melee = mel
 	for slot in ["primary", "sidearm"]:
 		var wid: String = loadout[slot]
 		if wid != "" and weapon_count(wid) > 0:
@@ -165,15 +171,19 @@ func begin_raid() -> Dictionary:
 	return kit
 
 ## 탈출 성공: 장비·남은 탄약·배낭을 보관함으로
-func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Array) -> void:
+func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Array, melee: String = "bat") -> void:
 	for wid in kit_weapons:
 		weapons[wid] = weapon_count(wid) + 1
+	if melee != "bat" and melee != "":
+		weapons[melee] = weapon_count(melee) + 1
 	for at in kit_ammo:
 		ammo[at] = int(ammo.get(at, 0)) + int(kit_ammo[at])
 	for id in bag_ids:
 		var it: Dictionary = DB.ITEMS[id]
 		if it.cat == "ammo":
 			ammo[it.ammo] = int(ammo.get(it.ammo, 0)) + int(it.amount)
+		elif it.cat == "weapon":
+			weapons[it.weapon] = weapon_count(it.weapon) + 1   # 주워 온 무기는 무기고로
 		else:
 			add_item(id)
 	stats.extracts = int(stats.extracts) + 1

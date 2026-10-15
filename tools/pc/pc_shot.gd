@@ -51,6 +51,28 @@ func _process(_d: float) -> void:
 			"tp":
 				var xy := arg.split(",")
 				main.current.player.global_position = Vector2(float(xy[0]), float(xy[1])) * 48.0
+			"spawn3":
+				var r = main.current
+				var pp: Vector2 = r.player.global_position
+				var i := 0
+				for t in ["hyena", "bulldog", "cat"]:
+					r._spawn_enemy(t, pp + Vector2(-150 + i * 150, -130 + (i % 2) * 50))
+					i += 1
+			"freeze":
+				for e in get_tree().get_nodes_in_group("enemy"):
+					e.process_mode = Node.PROCESS_MODE_DISABLED
+			"unfreeze":
+				for e in get_tree().get_nodes_in_group("enemy"):
+					e.process_mode = Node.PROCESS_MODE_INHERIT
+			"god":
+				main.current.player.hp = 99999.0
+				main.current.player.max_hp = 99999.0
+			"camd":
+				main.current.view3d.cam_dist = float(arg)
+			"kill":
+				for e in get_tree().get_nodes_in_group("enemy"):
+					if e.global_position.distance_to(main.current.player.global_position) < float(arg if arg != "" else "400"):
+						e.take_damage(999.0, main.current.player.global_position, 0.0)
 			"alert":
 				for e in get_tree().get_nodes_in_group("enemy"):
 					if e.global_position.distance_to(main.current.player.global_position) < 700:

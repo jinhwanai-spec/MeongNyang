@@ -738,6 +738,15 @@ func on_enemy_killed(e: Enemy) -> void:
 	if not Net.active or e.last_hitter == Net.my_id():
 		kills += 1
 	var items := e.roll_loot()
+	# 고양이가 들고 있던 무기는 꼭 떨어진다 + 총이면 맞는 탄약도
+	if e.weapon != "" and DB.ITEMS.has("w_" + e.weapon):
+		items.append("w_" + e.weapon)
+		if DB.WEAPONS.has(e.weapon):
+			var am := "ammo_" + str(DB.WEAPONS[e.weapon].ammo)
+			if DB.ITEMS.has(am):
+				items.append(am)
+				if randf() < 0.5:
+					items.append(am)
 	if not items.is_empty():
 		var drop := LootContainer.new()
 		drop.setup(self, "drop", e.global_position)
@@ -809,7 +818,7 @@ func _end(survived: bool, reason: String) -> void:
 	var result := {
 		"survived": survived, "reason": reason, "time": elapsed, "kills": kills,
 		"items": bag_ids if survived else kept, "lost_items": lost, "kept_items": kept,
-		"value": bag.total_value(), "weapons": kit.weapons, "ammo_left": player.reserve.duplicate(),
+		"value": bag.total_value(), "weapons": player.weapons.duplicate(), "ammo_left": player.reserve.duplicate(),
 	}
 	# 탄창에 남은 탄도 회수
 	for wid in player.mags:
@@ -817,7 +826,7 @@ func _end(survived: bool, reason: String) -> void:
 		result.ammo_left[at] = int(result.ammo_left.get(at, 0)) + int(player.mags[wid])
 	GameState.stats.kills = int(GameState.stats.kills) + kills
 	if survived:
-		GameState.finish_raid_extract(kit.weapons, result.ammo_left, bag_ids)
+		GameState.finish_raid_extract(player.weapons, result.ammo_left, bag_ids, player.melee_id)
 		GameState.stats.best_haul = maxi(int(GameState.stats.best_haul), bag.total_value())
 		Sfx.play("extract", 0.0)
 		player.set_mood("happy", 10.0)

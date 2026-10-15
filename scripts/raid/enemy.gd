@@ -48,7 +48,12 @@ var puppet := false          # 클라이언트: 호스트가 보낸 상태만 �
 var last_hitter := 1
 var net_pos := Vector2.ZERO
 var target: Node2D           # 노리는 햄스터 (가장 가까운 플레이어)
+var weapon := ""             # 들고 있는 무기 (죽으면 떨어뜨림)
+var gunner := false          # 총을 들었으면 거리를 두고 쏜다
+var _burst := 0
+var _burst_t := 0.0
 var _net_hit := false
+var shot_flash := 0.0        # 방금 쐈음 (3D 모델 반동용)
 
 # AI 타입 → [스프라이트, 무기, 손 높이]
 const SPRITES := {"hyena": ["cat_tabby", "knife", -30.0], "bulldog": ["cat_black", "hammer", -40.0], "cat": ["cat_white", "sniper", -34.0]}
@@ -72,6 +77,10 @@ func setup(r: Raid, t: String, pos: Vector2) -> void:
 	target_pos = pos
 	facing = 1.0 if randf() > 0.5 else -1.0
 	think_t = randf() * 0.3
+	var pool: Array = DB.ENEMY_WEAPONS.get(t, [])
+	if not pool.is_empty():
+		weapon = pool[randi() % pool.size()]
+	gunner = DB.WEAPONS.has(weapon)
 
 func _ready() -> void:
 	add_to_group("enemy")
@@ -273,6 +282,16 @@ func _physics_process(delta: float) -> void:
 			if cover_t <= 0.0:
 				_set_state(S.CHASE)
 
+	if _burst > 0:
+		_burst_t -= delta
+		if _burst_t <= 0.0:
+			_burst -= 1
+			var pp = _cur()
+			if pp and not dead:
+				aim = ((pp.global_position + Vector2(0, -20)) - (global_position + hand.position)).normalized()
+				_shoot_weapon()
+			_burst_t = maxf(float(DB.WEAPONS[weapon].rate), 0.08)
+	shot_flash = maxf(0.0, shot_flash - delta)
 	if windup > 0.0:
 		desired *= 0.15
 		windup -= delta
@@ -386,6 +405,8 @@ func _combat(delta: float) -> Vector2:
 	var to: Vector2 = p.global_position - global_position
 	var dist := to.length()
 	aim = ((p.global_position + Vector2(0, -20)) - (global_position + hand.position)).normalized()
+	if gunner and type != "cat":
+		return _gun_combat(to, dist, delta)
 	match type:
 		"hyena":
 			if dist <= float(data.attack_range) and attack_cd <= 0.0 and windup <= 0.0:
@@ -424,6 +445,41 @@ func _combat(delta: float) -> Vector2:
 
 var _charge_pending := false
 
+## 총을 든 고양이: 사거리 안에서 옆걸음치며 쏜다
+func _gun_combat(to: Vector2, dist: float, delta: float) -> Vector2:
+	var w: Dictionary = DB.WEAPONS[weapon]
+	var rng := minf(float(w.range) * 0.75, 520.0)
+	if dist <= rng and attack_cd <= 0.0 and windup <= 0.0 and _burst <= 0:
+		_begin_windup(0.45 if not bool(w.auto) else 0.35)
+	strafe_t -= delta
+	if strafe_t <= 0.0:
+		strafe_t = randf_range(0.8, 1.6)
+		strafe = -strafe
+	var side := to.orthogonal().normalized() * strafe * 0.7
+	var keep := clampf(rng * 0.45, 120.0, 300.0)
+	if dist < keep:
+		return (-to.normalized() + side).normalized()
+	elif dist > rng * 0.9:
+		return (to.normalized() + side * 0.4).normalized()
+	return side
+
+## 들고 있는 총으로 한 번 쏘기 (산탄이면 여러 발)
+func _shoot_weapon() -> void:
+	var w: Dictionary = DB.WEAPONS[weapon]
+	var origin := global_position + hand.position + aim * 26.0
+	var dmg := maxf(4.0, float(w.dmg) * 0.4)
+	for i in int(w.pellets):
+		var spread := deg_to_rad(float(w.spread) * 1.4 + 2.0) * (randf() - 0.5)
+		var bolt := Projectile.new()
+		bolt.setup(raid, origin, aim.rotated(spread), float(w.speed) * 0.8, dmg, float(w.range), false, "enemy_bolt")
+		raid.fx_layer.add_child(bolt)
+		if Net.is_host():
+			Net.fired(origin, bolt.vel.normalized(), float(w.speed) * 0.8, float(w.range), "enemy_bolt", true)
+	Sfx.play_at(DB.shot_sfx(weapon), global_position, -5.0, 0.1)
+	FX.muzzle(raid.fx_layer, origin, aim, str(w.ammo) == "shell")
+	raid.emit_noise(global_position, minf(float(w.noise), 500.0))
+	shot_flash = 0.12
+
 func _begin_windup(t: float, charge: bool = false) -> void:
 	windup = t
 	windup_total = t
@@ -437,6 +493,14 @@ func _release_attack() -> void:
 		return
 	var to: Vector2 = p.global_position - global_position
 	attack_cd = float(data.attack_cd)
+	if gunner:
+		var w: Dictionary = DB.WEAPONS[weapon]
+		attack_cd = maxf(float(data.attack_cd) * 0.8, float(w.rate) * 3.0)
+		_shoot_weapon()
+		if bool(w.auto):
+			_burst = 3
+			_burst_t = maxf(float(w.rate), 0.08)
+		return
 	if _charge_pending:
 		_charge_pending = false
 		charge_t = 0.55

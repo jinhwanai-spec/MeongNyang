@@ -22,7 +22,8 @@ var stamina := 100.0
 
 var weapons: Array = []           # 휴대 무기 id (사망 시 잃음)
 var mags := {}                    # 무기 id -> 탄창에 든 탄
-var reserve := {"pistol": 0, "shell": 0, "bolt": 0}
+var reserve := {"pistol": 0, "shell": 0, "bolt": 0, "rifle": 0}
+var melee_id := "bat"               # 근접 무기 (V)
 var cur := 0
 var fire_cd := 0.0
 var reload_t := 0.0
@@ -136,6 +137,12 @@ func setup(kit: Dictionary) -> void:
 	Sprites.setup_char_sprite(spr, SPRITE)
 	weapons = kit.weapons.duplicate()
 	reserve = kit.ammo.duplicate()
+	for k in ["pistol", "shell", "bolt", "rifle"]:
+		if not reserve.has(k):
+			reserve[k] = 0
+	melee_id = str(kit.get("melee", "bat"))
+	if not DB.MELEES.has(melee_id):
+		melee_id = "bat"
 	for wid in weapons:
 		var w: Dictionary = DB.WEAPONS[wid]
 		var n := mini(int(w.mag), int(reserve[w.ammo]))
@@ -385,9 +392,9 @@ func _fire() -> void:
 	muzzle_t = 0.06
 	raid.shake(float(w.recoil) * 0.55)
 	raid.emit_noise(global_position, float(w.noise))
-	Sfx.play("shot_" + wid, -2.0, 0.08)
-	FX.muzzle(raid.fx_layer, origin, aim_dir, wid == "shotgun")
-	if wid != "crossbow":
+	Sfx.play(DB.shot_sfx(wid), -2.0, 0.08)
+	FX.muzzle(raid.fx_layer, origin, aim_dir, str(w.ammo) == "shell" or float(w.dmg) >= 60.0)
+	if str(w.ammo) != "bolt":
 		FX.shell(raid.fx_layer, global_position + Vector2(0, -22), -facing)
 	velocity -= aim_dir * float(w.recoil) * 6.0
 	weapon_changed.emit()
@@ -423,7 +430,7 @@ func _finish_reload() -> void:
 func _melee() -> void:
 	if melee_cd > 0.0 or dodge_t > 0.0:
 		return
-	var m: Dictionary = DB.MELEE
+	var m: Dictionary = DB.MELEES[melee_id]
 	melee_cd = float(m.cooldown) * (0.5 if hid == "meokmul" else 1.0)
 	cloak_t = 0.0
 	melee_anim = 0.22
@@ -511,6 +518,56 @@ func cancel_heal() -> void:
 	if heal_t > 0.0:
 		heal_t = 0.0
 		heal_item = ""
+
+## 가방의 무기를 바로 장착 (원래 들던 무기는 가방/바닥으로)
+func equip_from_bag(idx: int) -> bool:
+	var bag: Backpack = raid.bag
+	if idx < 0 or idx >= bag.entries.size():
+		return false
+	var id: String = bag.entries[idx].id
+	var it: Dictionary = DB.ITEMS.get(id, {})
+	if str(it.get("cat", "")) != "weapon":
+		return false
+	var wid: String = it.weapon
+	bag.remove_at(idx)
+	if DB.MELEES.has(wid):
+		var old := melee_id
+		melee_id = wid
+		if old != "bat":
+			_stow("w_" + old)
+	else:
+		var slot: String = DB.WEAPONS[wid].slot
+		var replace := -1
+		for i in weapons.size():
+			if DB.WEAPONS[weapons[i]].slot == slot:
+				replace = i
+		if replace < 0 and weapons.size() >= 2:
+			replace = cur
+		if replace >= 0:
+			var old_w: String = weapons[replace]
+			var oa: String = DB.WEAPONS[old_w].ammo
+			reserve[oa] = int(reserve.get(oa, 0)) + int(mags.get(old_w, 0))
+			mags.erase(old_w)
+			weapons[replace] = wid
+			cur = replace
+			_stow("w_" + old_w)
+		else:
+			weapons.append(wid)
+			cur = weapons.size() - 1
+		var w: Dictionary = DB.WEAPONS[wid]
+		var n := mini(int(w.mag), int(reserve.get(w.ammo, 0)))
+		mags[wid] = n
+		reserve[w.ammo] = int(reserve.get(w.ammo, 0)) - n
+		reload_t = 0.0
+		fire_cd = 0.3
+	Sfx.play("switch", -4.0)
+	raid.notify("%s 장착!" % DB.ITEMS[id].name, DB.C_LEGEND)
+	weapon_changed.emit()
+	return true
+
+func _stow(item_id: String) -> void:
+	if not raid.bag.try_add(item_id):
+		raid.drop_item_on_ground(item_id)
 
 func add_ammo(kind: String, n: int) -> void:
 	reserve[kind] = int(reserve.get(kind, 0)) + n

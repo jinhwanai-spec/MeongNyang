@@ -103,7 +103,7 @@ func _npc3d(tp: String, pos: Vector3, yaw: float) -> Node3D:
 	var m := EnemyModel.load_model(tp, true)
 	m.position = pos
 	m.rotation.y = yaw
-	m.scale = Vector3.ONE * float(EnemyModel.HEIGHT.get(tp, 1.2)) * 0.95
+	m.scale *= 0.95
 	add_child(m)
 	return m
 

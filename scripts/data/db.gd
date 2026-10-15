@@ -55,6 +55,37 @@ const ITEMS := {
 	"ammo_pistol": {"name": "권총탄", "w": 1, "h": 1, "r": 0, "v": 3, "cat": "ammo", "ammo": "pistol", "amount": 12, "desc": "권총탄 12발."},
 	"ammo_shell": {"name": "산탄", "w": 1, "h": 1, "r": 0, "v": 8, "cat": "ammo", "ammo": "shell", "amount": 6, "desc": "산탄 6발."},
 	"ammo_bolt": {"name": "석궁 화살", "w": 1, "h": 1, "r": 0, "v": 10, "cat": "ammo", "ammo": "bolt", "amount": 4, "desc": "석궁 화살 4발."},
+	"ammo_rifle": {"name": "소총탄", "w": 1, "h": 1, "r": 1, "v": 4, "cat": "ammo", "ammo": "rifle", "amount": 20, "desc": "소총탄 20발."},
+	"w_pistol": {"name": "멍멍 권총", "w": 2, "h": 1, "r": 0, "v": 66, "cat": "weapon", "weapon": "pistol", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_shotgun": {"name": "펌프 산탄총", "w": 4, "h": 1, "r": 1, "v": 209, "cat": "weapon", "weapon": "shotgun", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_crossbow": {"name": "깡통 석궁", "w": 3, "h": 1, "r": 2, "v": 286, "cat": "weapon", "weapon": "crossbow", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_revolver": {"name": "냥펀치 리볼버", "w": 2, "h": 1, "r": 1, "v": 121, "cat": "weapon", "weapon": "revolver", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_machine_pistol": {"name": "따발 기관권총", "w": 2, "h": 1, "r": 1, "v": 143, "cat": "weapon", "weapon": "machine_pistol", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_derringer": {"name": "주머니 데린저", "w": 1, "h": 1, "r": 1, "v": 82, "cat": "weapon", "weapon": "derringer", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_sawed_off": {"name": "짤뚝 산탄총", "w": 2, "h": 1, "r": 1, "v": 165, "cat": "weapon", "weapon": "sawed_off", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_nail_gun": {"name": "공구함 못총", "w": 2, "h": 1, "r": 1, "v": 132, "cat": "weapon", "weapon": "nail_gun", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_smg": {"name": "꼬리흔들 기관단총", "w": 3, "h": 1, "r": 2, "v": 231, "cat": "weapon", "weapon": "smg", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_assault_rifle": {"name": "돌격소총", "w": 4, "h": 1, "r": 2, "v": 341, "cat": "weapon", "weapon": "assault_rifle", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_carbine": {"name": "카빈 소총", "w": 4, "h": 1, "r": 1, "v": 264, "cat": "weapon", "weapon": "carbine", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_battle_rifle": {"name": "전투소총", "w": 4, "h": 1, "r": 3, "v": 385, "cat": "weapon", "weapon": "battle_rifle", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_hunting_rifle": {"name": "사냥용 소총", "w": 4, "h": 1, "r": 2, "v": 308, "cat": "weapon", "weapon": "hunting_rifle", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_sniper": {"name": "저격소총", "w": 5, "h": 1, "r": 4, "v": 605, "cat": "weapon", "weapon": "sniper", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_dmr": {"name": "지정사수 소총", "w": 4, "h": 1, "r": 3, "v": 467, "cat": "weapon", "weapon": "dmr", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_lmg": {"name": "경기관총", "w": 4, "h": 1, "r": 3, "v": 539, "cat": "weapon", "weapon": "lmg", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_double_barrel": {"name": "쌍열 산탄총", "w": 4, "h": 1, "r": 1, "v": 231, "cat": "weapon", "weapon": "double_barrel", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_auto_shotgun": {"name": "자동 산탄총", "w": 4, "h": 1, "r": 3, "v": 495, "cat": "weapon", "weapon": "auto_shotgun", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_compound_bow": {"name": "컴파운드 활", "w": 3, "h": 1, "r": 2, "v": 253, "cat": "weapon", "weapon": "compound_bow", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_harpoon_gun": {"name": "작살총", "w": 4, "h": 1, "r": 3, "v": 352, "cat": "weapon", "weapon": "harpoon_gun", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_bat": {"name": "쇠파이프 배트", "w": 3, "h": 1, "r": 0, "v": 44, "cat": "weapon", "weapon": "bat", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_knife": {"name": "전투 나이프", "w": 2, "h": 1, "r": 0, "v": 38, "cat": "weapon", "weapon": "knife", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_hammer": {"name": "망치", "w": 2, "h": 1, "r": 0, "v": 49, "cat": "weapon", "weapon": "hammer", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_machete": {"name": "마체테", "w": 3, "h": 1, "r": 1, "v": 88, "cat": "weapon", "weapon": "machete", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_katana": {"name": "카타나", "w": 4, "h": 1, "r": 3, "v": 264, "cat": "weapon", "weapon": "katana", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_crowbar": {"name": "빠루", "w": 3, "h": 1, "r": 0, "v": 55, "cat": "weapon", "weapon": "crowbar", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_fire_axe": {"name": "소방 도끼", "w": 4, "h": 1, "r": 2, "v": 143, "cat": "weapon", "weapon": "fire_axe", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_spear": {"name": "죽창", "w": 5, "h": 1, "r": 1, "v": 99, "cat": "weapon", "weapon": "spear", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_frying_pan": {"name": "프라이팬", "w": 2, "h": 1, "r": 0, "v": 33, "cat": "weapon", "weapon": "frying_pan", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
+	"w_sledgehammer": {"name": "오함마", "w": 4, "h": 1, "r": 3, "v": 231, "cat": "weapon", "weapon": "sledgehammer", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
 }
 
 # ── 햄스터 용병 8명 (시나리오·캐릭터 설계서) ─────────
@@ -95,9 +126,112 @@ const WEAPONS := {
 	"crossbow": {"name": "깡통 석궁", "slot": "primary", "ammo": "bolt", "dmg": 62.0, "pellets": 1, "rate": 0.3, "mag": 1, "reload": 0.95,
 		"spread": 0.6, "speed": 1250.0, "range": 900.0, "noise": 90.0, "recoil": 3.0, "kick": 120.0, "auto": false, "v": 520, "r": 2,
 		"pierce": 1, "recover": true, "desc": "은신처 작업대에서 제작. 거의 소리가 나지 않고 화살을 회수할 수 있다."},
+	"revolver": {"name": "냥펀치 리볼버", "slot": "sidearm", "ammo": "pistol", "dmg": 32.0, "pellets": 1, "rate": 0.42, "mag": 6, "reload": 1.6,
+		"spread": 2.0, "speed": 1050.0, "range": 680.0, "noise": 620.0, "recoil": 8, "kick": 110.0, "auto": false, "v": 220, "r": 1,
+		"desc": "한 방이 묵직한 6연발 권총."},
+	"machine_pistol": {"name": "따발 기관권총", "slot": "sidearm", "ammo": "pistol", "dmg": 10.0, "pellets": 1, "rate": 0.075, "mag": 20, "reload": 1.4,
+		"spread": 9, "speed": 900.0, "range": 480.0, "noise": 560.0, "recoil": 2.5, "kick": 30.0, "auto": true, "v": 260, "r": 1,
+		"desc": "권총탄을 무섭게 뿌린다. 탄 소모가 크다."},
+	"derringer": {"name": "주머니 데린저", "slot": "sidearm", "ammo": "pistol", "dmg": 30.0, "pellets": 1, "rate": 0.22, "mag": 2, "reload": 1.3,
+		"spread": 3, "speed": 900.0, "range": 420.0, "noise": 380.0, "recoil": 6, "kick": 90.0, "auto": false, "v": 150, "r": 1,
+		"desc": "두 발짜리 비상용 권총. 작고 조용하다."},
+	"sawed_off": {"name": "짤뚝 산탄총", "slot": "sidearm", "ammo": "shell", "dmg": 9.0, "pellets": 7, "rate": 0.3, "mag": 2, "reload": 1.8,
+		"spread": 32, "speed": 760.0, "range": 240.0, "noise": 760.0, "recoil": 14, "kick": 190.0, "auto": false, "v": 300, "r": 1,
+		"desc": "짧은 쌍열 산탄총. 코앞에서는 최강."},
+	"nail_gun": {"name": "공구함 못총", "slot": "sidearm", "ammo": "pistol", "dmg": 13.0, "pellets": 1, "rate": 0.14, "mag": 25, "reload": 1.8,
+		"spread": 5, "speed": 820.0, "range": 420.0, "noise": 170.0, "recoil": 2, "kick": 35.0, "auto": true, "v": 240, "r": 1,
+		"desc": "권총탄을 못처럼 쏜다. 아주 조용하다."},
+	"smg": {"name": "꼬리흔들 기관단총", "slot": "primary", "ammo": "pistol", "dmg": 12.0, "pellets": 1, "rate": 0.075, "mag": 30, "reload": 1.7,
+		"spread": 7, "speed": 950.0, "range": 520.0, "noise": 600.0, "recoil": 2.5, "kick": 35.0, "auto": true, "v": 420, "r": 2,
+		"desc": "권총탄을 쓰는 연사 무기. 근거리 제압용."},
+	"assault_rifle": {"name": "돌격소총", "slot": "primary", "ammo": "rifle", "dmg": 20.0, "pellets": 1, "rate": 0.11, "mag": 30, "reload": 2.0,
+		"spread": 4.5, "speed": 1150.0, "range": 760.0, "noise": 820.0, "recoil": 4, "kick": 55.0, "auto": true, "v": 620, "r": 2,
+		"desc": "만능 연사 소총."},
+	"carbine": {"name": "카빈 소총", "slot": "primary", "ammo": "rifle", "dmg": 24.0, "pellets": 1, "rate": 0.17, "mag": 20, "reload": 1.8,
+		"spread": 3, "speed": 1150.0, "range": 780.0, "noise": 780.0, "recoil": 4.5, "kick": 65.0, "auto": false, "v": 480, "r": 1,
+		"desc": "가볍고 다루기 쉬운 반자동 소총."},
+	"battle_rifle": {"name": "전투소총", "slot": "primary", "ammo": "rifle", "dmg": 34.0, "pellets": 1, "rate": 0.22, "mag": 20, "reload": 2.2,
+		"spread": 3.5, "speed": 1200.0, "range": 820.0, "noise": 880.0, "recoil": 7, "kick": 90.0, "auto": false, "v": 700, "r": 3,
+		"desc": "한 발 한 발이 강한 반자동 소총."},
+	"hunting_rifle": {"name": "사냥용 소총", "slot": "primary", "ammo": "rifle", "dmg": 62.0, "pellets": 1, "rate": 0.95, "mag": 5, "reload": 2.4,
+		"spread": 1, "speed": 1350.0, "range": 980.0, "noise": 880.0, "recoil": 10, "kick": 160.0, "auto": false, "v": 560, "r": 2, "pierce": 1,
+		"desc": "볼트액션. 한 발에 고양이를 눕힌다."},
+	"sniper": {"name": "저격소총", "slot": "primary", "ammo": "rifle", "dmg": 95.0, "pellets": 1, "rate": 1.35, "mag": 5, "reload": 2.8,
+		"spread": 0.4, "speed": 1600.0, "range": 1150.0, "noise": 980.0, "recoil": 14, "kick": 220.0, "auto": false, "v": 1100, "r": 4, "pierce": 2,
+		"desc": "멀리서 한 방. 총성이 크다."},
+	"dmr": {"name": "지정사수 소총", "slot": "primary", "ammo": "rifle", "dmg": 46.0, "pellets": 1, "rate": 0.36, "mag": 10, "reload": 2.3,
+		"spread": 1.5, "speed": 1400.0, "range": 950.0, "noise": 860.0, "recoil": 7, "kick": 110.0, "auto": false, "v": 850, "r": 3,
+		"desc": "정확하고 빠른 중거리 소총."},
+	"lmg": {"name": "경기관총", "slot": "primary", "ammo": "rifle", "dmg": 18.0, "pellets": 1, "rate": 0.085, "mag": 60, "reload": 3.6,
+		"spread": 7, "speed": 1150.0, "range": 760.0, "noise": 920.0, "recoil": 4, "kick": 45.0, "auto": true, "v": 980, "r": 3,
+		"desc": "탄띠 60발. 재장전이 길다."},
+	"double_barrel": {"name": "쌍열 산탄총", "slot": "primary", "ammo": "shell", "dmg": 11.0, "pellets": 9, "rate": 0.22, "mag": 2, "reload": 2.0,
+		"spread": 22, "speed": 800.0, "range": 320.0, "noise": 800.0, "recoil": 14, "kick": 180.0, "auto": false, "v": 420, "r": 1,
+		"desc": "두 발을 연달아 쏘는 고전 산탄총."},
+	"auto_shotgun": {"name": "자동 산탄총", "slot": "primary", "ammo": "shell", "dmg": 9.0, "pellets": 7, "rate": 0.28, "mag": 8, "reload": 2.6,
+		"spread": 26, "speed": 820.0, "range": 320.0, "noise": 820.0, "recoil": 11, "kick": 150.0, "auto": true, "v": 900, "r": 3,
+		"desc": "산탄을 연사한다. 실내 정리용."},
+	"compound_bow": {"name": "컴파운드 활", "slot": "primary", "ammo": "bolt", "dmg": 48.0, "pellets": 1, "rate": 0.6, "mag": 1, "reload": 0.75,
+		"spread": 0.8, "speed": 1150.0, "range": 850.0, "noise": 70.0, "recoil": 2, "kick": 100.0, "auto": false, "v": 460, "r": 2, "recover": true,
+		"desc": "거의 소리 없는 활. 화살을 회수할 수 있다."},
+	"harpoon_gun": {"name": "작살총", "slot": "primary", "ammo": "bolt", "dmg": 75.0, "pellets": 1, "rate": 0.5, "mag": 1, "reload": 1.4,
+		"spread": 0.6, "speed": 1000.0, "range": 700.0, "noise": 150.0, "recoil": 6, "kick": 260.0, "auto": false, "v": 640, "r": 3, "pierce": 2, "recover": true,
+		"desc": "꿰뚫는 작살. 화살탄을 쓴다."},
 }
 
 const MELEE := {"name": "쇠파이프 배트", "dmg": 34.0, "range": 70.0, "arc": 110.0, "cooldown": 0.5, "noise": 110.0, "kick": 260.0}
+
+# ── 근접 무기 10종 (V) ─────────────────────────────
+const MELEES := {
+	"bat": {"name": "쇠파이프 배트", "dmg": 34.0, "range": 70.0, "arc": 110.0, "cooldown": 0.5, "noise": 110.0, "kick": 260.0, "v": 80, "r": 0, "desc": "기본 근접 무기. 언제나 챙길 수 있다."},
+	"knife": {"name": "전투 나이프", "dmg": 24.0, "range": 52.0, "arc": 80.0, "cooldown": 0.26, "noise": 60.0, "kick": 120.0, "v": 70, "r": 0, "desc": "빠르고 조용하다. 암습에 좋다."},
+	"hammer": {"name": "망치", "dmg": 42.0, "range": 62.0, "arc": 90.0, "cooldown": 0.62, "noise": 120.0, "kick": 300.0, "v": 90, "r": 0, "desc": "묵직하게 내려친다."},
+	"machete": {"name": "마체테", "dmg": 36.0, "range": 74.0, "arc": 120.0, "cooldown": 0.42, "noise": 90.0, "kick": 220.0, "v": 160, "r": 1, "desc": "넓게 베는 정글도."},
+	"katana": {"name": "카타나", "dmg": 46.0, "range": 88.0, "arc": 130.0, "cooldown": 0.46, "noise": 90.0, "kick": 240.0, "v": 480, "r": 3, "desc": "길고 날카로운 칼."},
+	"crowbar": {"name": "빠루", "dmg": 34.0, "range": 68.0, "arc": 100.0, "cooldown": 0.48, "noise": 110.0, "kick": 280.0, "v": 100, "r": 0, "desc": "문도 열고 고양이도 친다."},
+	"fire_axe": {"name": "소방 도끼", "dmg": 58.0, "range": 80.0, "arc": 110.0, "cooldown": 0.8, "noise": 140.0, "kick": 340.0, "v": 260, "r": 2, "desc": "한 방이 크지만 느리다."},
+	"spear": {"name": "죽창", "dmg": 40.0, "range": 115.0, "arc": 40.0, "cooldown": 0.55, "noise": 90.0, "kick": 260.0, "v": 180, "r": 1, "desc": "멀리 찌른다. 좁은 각도."},
+	"frying_pan": {"name": "프라이팬", "dmg": 28.0, "range": 60.0, "arc": 120.0, "cooldown": 0.5, "noise": 180.0, "kick": 420.0, "v": 60, "r": 0, "desc": "맞으면 멀리 날아간다. 소리가 크다."},
+	"sledgehammer": {"name": "오함마", "dmg": 75.0, "range": 82.0, "arc": 140.0, "cooldown": 1.15, "noise": 180.0, "kick": 460.0, "v": 420, "r": 3, "desc": "아주 느리지만 무엇이든 부순다."},
+}
+
+## 고양이 종류별로 들고 다니는 무기 (죽으면 그 무기 + 맞는 탄약을 떨어뜨린다)
+const ENEMY_WEAPONS := {
+	"hyena": ["knife", "machete", "bat", "crowbar", "katana", "spear", "pistol", "revolver", "machine_pistol", "derringer", "nail_gun", "sawed_off", "smg"],
+	"bulldog": ["hammer", "sledgehammer", "fire_axe", "frying_pan", "shotgun", "double_barrel", "auto_shotgun", "lmg"],
+	"cat": ["sniper", "hunting_rifle", "dmr", "carbine", "battle_rifle", "assault_rifle", "crossbow", "compound_bow", "harpoon_gun"],
+}
+
+## 총소리: 무기 계열별
+static func shot_sfx(wid: String) -> String:
+	match wid:
+		"pistol", "shotgun", "crossbow":
+			return "shot_" + wid
+		"sniper", "hunting_rifle", "dmr", "battle_rifle":
+			return "shot_sniper"
+		"assault_rifle", "carbine", "lmg":
+			return "shot_rifle"
+		"smg", "machine_pistol", "nail_gun":
+			return "shot_smg"
+		"revolver", "derringer":
+			return "shot_revolver"
+	var w: Dictionary = WEAPONS.get(wid, {})
+	match str(w.get("ammo", "pistol")):
+		"shell":
+			return "shot_shotgun"
+		"bolt":
+			return "shot_crossbow"
+		"rifle":
+			return "shot_rifle"
+	return "shot_pistol"
+
+static func is_melee(wid: String) -> bool:
+	return MELEES.has(wid)
+
+static func weapon_data(wid: String) -> Dictionary:
+	if WEAPONS.has(wid):
+		return WEAPONS[wid]
+	return MELEES.get(wid, {})
 
 # ── 적 ───────────────────────────────────────────────
 # tier: 1=약탈자, 2=정규 적 / eye: 눈 색 = 위협도
@@ -153,6 +287,10 @@ const SHOP := [
 	{"id": "sunflower_seed", "kind": "item", "item": "sunflower_seed", "amount": 3, "price": 40, "name": "해바라기씨 ×3"},
 	{"id": "nut_mix", "kind": "item", "item": "nut_mix", "amount": 1, "price": 55, "name": "견과류 한 줌"},
 	{"id": "shotgun", "kind": "weapon", "weapon": "shotgun", "price": 420, "name": "펌프 산탄총"},
+	{"id": "ammo_rifle", "kind": "ammo", "ammo": "rifle", "amount": 20, "price": 60, "name": "소총탄 20발"},
+	{"id": "revolver", "kind": "weapon", "weapon": "revolver", "price": 320, "name": "냥펀치 리볼버"},
+	{"id": "smg", "kind": "weapon", "weapon": "smg", "price": 560, "name": "꼬리흔들 기관단총"},
+	{"id": "carbine", "kind": "weapon", "weapon": "carbine", "price": 640, "name": "카빈 소총"},
 ]
 
 const RAID_TIME := 14.0 * 60.0

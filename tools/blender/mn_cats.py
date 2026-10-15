@@ -38,7 +38,7 @@ def _cam(sc):
         cam = bpy.data.objects.new("PV_cam", bpy.data.cameras.new("PV_cam"))
         sc.collection.objects.link(cam)
     for nm, rot, en in [("PV_key", (50, 0, 30), 3.0), ("PV_fill", (60, 0, -140), 1.2)]:
-        l = sc.objects.get(nm)
+        l = next((o for o in sc.objects if o.name.startswith(nm)), None)
         if not l:
             l = bpy.data.objects.new(nm, bpy.data.lights.new(nm, "SUN"))
             sc.collection.objects.link(l)
@@ -456,3 +456,120 @@ def reanim(kind):
     ob = [o for o in sc.objects if o.type == "MESH"][0]
     make_anims(arm)
     return export(sc, arm, ob, kind)
+
+# ── 무기 (Meshy) ──
+WSRC = os.path.join(os.path.expanduser("~"), "Documents", "멍냥서바이벌_에셋", "1_Meshy_원본", "weapons")
+
+def weapon_load(wid):
+    sc = bpy.data.scenes.get("WPN") or bpy.data.scenes.new("WPN")
+    bpy.context.window.scene = sc
+    clear(sc)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(WSRC, wid + ".glb"))
+    ms = [o for o in sc.objects if o.type == "MESH"]
+    return sc, ms
+
+def weapon_info(wid):
+    sc, ms = weapon_load(wid)
+    out = []
+    for o in ms:
+        mn, mx = world_bbox(o)
+        out.append((o.name, len(o.data.polygons), [round(v, 3) for v in mn], [round(v, 3) for v in mx]))
+    return sc, out
+
+# 무기: (게임 속 길이[타일], 손잡이 위치 = 뒤끝에서 길이 비율)
+WSPEC = {
+    "pistol": (0.34, 0.22), "revolver": (0.42, 0.2), "machine_pistol": (0.4, 0.3), "derringer": (0.24, 0.25),
+    "sawed_off": (0.55, 0.28), "nail_gun": (0.42, 0.35), "smg": (0.6, 0.38), "assault_rifle": (0.82, 0.4),
+    "carbine": (0.78, 0.38), "battle_rifle": (0.92, 0.38), "hunting_rifle": (0.95, 0.36), "sniper": (1.05, 0.34),
+    "dmr": (0.95, 0.36), "lmg": (0.95, 0.4), "shotgun": (0.85, 0.3), "double_barrel": (0.88, 0.3),
+    "auto_shotgun": (0.8, 0.38), "crossbow": (0.7, 0.3), "compound_bow": (0.75, 0.5), "harpoon_gun": (0.85, 0.3),
+    "bat": (0.68, 0.12), "knife": (0.32, 0.18), "hammer": (0.42, 0.12), "machete": (0.6, 0.14), "katana": (0.85, 0.12),
+    "crowbar": (0.6, 0.15), "fire_axe": (0.8, 0.12), "spear": (1.15, 0.3), "frying_pan": (0.5, 0.15), "sledgehammer": (0.85, 0.12),
+}
+WOUT = os.path.join(PROJ, "assets", "models", "weapons")
+ICON = os.path.join(PROJ, "assets", "sprites", "icons")
+
+def weapon_icon_only(wid):
+    sc = bpy.data.scenes.get("WPN") or bpy.data.scenes.new("WPN")
+    bpy.context.window.scene = sc
+    clear(sc)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(WOUT, wid + ".glb"))
+    ob = [o for o in sc.objects if o.type == "MESH"][0]
+    weapon_icon(sc, ob, wid)
+
+def weapon_process(wid, flip=False, icon=True):
+    """길이·방향 맞추기: 앞(총구·날 끝) = -Y, 위 = +Z, 손잡이 = 원점 → GLB + 아이콘"""
+    from mathutils import Matrix
+    sc, ms = weapon_load(wid)
+    if len(ms) > 1:
+        for o in sc.objects:
+            o.select_set(o in ms)
+        bpy.context.view_layer.objects.active = ms[0]
+        with bpy.context.temp_override(active_object=ms[0], selected_editable_objects=ms, selected_objects=ms):
+            bpy.ops.object.join()
+    ob = [o for o in sc.objects if o.type == "MESH"][0]
+    ob.data.transform(ob.matrix_world)
+    ob.parent = None
+    ob.matrix_world = Matrix.Identity(4)
+    for o in [o for o in sc.objects if o != ob]:
+        bpy.data.objects.remove(o, do_unlink=True)
+    mn, mx = world_bbox(ob)
+    ext = mx - mn
+    # 가장 긴 축을 X로
+    if ext.y > ext.x and ext.y >= ext.z:
+        ob.data.transform(Matrix.Rotation(math.radians(-90), 4, "Z"))
+    elif ext.z > ext.x and ext.z > ext.y:
+        ob.data.transform(Matrix.Rotation(math.radians(90), 4, "Y"))
+    # 총구가 -X (그림에서 오른쪽을 향함) → -Y 로
+    ob.data.transform(Matrix.Rotation(math.radians(90 if not flip else -90), 4, "Z"))
+    mn, mx = world_bbox(ob)
+    length, gf = WSPEC[wid]
+    s = length / max(1e-6, (mx.y - mn.y))
+    gy = mx.y - (mx.y - mn.y) * gf            # 뒤끝(+Y)에서 gf 만큼 앞
+    gz = (mn.z + mx.z) * 0.5
+    ob.data.transform(Matrix.Scale(s, 4) @ Matrix.Translation((-(mn.x + mx.x) * 0.5, -gy, -gz)))
+    ob.data.update()
+    ob.name = "w_" + wid
+    for m in ob.data.materials:
+        if m and m.node_tree:
+            for n in m.node_tree.nodes:
+                if n.type == "TEX_IMAGE" and n.image and n.image.size[0] > 512:
+                    n.image.scale(512, 512)
+    os.makedirs(WOUT, exist_ok=True)
+    for o in sc.objects:
+        o.select_set(False)
+    ob.select_set(True)
+    bpy.context.view_layer.objects.active = ob
+    out = os.path.join(WOUT, wid + ".glb")
+    bpy.ops.export_scene.gltf(filepath=out, export_format="GLB", use_selection=True, export_yup=True,
+                              export_animations=False, export_image_format="JPEG", export_jpeg_quality=88,
+                              export_cameras=False, export_lights=False, use_active_scene=True)
+    if icon:
+        weapon_icon(sc, ob, wid)
+    return out, len(ob.data.polygons)
+
+def weapon_icon(sc, ob, wid, res=(384, 192)):
+    mn, mx = world_bbox(ob)
+    c = (mn + mx) * 0.5
+    cam = _cam(sc)
+    cam.data.type = "ORTHO"
+    L = max(mx.y - mn.y, (mx.z - mn.z) * 2.0) * 1.08
+    cam.data.ortho_scale = L
+    cam.location = Vector((c.x - 5.0, c.y, c.z))
+    cam.rotation_mode = "XYZ"
+    cam.rotation_euler = (math.radians(90), 0, math.radians(-90))
+    sc.camera = cam
+    eng = [x.identifier for x in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items]
+    sc.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in eng else "BLENDER_EEVEE"
+    sc.render.resolution_x, sc.render.resolution_y = res
+    sc.render.film_transparent = True
+    if not sc.world:
+        sc.world = bpy.data.worlds.get("pvw") or bpy.data.worlds.new("pvw")
+    sc.world.color = (0.55, 0.55, 0.6)
+    k = [o for o in sc.objects if o.name.startswith("PV_key")][0]
+    k.rotation_euler = (math.radians(40), 0, math.radians(-110))
+    k.data.energy = 3.5
+    os.makedirs(ICON, exist_ok=True)
+    sc.render.filepath = os.path.join(ICON, "w_" + wid + ".png")
+    bpy.ops.render.render(write_still=True, scene=sc.name)
+    sc.render.film_transparent = False

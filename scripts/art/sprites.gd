@@ -202,6 +202,10 @@ static func draw_fit(ci: CanvasItem, tex: Texture2D, r: Rect2, mod: Color = Colo
 
 # ── 아이템 아이콘 ────────────────────────────────────
 static func item_tex(id: String) -> Texture2D:
+	if id.begins_with("w_") or id == "ammo_rifle":
+		var t := icon_tex(id)
+		if t:
+			return t
 	if not SpriteData.DATA.items.has(id):
 		return null
 	return _load(BASE + "items/%s.png" % id)

@@ -195,10 +195,11 @@ func _build_prep() -> void:
 
 	var w := _card(prep_box)
 	w.add_child(UITheme.label("주무기", 17, DB.C_TEXT))
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	var row := HFlowContainer.new()
+	row.add_theme_constant_override("h_separation", 8)
+	row.add_theme_constant_override("v_separation", 6)
 	w.add_child(row)
-	for opt in ["", "shotgun", "crossbow"]:
+	for opt in _owned_weapons("primary"):
 		var have := GameState.weapon_count(opt) if opt != "" else 1
 		if opt != "" and have <= 0:
 			continue
@@ -210,10 +211,11 @@ func _build_prep() -> void:
 			refresh())
 		row.add_child(b)
 	w.add_child(UITheme.label("보조무기", 17, DB.C_TEXT))
-	var row2 := HBoxContainer.new()
-	row2.add_theme_constant_override("separation", 8)
+	var row2 := HFlowContainer.new()
+	row2.add_theme_constant_override("h_separation", 8)
+	row2.add_theme_constant_override("v_separation", 6)
 	w.add_child(row2)
-	for opt in ["", "pistol"]:
+	for opt in _owned_weapons("sidearm"):
 		if opt != "" and GameState.weapon_count(opt) <= 0:
 			continue
 		var nm2: String = "없음" if opt == "" else "%s ×%d" % [DB.WEAPONS[opt].name, GameState.weapon_count(opt)]
@@ -223,6 +225,22 @@ func _build_prep() -> void:
 			GameState.save_game()
 			refresh())
 		row2.add_child(b2)
+	w.add_child(UITheme.label("근접무기 (V)", 17, DB.C_TEXT))
+	var row3 := HFlowContainer.new()
+	row3.add_theme_constant_override("h_separation", 8)
+	row3.add_theme_constant_override("v_separation", 6)
+	w.add_child(row3)
+	for mid in DB.MELEES:
+		if mid != "bat" and GameState.weapon_count(mid) <= 0:
+			continue
+		var nm4: String = DB.MELEES[mid].name if mid == "bat" else "%s ×%d" % [DB.MELEES[mid].name, GameState.weapon_count(mid)]
+		var b3 := UITheme.button(nm4, 15, str(lo.get("melee", "bat")) == mid)
+		b3.tooltip_text = "피해 %d · 사거리 %d · %s" % [int(DB.MELEES[mid].dmg), int(DB.MELEES[mid].range), DB.MELEES[mid].desc]
+		b3.pressed.connect(func():
+			GameState.loadout.melee = mid
+			GameState.save_game()
+			refresh())
+		row3.add_child(b3)
 	var mrow := HBoxContainer.new()
 	mrow.add_theme_constant_override("separation", 8)
 	w.add_child(mrow)
@@ -295,6 +313,14 @@ func _build_prep() -> void:
 	var keys := UITheme.label("WASD 이동 · 마우스 조준/사격 · R 재장전 · Space 구르기 · V 근접 · E 뒤지기 · Tab 배낭 · Q 회복 · G 간식 · F 스킬 · C 웅크리기(풀숲 은신) · M 지도", 13, DB.C_MUTED)
 	keys.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prep_box.add_child(keys)
+
+## 보유한 무기 목록 (슬롯별, "" = 없음)
+func _owned_weapons(slot: String) -> Array:
+	var out := [""]
+	for wid in DB.WEAPONS:
+		if DB.WEAPONS[wid].slot == slot and GameState.weapon_count(wid) > 0:
+			out.append(wid)
+	return out
 
 # ── 작업대 ───────────────────────────────────────────
 func _build_craft() -> void:
@@ -506,8 +532,9 @@ func _buy(s: Dictionary) -> void:
 		"item": GameState.add_item(s.item, int(s.amount))
 		"weapon":
 			GameState.weapons[s.weapon] = GameState.weapon_count(s.weapon) + 1
-			if GameState.loadout.primary == "":
-				GameState.loadout.primary = s.weapon
+			var wslot: String = str(DB.WEAPONS[s.weapon].slot) if DB.WEAPONS.has(s.weapon) else "melee"
+			if wslot != "melee" and str(GameState.loadout.get(wslot, "")) == "":
+				GameState.loadout[wslot] = s.weapon
 	GameState.save_game()
 	Sfx.play("coin", -2.0)
 	show_toast("%s 구매!" % s.name)

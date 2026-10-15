@@ -126,7 +126,9 @@ func _on_input(event: InputEvent) -> void:
 				var idx2 := bag.index_at_cell(cell2.x, cell2.y)
 				if idx2 >= 0:
 					var id: String = bag.entries[idx2].id
-					if DB.ITEMS[id].has("use"):
+					if DB.ITEMS[id].cat == "weapon":
+						raid.player.equip_from_bag(idx2)
+					elif DB.ITEMS[id].has("use"):
 						if raid.player.use_item(id):
 							raid.notify("%s 사용 중..." % DB.ITEMS[id].name, DB.C_TEXT)
 					else:
