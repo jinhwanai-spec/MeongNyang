@@ -198,6 +198,8 @@ func _env() -> void:
 
 ## 날씨: 밤(달빛 + 손전등) · 안개
 var flashlight: SpotLight3D
+var _lamps: Array = []      # [OmniLight3D, 원래 세기]
+var _flicker_t := 3.0
 func _apply_weather(e: Environment, moon: DirectionalLight3D) -> void:
 	match Raid.weather_now:
 		"night":
@@ -223,6 +225,24 @@ func _apply_weather(e: Environment, moon: DirectionalLight3D) -> void:
 			e.fog_sky_affect = 0.0
 			moon.light_energy *= 0.7
 			e.ambient_light_energy *= 1.1
+
+## 실내(지하철역): 형광등이 가끔 지지직 깜빡인다
+func _update_flicker(delta: float) -> void:
+	if not Regions.cur().get("indoor", false) or _lamps.is_empty():
+		return
+	_flicker_t -= delta
+	if _flicker_t > 0.0:
+		return
+	_flicker_t = randf_range(2.5, 6.0)
+	var lp: Array = _lamps.pick_random()
+	var o: OmniLight3D = lp[0]
+	var e0: float = lp[1]
+	var tw := o.create_tween()
+	for i in randi_range(3, 6):
+		tw.tween_property(o, "light_energy", e0 * randf_range(0.0, 0.3), 0.05)
+		tw.tween_property(o, "light_energy", e0, 0.06)
+	if raid.player and Vector2(o.position.x, o.position.z).distance_to(raid.player.global_position / T) < 7.0:
+		Sfx.play("tick", -14.0, 0.3)
 
 func _update_flashlight() -> void:
 	if flashlight == null or raid.player == null:
@@ -262,6 +282,7 @@ func _lights() -> void:
 		o.light_energy = float(l[3]) * (1.7 if Raid.weather_now == "night" else 1.0)
 		o.omni_attenuation = 1.4
 		add_child(o)
+		_lamps.append([o, o.light_energy])
 
 # ── 바닥 ─────────────────────────────────────────────
 func _floor() -> void:
@@ -636,6 +657,7 @@ func _process(delta: float) -> void:
 		return
 	_update_storm3d(delta)
 	_update_flashlight()
+	_update_flicker(delta)
 	# 카메라: 플레이어(부드럽게 보간한 위치) + 마우스 쪽으로 살짝 앞당김.
 	# 앞당김은 '화면 좌표'로 계산해서 카메라↔조준점이 서로 끌고 다니지 않게 한다.
 	var pp: Vector2 = _player_smooth()
