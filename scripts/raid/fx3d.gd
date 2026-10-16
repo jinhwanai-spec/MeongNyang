@@ -189,6 +189,53 @@ func kill(pos: Vector2, c: Color) -> void:
 	hitstop(0.06)
 
 ## 아주 짧게 시간을 멈칫 → 타격감 (협동 중엔 안 함)
+## 근접 무기 휘두르기: 조준 방향으로 부채꼴 궤적이 휙 그려지고 사라진다
+func slash(pos: Vector2, d: Vector2, reach_px: float, arc_deg: float, c: Color, heavy: bool = false) -> void:
+	var r := reach_px / T
+	var r0 := r * 0.6
+	var half := deg_to_rad(arc_deg) * 0.5
+	var seg := 14
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in seg:
+		var a0 := -half + 2.0 * half * float(i) / seg
+		var a1 := -half + 2.0 * half * float(i + 1) / seg
+		var k0 := float(i) / seg
+		var k1 := float(i + 1) / seg
+		var o0 := Vector3(cos(a0), 0, sin(a0))
+		var o1 := Vector3(cos(a1), 0, sin(a1))
+		var ca := Color(c, 0.05 + 0.8 * k0)
+		var cb := Color(c, 0.05 + 0.8 * k1)
+		var ci := Color(c, 0.0)
+		st.set_color(ci); st.add_vertex(o0 * r0)
+		st.set_color(ca); st.add_vertex(o0 * r)
+		st.set_color(cb); st.add_vertex(o1 * r)
+		st.set_color(ci); st.add_vertex(o0 * r0)
+		st.set_color(cb); st.add_vertex(o1 * r)
+		st.set_color(ci); st.add_vertex(o1 * r0)
+	var mesh := st.commit()
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.vertex_color_use_as_albedo = true
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = p3(pos, 0.45)
+	var ang := atan2(d.y, d.x)
+	mi.rotation.y = -ang + 0.6
+	mi.scale = Vector3(0.7, 1, 0.7)
+	add_child(mi)
+	var tw := mi.create_tween()
+	tw.set_ignore_time_scale(true)
+	tw.tween_property(mi, "rotation:y", -ang - 0.15, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(mi, "scale", Vector3(1.05, 1, 1.05) * (1.12 if heavy else 1.0), 0.1)
+	tw.tween_property(m, "albedo_color:a", 0.0, 0.14)
+	tw.tween_callback(mi.queue_free)
+
 func hitstop(dur: float, ts: float = 0.08) -> void:
 	if Net.active or dur <= 0.0:
 		return

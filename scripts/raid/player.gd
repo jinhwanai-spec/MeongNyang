@@ -465,6 +465,8 @@ func _melee() -> void:
 	Sfx.play("slash" if melee_id in ["knife", "machete", "katana", "spear"] else "swing", -4.0, 0.1)
 	raid.emit_noise(global_position, float(m.noise))
 	var origin := global_position + Vector2(0, -18)
+	if is_instance_valid(FX.fx3d):
+		FX.fx3d.slash(global_position, aim_dir, float(m.range), float(m.arc), Color(1.0, 0.95, 0.8) if not melee_id in ["fire_axe", "sledgehammer", "hammer"] else Color(1.0, 0.7, 0.4), float(m.dmg) >= 45.0)
 	var hit_any := false
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if e.dead:
