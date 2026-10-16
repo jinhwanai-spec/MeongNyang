@@ -34,7 +34,17 @@ func _swap(n: Node) -> void:
 	fade.color.a = 1.0
 	var tw := create_tween()
 	if n is Raid:
-		tw.tween_interval(1.2)   # 어두운 화면 뒤에서 3D 셰이더를 미리 굽는 동안
+		# 출격 카드: 어두운 화면 뒤에서 3D 셰이더를 미리 굽는 동안 이동 연출
+		var card := DeployCard.make(LevelData.region)
+		fade.get_parent().add_child(card)
+		if not Net.active:
+			get_tree().paused = true
+		tw.tween_interval(card.dur)
+		tw.tween_callback(func(): get_tree().paused = false)
+		tw.tween_property(card, "modulate:a", 0.0, 0.35)
+		tw.parallel().tween_property(fade, "color:a", 0.0, 0.35)
+		tw.tween_callback(card.queue_free)
+		return
 	tw.tween_property(fade, "color:a", 0.0, 0.35)
 
 func show_title() -> void:

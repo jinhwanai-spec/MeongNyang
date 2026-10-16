@@ -632,7 +632,8 @@ void fragment(){
 	vec3 n = normalize(vec3(h(p+vec2(e,0.0))-w, 4.0, h(p+vec2(0.0,e))-w));
 	NORMAL = (VIEW_MATRIX * vec4(n,0.0)).xyz;
 	vec3 c = mix(deep.rgb, shallow.rgb, 0.5+0.25*w);
-	float sparkle = pow(max(0.0, sin(p.x*7.0+TIME*3.0)*sin(p.y*6.0-TIME*2.5)), 24.0);
+	float s2 = sin(p.x*5.3+p.y*2.1+TIME*2.0)*sin(p.y*4.7-p.x*1.3-TIME*1.6)*sin((p.x-p.y)*3.7+TIME*0.9);
+	float sparkle = pow(max(0.0, s2), 6.0);
 	ALBEDO = c + vec3(sparkle*0.25);
 	ROUGHNESS = 0.22;
 	METALLIC = 0.0;
