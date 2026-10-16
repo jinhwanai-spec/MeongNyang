@@ -567,7 +567,33 @@ static func proc_prop(n: String) -> Node3D:
 		"flowerbed": return flowerbed()
 		"mailbox": return mailbox()
 		"picnic": return picnic_table()
+		"mousetrap": return mousetrap(false)
+		"mousetrap_sprung": return mousetrap(true)
 	return backpack()
+
+## 쥐덫 (햄스터 크기에 맞춘 큰 덫). sprung = 이미 튕긴 상태
+static func mousetrap(sprung: bool) -> Node3D:
+	var r := _root("mousetrap")
+	var wood := mat(Color("#C89A5B"), 0.8)
+	var metal := mat(Color("#B8BEC6"), 0.35, 0.85)
+	box(r, Vector3(0.56, 0.035, 0.3), Vector3(0, 0.018, 0), wood)
+	# 스프링 (가운데 원통)
+	cyl(r, 0.03, 0.03, 0.26, Vector3(0, 0.06, 0), metal, Vector3(PI * 0.5, 0, 0), 10)
+	# 튕기는 쇠막대 (ㄷ자): 열린 덫은 뒤로 젖혀져 있고, 튕기면 앞으로 내려친다
+	var bar := Node3D.new()
+	bar.position = Vector3(0, 0.06, 0)
+	bar.rotation.z = -0.15 if sprung else PI - 0.15
+	r.add_child(bar)
+	box(bar, Vector3(0.26, 0.012, 0.012), Vector3(0.13, 0, 0.12), metal)
+	box(bar, Vector3(0.26, 0.012, 0.012), Vector3(0.13, 0, -0.12), metal)
+	box(bar, Vector3(0.012, 0.012, 0.25), Vector3(0.26, 0, 0), metal)
+	# 미끼 치즈 + 걸쇠
+	box(r, Vector3(0.09, 0.012, 0.06), Vector3(0.14, 0.04, 0), metal)
+	if not sprung:
+		var cheese := mat(Color("#FFD34E"), 0.5, 0.0, 0.25)
+		box(r, Vector3(0.09, 0.06, 0.08), Vector3(0.15, 0.08, 0), cheese, Vector3(0, 0.4, 0))
+		box(r, Vector3(0.012, 0.012, 0.2), Vector3(-0.2, 0.05, 0), metal)
+	return r
 
 ## 방패 흑냥이의 진압 방패 (원점 = 방패 중심, 앞면 +Z)
 static func riot_shield() -> Node3D:

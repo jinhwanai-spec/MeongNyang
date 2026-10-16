@@ -62,6 +62,7 @@ var SPRITE := "hamster"
 var hid := "baragi"          # 선택한 햄스터 (DB.HAMSTERS)
 var hdata: Dictionary = {}
 var crouching := false
+var trap_t := 0.0             # 쥐덫에 걸려 다리가 묶인 시간
 var skill_cd := 0.0
 var buffs := {}              # 버프 이름 -> 남은 시간 (rally, carrot, nut, seed)
 var cloak_t := 0.0
@@ -712,6 +713,8 @@ func speed_mul() -> float:
 		m *= 1.0 - (lr - 0.5) * 0.5   # 최대 -25%
 	if crouching:
 		m *= 0.5
+	if trap_t > 0.0:
+		m *= 0.2
 	if buffs.has("carrot"):
 		m *= 1.25
 	if buffs.has("swift"):

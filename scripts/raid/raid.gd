@@ -290,6 +290,7 @@ func _spawn_entities() -> void:
 		sp.set_meta("prop_scale", float(d[3]))
 		world.add_child(sp)
 	_spawn_lost_bags()
+	_spawn_traps(a_cells + b_cells)
 	var rx: Dictionary = Regions.cur().exits
 	var ea := _make_exit(str(rx.A[0]), a_cells, 6.0)
 	ea.kind = str(rx.A[1])
@@ -346,6 +347,86 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 		spr.position = Vector2(0, -T * 0.5)
 		holder.add_child(spr)
 	world.add_child(holder)
+
+# ── 쥐덫: 실내 바닥 곳곳. 서서 밟으면 '탁!' (피해·발 묶임·큰 소리), 웅크려 다가가면 미끼 치즈만 쏙 ──
+var traps: Array = []   # [Node2D, 위치, 튕겼나]
+var _trap_hint := false
+
+func _spawn_traps(exit_cells: Array) -> void:
+	if Net.active:
+		return
+	var cand := []
+	for y in LevelData.height():
+		for x in LevelData.width():
+			var c := LevelData.code(x, y)
+			if c != "_" and c != "=":
+				continue
+			# 벽·상자 바로 옆은 피하고, 사방이 바닥인 칸만
+			var ok := true
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				var n := LevelData.code(x + d.x, y + d.y)
+				if n != "_" and n != "=":
+					ok = false
+			if not ok:
+				continue
+			var far := true
+			for ec in exit_cells:
+				if Vector2i(ec).distance_to(Vector2i(x, y)) < 4.0:
+					far = false
+			if far and player and player.global_position.distance_to(Vector2(x * T + T * 0.5, y * T + T * 0.5)) > T * 6:
+				cand.append(Vector2i(x, y))
+	cand.shuffle()
+	var n := mini(cand.size(), {"mart": 6, "dock": 5, "town": 8}.get(LevelData.region, 6))
+	var used := []
+	for c in cand:
+		if traps.size() >= n:
+			break
+		var near := false
+		for u in used:
+			if Vector2i(u).distance_to(c) < 5.0:
+				near = true
+		if near:
+			continue
+		used.append(c)
+		var pos := Vector2(c.x * T + T * 0.5, c.y * T + T * 0.6)
+		traps.append([_trap_node(pos, false), pos, false])
+
+func _trap_node(pos: Vector2, sprung: bool) -> Node2D:
+	var nd := Node2D.new()
+	nd.position = pos
+	nd.set_meta("prop3d", "proc:mousetrap_sprung" if sprung else "proc:mousetrap")
+	nd.set_meta("prop_off", Vector2.ZERO)
+	nd.set_meta("prop_scale", 1.5)
+	nd.set_meta("prop_rot", float((int(pos.x) * 7 + int(pos.y)) % 4) * 90.0)
+	world.add_child(nd)
+	return nd
+
+func _update_traps(delta: float) -> void:
+	if player.trap_t > 0.0:
+		player.trap_t -= delta
+	for tr in traps:
+		if tr[2]:
+			continue
+		var d: float = player.global_position.distance_to(tr[1])
+		if d < T * 2.2 and not _trap_hint:
+			_trap_hint = true
+			notify("쥐덫이다! 웅크려(Ctrl) 다가가면 미끼만 빼 올 수 있다", DB.C_LEGEND)
+		if d > 18.0 or player.dodge_t > 0.0:
+			continue
+		tr[2] = true
+		(tr[0] as Node2D).queue_free()
+		tr[0] = _trap_node(tr[1], true)
+		if player.crouching:
+			Sfx.play("pick", -4.0)
+			if bag.try_add("cheese"):
+				notify("쥐덫에서 치즈 미끼를 살짝 빼냈다", Color("#6CCB5F"))
+		else:
+			Sfx.play("slam", -2.0, 0.1)
+			shake(7.0)
+			player.take_damage(16.0, tr[1] + Vector2(0, -6))
+			player.trap_t = 1.2
+			emit_noise(tr[1], 320.0)
+			notify("탁! 쥐덫에 걸렸다 — 잠시 못 움직인다", DB.C_DANGER)
 
 ## 지난 원정에서 쓰러진 자리의 가방 (협동 중에는 없음)
 func _spawn_lost_bags() -> void:
@@ -664,14 +745,18 @@ func _physics_process(delta: float) -> void:
 	_update_interaction(delta)
 	_update_extraction(delta)
 	_update_pickups()
+	_update_traps(delta)
 	_update_tutorial(delta)
 	if power_on_t >= 0.0:
 		power_on_t += delta
 		if power_on_t >= 5.0 and exit_b.locked:
 			exit_b.locked = false
-			for y in range(5, 10):
-				astar.set_point_solid(Vector2i(51, y), false)
-			notify("하역장 셔터 개방! 탈출구 B 사용 가능", Color("#6CCB5F"))
+			# 셔터 칸(H)을 길찾기에서 열어 준다 (지역마다 위치가 다르다)
+			for y in LevelData.height():
+				for x in LevelData.width():
+					if LevelData.code(x, y) == "H":
+						astar.set_point_solid(Vector2i(x, y), false)
+			notify("셔터 개방! 탈출구 %s 사용 가능" % str(Regions.cur().exits.B[0]), Color("#6CCB5F"))
 	if time_left <= 0.0 and not player.dead:
 		notify("폭풍에 휩쓸렸다...", DB.C_DANGER)
 		player.hp = 1.0
