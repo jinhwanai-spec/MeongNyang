@@ -37,5 +37,9 @@ func _draw() -> void:
 	var f := UITheme.bold()
 	var nm: String = DB.HAMSTERS[hid].name
 	draw_string(f, Vector2(0, size.y - 10), nm, HORIZONTAL_ALIGNMENT_CENTER, size.x, 14, DB.C_LEGEND if selected else DB.C_TEXT)
+	var lv := GameState.ham_level(hid)
+	if lv > 1:
+		Art.rrect(self, Rect2(Vector2(5, 5), Vector2(30, 16)), Color(0.1, 0.1, 0.12, 0.85), 5, 0)
+		draw_string(f, Vector2(5, 18), "Lv%d" % lv, HORIZONTAL_ALIGNMENT_CENTER, 30, 11, Color("#9FE38A"))
 	var bc := DB.C_LEGEND if selected else (Color(1, 1, 1, 0.35) if hov else Color(1, 1, 1, 0.08))
 	draw_style_box(UITheme.box(Color(0, 0, 0, 0), 10, bc, 3 if selected else 2, 0), r)

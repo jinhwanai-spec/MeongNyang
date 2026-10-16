@@ -230,10 +230,24 @@ func _build_prep() -> void:
 	var hd: Dictionary = DB.HAMSTERS.get(GameState.hamster, DB.HAMSTERS.baragi)
 	var hh := HBoxContainer.new()
 	hc.add_child(hh)
-	var hn := UITheme.label("%s  ·  %s %s" % [hd.name, hd.breed, hd.role], 19, Color(str(hd.fur)).lightened(0.25), true)
+	var hn := UITheme.label("%s  Lv.%d  ·  %s %s" % [hd.name, GameState.ham_level(GameState.hamster), hd.breed, hd.role], 19, Color(str(hd.fur)).lightened(0.25), true)
 	hn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hh.add_child(hn)
-	hh.add_child(UITheme.label("체력 %d · 속도 %d%% · 소음 %d%%" % [int(hd.hp), int(round(float(hd.speed) * 100)), int(round(float(hd.noise) * 100))], 14, DB.C_MUTED))
+	hh.add_child(UITheme.label("체력 %d · 속도 %d%% · 소음 %d%%" % [int(float(hd.hp) + GameState.ham_bonus_hp(GameState.hamster)), int(round(float(hd.speed) * 100)), int(round(float(hd.noise) * 100))], 14, DB.C_MUTED))
+	var xpp: Array = GameState.ham_xp_progress(GameState.hamster)
+	var xrow := HBoxContainer.new()
+	xrow.add_theme_constant_override("separation", 8)
+	hc.add_child(xrow)
+	xrow.add_child(UITheme.label("경험치" if int(xpp[1]) > 0 else "최고 레벨!", 13, Color("#9FE38A"), true))
+	if int(xpp[1]) > 0:
+		var xb := ProgressBar.new()
+		xb.max_value = int(xpp[1])
+		xb.value = int(xpp[0])
+		xb.show_percentage = false
+		xb.custom_minimum_size = Vector2(160, 8)
+		xb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		xrow.add_child(xb)
+		xrow.add_child(UITheme.label("%d / %d  (레벨마다 체력 +%d)" % [int(xpp[0]), int(xpp[1]), int(GameState.HP_PER_LV)], 13, DB.C_MUTED))
 	var sk := UITheme.label("[F] %s  (재사용 %d초) — %s" % [hd.skill_name, int(hd.cd), hd.desc], 15, DB.C_LEGEND)
 	sk.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hc.add_child(sk)

@@ -957,6 +957,12 @@ func _end(survived: bool, reason: String) -> void:
 			else:
 				GameState.add_item(kid)
 		GameState.finish_raid_death()
+	# 용병 경험치: 처치 + 생존 + 전리품 가치
+	var xp_gain := kills * 12 + (60 if survived else 15) + (int(bag.total_value() / 20) if survived else 0)
+	result["xp"] = xp_gain
+	result["hamster"] = player.hid
+	result["lvup"] = GameState.add_ham_xp(player.hid, xp_gain)
+	result["level"] = GameState.ham_level(player.hid)
 	GameState.tutorial_done = true
 	GameState.save_game()
 	var ov := Control.new()

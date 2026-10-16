@@ -25,6 +25,7 @@ var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
 var region := "mart"      # 원정 지역 (Regions)
 var seen := {}            # 한 번 보여 준 안내 (새 기능 소개 등)
+var ham_xp := {}   # 용병별 경험치 {hamster_id: xp}
 var facility := {"weapon": 1, "potion": 1, "armor": 1}  # 시설 강화 단계 (1~3)
 var contracts: Array = [] # 의뢰 게시판 [{kind, target, need, have, region, coins, item, done}]
 # 직전 원정 결과 (결과 화면용)
@@ -53,6 +54,7 @@ func new_game() -> void:
 	armor_dur = {}
 	contracts = []
 	facility = {"weapon": 1, "potion": 1, "armor": 1}
+	ham_xp = {}
 	fill_contracts()
 	save_game()
 
@@ -60,7 +62,7 @@ func new_game() -> void:
 func save_game() -> void:
 	var data := {"coins": coins, "stash": stash, "weapons": weapons, "ammo": ammo, "crafted": crafted,
 		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster,
-		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "facility": facility, "mods": mods, "armor": armor, "armor_dur": armor_dur}
+		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "facility": facility, "ham_xp": ham_xp, "mods": mods, "armor": armor, "armor_dur": armor_dur}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "\t"))
@@ -121,6 +123,11 @@ func load_game() -> bool:
 	if typeof(fc) == TYPE_DICTIONARY:
 		for k in facility:
 			facility[k] = clampi(int(fc.get(k, 1)), 1, 3)
+	ham_xp = {}
+	var hx = d.get("ham_xp", {})
+	if typeof(hx) == TYPE_DICTIONARY:
+		for k in hx:
+			ham_xp[str(k)] = int(hx[k])
 	region = str(d.get("region", "mart"))
 	seen = d.get("seen", {}) if typeof(d.get("seen", {})) == TYPE_DICTIONARY else {}
 	contracts = []
@@ -227,6 +234,35 @@ func weapon_stats(wid: String) -> Dictionary:
 # ── 갑옷 ─────────────────────────────────────────────
 func armor_max(aid: String) -> float:
 	return float(DB.ITEMS.get(aid, {}).get("dur", 100)) * float(DB.FACILITY.armor.mul[fac("armor") - 1])
+
+# ── 용병 레벨 (원정마다 경험치, 레벨마다 체력 +8) ─────
+const XP_LV := [0, 100, 250, 450, 700]
+const HP_PER_LV := 8.0
+
+func ham_level(id: String) -> int:
+	var xp := int(ham_xp.get(id, 0))
+	var lv := 1
+	for i in XP_LV.size():
+		if xp >= int(XP_LV[i]):
+			lv = i + 1
+	return lv
+
+## [지금 레벨 안에서 모은 양, 다음 레벨까지 필요한 양] (최고 레벨이면 [0, 0])
+func ham_xp_progress(id: String) -> Array:
+	var lv := ham_level(id)
+	if lv >= XP_LV.size():
+		return [0, 0]
+	var xp := int(ham_xp.get(id, 0))
+	return [xp - int(XP_LV[lv - 1]), int(XP_LV[lv]) - int(XP_LV[lv - 1])]
+
+func ham_bonus_hp(id: String) -> float:
+	return HP_PER_LV * float(ham_level(id) - 1)
+
+## 경험치를 더하고 오른 레벨 수를 돌려준다
+func add_ham_xp(id: String, amount: int) -> int:
+	var before := ham_level(id)
+	ham_xp[id] = int(ham_xp.get(id, 0)) + maxi(0, amount)
+	return ham_level(id) - before
 
 # ── 시설 강화 ────────────────────────────────────────
 func fac(st: String) -> int:

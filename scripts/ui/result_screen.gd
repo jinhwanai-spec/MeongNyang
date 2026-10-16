@@ -64,6 +64,22 @@ func _ready() -> void:
 	_stat(stats, "생존 시간", "%d:%02d" % [int(tm) / 60, int(tm) % 60])
 	_stat(stats, "처치", str(int(result.get("kills", 0))))
 	_stat(stats, "전리품 가치", "%s냥" % HUD._fmt(int(result.get("value", 0))))
+	if result.has("xp") and DB.HAMSTERS.has(str(result.get("hamster", ""))):
+		var hid := str(result.hamster)
+		var xl := "%s 경험치 +%d  ·  Lv.%d" % [DB.HAMSTERS[hid].name, int(result.xp), int(result.level)]
+		if int(result.get("lvup", 0)) > 0:
+			xl += "   ▲ 레벨 업! 최대 체력 +%d" % int(GameState.HP_PER_LV * int(result.lvup))
+		var xlab := UITheme.label(xl, 17, Color("#9FE38A") if int(result.get("lvup", 0)) > 0 else DB.C_TEXT, true)
+		xlab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		v.add_child(xlab)
+		var pr: Array = GameState.ham_xp_progress(hid)
+		if int(pr[1]) > 0:
+			var bar := ProgressBar.new()
+			bar.max_value = int(pr[1])
+			bar.value = int(pr[0])
+			bar.show_percentage = false
+			bar.custom_minimum_size = Vector2(0, 10)
+			v.add_child(bar)
 	var items: Array = result.get("items", []) if ok else result.get("lost_items", [])
 	v.add_child(UITheme.label("가져온 전리품" if ok else ("가방에 남긴 것" if bool(result.get("bag_left", false)) else "잃어버린 것"), 18, DB.C_TEXT if ok else DB.C_DANGER, true))
 	var flow := HFlowContainer.new()

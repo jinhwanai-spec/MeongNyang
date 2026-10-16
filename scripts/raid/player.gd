@@ -136,7 +136,7 @@ func setup(kit: Dictionary) -> void:
 	if not DB.HAMSTERS.has(hid):
 		hid = "baragi"
 	hdata = DB.HAMSTERS[hid]
-	max_hp = float(hdata.hp)
+	max_hp = float(hdata.hp) + (GameState.ham_bonus_hp(hid) if not kit.get("remote", false) else 0.0)
 	hp = max_hp
 	SPRITE = "hamster_" + hid
 	if Sprites.char_info(SPRITE).is_empty():
