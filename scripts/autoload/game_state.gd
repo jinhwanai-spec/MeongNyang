@@ -624,7 +624,7 @@ func _setup_input() -> void:
 		mb.button_index = mouse[action]
 		InputMap.action_add_event(action, mb)
 	# 컨트롤러 기본 지원
-	var pads := {"fire": JOY_BUTTON_RIGHT_SHOULDER, "dodge": JOY_BUTTON_A, "reload": JOY_BUTTON_X, "interact": JOY_BUTTON_Y, "melee": JOY_BUTTON_B, "inventory": JOY_BUTTON_BACK, "heal": JOY_BUTTON_LEFT_SHOULDER}
+	var pads := {"fire": JOY_BUTTON_RIGHT_SHOULDER, "dodge": JOY_BUTTON_A, "reload": JOY_BUTTON_X, "interact": JOY_BUTTON_Y, "melee": JOY_BUTTON_B, "inventory": JOY_BUTTON_BACK, "heal": JOY_BUTTON_LEFT_SHOULDER, "throw": JOY_BUTTON_DPAD_UP, "crouch": JOY_BUTTON_RIGHT_STICK, "skill": JOY_BUTTON_DPAD_RIGHT}
 	for action in pads:
 		var jb := InputEventJoypadButton.new()
 		jb.button_index = pads[action]

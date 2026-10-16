@@ -260,6 +260,7 @@ const BIRD_SPOTS := {
 	"mart": ["pigeon", [Vector2(6, 18), Vector2(28, 21.5), Vector2(50, 26.5), Vector2(3, 6)]],
 	"dock": ["gull", [Vector2(10, 7.5), Vector2(36, 6.5), Vector2(14, 33), Vector2(44, 35)]],
 	"town": ["sparrow", [Vector2(8, 4.5), Vector2(36, 5.5), Vector2(46, 10.5), Vector2(28, 37), Vector2(10, 35)]],
+	"subway": ["pigeon", [Vector2(5, 5.5), Vector2(30, 6.5), Vector2(44, 7.5)]],
 }
 func _birds() -> void:
 	if Net.active or not BIRD_SPOTS.has(LevelData.region):
