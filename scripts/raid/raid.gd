@@ -55,8 +55,16 @@ var power_on_t := -1.0
 var warned_storm := false
 var seen_enemy := false
 
+static var weather_now := "clear"   # 이번 원정 날씨 (DB.WEATHER)
+static var force_weather := ""      # 테스트용
+
 func setup(k: Dictionary) -> void:
 	kit = k
+	weather_now = "clear" if Net.active else str(k.get("weather", "clear"))
+	if force_weather != "":
+		weather_now = force_weather
+	if not DB.WEATHER.has(weather_now):
+		weather_now = "clear"
 
 const DAY_TINT := Color(0.84, 0.83, 0.9)
 
@@ -682,7 +690,7 @@ func _update_storm(delta: float) -> void:
 			notify("폭풍이 다가온다! 서둘러 탈출하자", DB.C_DANGER)
 			Sfx.play("thunder", -2.0)
 		storm_k = minf(1.0, storm_k + delta / 60.0)
-	vision_mul = 1.0 - storm_k * 0.25
+	vision_mul = (1.0 - storm_k * 0.25) * float(DB.WEATHER[weather_now].vision)
 	# 3D 화면은 조명으로 어둡게 하므로 화면 색조는 조금만
 	var base := DAY_TINT.lerp(Color(0.5, 0.54, 0.68), storm_k * (0.35 if view3d else 1.0))
 	modulate_node.color = base

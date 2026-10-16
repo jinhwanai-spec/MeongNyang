@@ -134,6 +134,7 @@ func _process(_d: float) -> void:
 			"nextr": main.current.next_raid.emit(arg)
 			"fac": get_node("/root/GameState").facility = {"weapon": int(arg), "potion": int(arg), "armor": int(arg)}
 			"shield": Enemy.force_shield = arg != "0"
+			"weather": Raid.force_weather = arg
 			"god":
 				main.current.player.hp = 99999.0
 				main.current.player.max_hp = 99999.0

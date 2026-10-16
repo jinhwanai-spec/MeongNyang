@@ -264,6 +264,14 @@ func add_ham_xp(id: String, amount: int) -> int:
 	ham_xp[id] = int(ham_xp.get(id, 0)) + maxi(0, amount)
 	return ham_level(id) - before
 
+func roll_weather() -> String:
+	var r := randf()
+	for w in DB.WEATHER:
+		r -= float(DB.WEATHER[w].chance)
+		if r <= 0.0:
+			return w
+	return "clear"
+
 # ── 시설 강화 ────────────────────────────────────────
 func fac(st: String) -> int:
 	return int(facility.get(st, 1))
@@ -358,6 +366,7 @@ func begin_raid() -> Dictionary:
 			want -= 1
 	kit.hamster = hamster
 	kit.region = region
+	kit.weather = roll_weather()
 	# 갑옷: 입고 나간 것은 원정 꾸러미로 (사망 시 가방에 남는다)
 	for slot in ["helmet", "vest"]:
 		var aid := str(loadout.get(slot, ""))

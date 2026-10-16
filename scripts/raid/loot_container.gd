@@ -26,7 +26,7 @@ func setup(r: Raid, t: String, pos: Vector2) -> void:
 	var c: Dictionary = DB.CONTAINERS[t]
 	var n := randi_range(int(c.slots[0]), int(c.slots[1]))
 	# 난이도: 전리품 양
-	var lm := float(GameState.diff("loot")) * float(Regions.cur().get("loot", 1.0))
+	var lm := float(GameState.diff("loot")) * float(Regions.cur().get("loot", 1.0)) * float(DB.WEATHER[Raid.weather_now].loot)
 	var extra := float(n) * (lm - 1.0)
 	if lm >= 1.0:
 		n += int(extra) + (1 if randf() < fposmod(extra, 1.0) else 0)

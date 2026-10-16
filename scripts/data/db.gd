@@ -257,6 +257,13 @@ const BAG_RULES := {"instant": "바로 사라짐", "two": "두 번 연속 쓰러
 const BAG_RULE_ORDER := ["instant", "two", "keep"]
 const DIFF_STEPS := {"enemy_dmg": [0.5, 0.7, 0.85, 1.0, 1.15, 1.3, 1.5], "enemy_hp": [0.7, 0.85, 1.0, 1.2, 1.4], "loot": [0.7, 0.85, 1.0, 1.25, 1.5]}
 
+# ── 원정 날씨 (출격할 때 정해진다) ───────────────────
+const WEATHER := {
+	"clear": {"name": "맑음", "vision": 1.0, "loot": 1.0, "chance": 0.6, "desc": "평범한 원정"},
+	"fog": {"name": "안개", "vision": 0.72, "loot": 1.1, "chance": 0.2, "desc": "냥이 시야 -28% · 전리품 +10%"},
+	"night": {"name": "밤", "vision": 0.65, "loot": 1.2, "chance": 0.2, "desc": "냥이 시야 -35% · 전리품 +20% · 손전등 사용"},
+}
+
 # ── 시설 강화 (은신처 제작소 1~3단계) ─────────────────
 const FACILITY := {
 	"weapon": {"name": "무기 제작소", "mul": [1.0, 1.5, 2.0],

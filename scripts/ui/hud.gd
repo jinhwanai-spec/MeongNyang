@@ -408,7 +408,8 @@ func _draw_minimap(p: Player, vs: Vector2) -> void:
 	_txt(tr.position + Vector2(12, 25), "%02d:%02d" % [int(left) / 60, int(left) % 60], 20, tcol, false, HORIZONTAL_ALIGNMENT_RIGHT, tr.size.x - 24)
 	if raid.storm_k > 0.0:
 		_txt(Vector2(tr.position.x, tr.end.y + 20), "폭풍 접근 중 — 적이 늘어난다", 13, DB.C_DANGER)
-	_txt(Vector2(r.position.x + 4, r.end.y + 62 + (18 if raid.storm_k > 0.0 else 0)), "M 지도", 12, Color(1, 1, 1, 0.45))
+	var wtxt := "" if Raid.weather_now == "clear" else ("  ·  날씨: " + str(DB.WEATHER[Raid.weather_now].name))
+	_txt(Vector2(r.position.x + 4, r.end.y + 62 + (18 if raid.storm_k > 0.0 else 0)), "M 지도" + wtxt, 12, Color(1, 1, 1, 0.45) if wtxt == "" else Color("#9FC3FF"))
 
 func _minimap_marks(p: Player, mr: Rect2, k: float, dot: float) -> void:
 	var T := float(DB.TILE)

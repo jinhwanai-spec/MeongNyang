@@ -185,6 +185,7 @@ func _env() -> void:
 		e.ambient_light_energy = float(mood.amb_e)
 		e.background_color = Color(str(mood.bg))
 		e.adjustment_saturation = float(mood.get("sat", 1.12))
+	_apply_weather(e, moon)
 	add_child(moon)
 	Settings.apply_env(e, moon)
 	sun = moon
@@ -193,6 +194,45 @@ func _env() -> void:
 	_amb0 = e.ambient_light_color
 	_amb_e0 = e.ambient_light_energy
 	_bg0 = e.background_color
+
+## 날씨: 밤(달빛 + 손전등) · 안개
+var flashlight: SpotLight3D
+func _apply_weather(e: Environment, moon: DirectionalLight3D) -> void:
+	match Raid.weather_now:
+		"night":
+			moon.light_color = Color(0.62, 0.72, 1.0)
+			moon.light_energy = 0.32
+			e.ambient_light_color = Color(0.42, 0.5, 0.75)
+			e.ambient_light_energy = 0.42
+			e.background_color = Color(0.03, 0.04, 0.07)
+			e.glow_intensity = 0.7
+			flashlight = SpotLight3D.new()
+			flashlight.light_color = Color(1.0, 0.95, 0.82)
+			flashlight.light_energy = 4.0
+			flashlight.spot_range = 9.0
+			flashlight.spot_angle = 30.0
+			flashlight.spot_attenuation = 0.8
+			flashlight.shadow_enabled = true
+			add_child(flashlight)
+		"fog":
+			e.fog_enabled = true
+			e.fog_light_color = Color(0.72, 0.76, 0.8)
+			e.fog_light_energy = 0.9
+			e.fog_density = 0.016
+			e.fog_sky_affect = 0.0
+			moon.light_energy *= 0.7
+			e.ambient_light_energy *= 1.1
+
+func _update_flashlight() -> void:
+	if flashlight == null or raid.player == null:
+		return
+	var pp: Vector2 = raid.player.global_position
+	var a: Vector2 = raid.player.aim_dir
+	if a == Vector2.ZERO:
+		a = Vector2.DOWN
+	var from := Vector3(pp.x / T, 0.95, pp.y / T)
+	var to := from + Vector3(a.x, -0.18, a.y)
+	flashlight.global_transform = Transform3D(Basis.looking_at(to - from, Vector3.UP), from)
 
 func _lights() -> void:
 	# [타일 위치, 색, 반경(타일), 세기]
@@ -203,7 +243,7 @@ func _lights() -> void:
 		o.position = Vector3(p.x, 2.1, p.y)
 		o.light_color = Color(str(l[1]))
 		o.omni_range = float(l[2])
-		o.light_energy = float(l[3])
+		o.light_energy = float(l[3]) * (1.7 if Raid.weather_now == "night" else 1.0)
 		o.omni_attenuation = 1.4
 		add_child(o)
 
@@ -579,6 +619,7 @@ func _process(delta: float) -> void:
 	if raid == null or raid.player == null:
 		return
 	_update_storm3d(delta)
+	_update_flashlight()
 	# 카메라: 플레이어(부드럽게 보간한 위치) + 마우스 쪽으로 살짝 앞당김.
 	# 앞당김은 '화면 좌표'로 계산해서 카메라↔조준점이 서로 끌고 다니지 않게 한다.
 	var pp: Vector2 = _player_smooth()

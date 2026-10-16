@@ -70,6 +70,11 @@ func _build() -> void:
 	var l1 := UITheme.label(line, 19, Color(0.86, 0.88, 0.93))
 	l1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vb.add_child(l1)
+	var wd: Dictionary = DB.WEATHER.get(Raid.weather_now, DB.WEATHER.clear)
+	if Raid.weather_now != "clear":
+		var wl := UITheme.label("날씨: %s — %s" % [wd.name, wd.desc], 18, Color("#9FC3FF"), true)
+		wl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vb.add_child(wl)
 	if bags > 0:
 		var l2 := UITheme.label("이 지역에 두고 온 내 가방 %d개 — 지도에 표시된다" % bags, 18, DB.C_LEGEND, true)
 		l2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
