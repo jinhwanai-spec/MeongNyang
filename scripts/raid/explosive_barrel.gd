@@ -65,8 +65,7 @@ func explode() -> void:
 		FX.fx3d.boom(pos, RADIUS)
 	raid.shake(12.0)
 	raid.emit_noise(pos, 650.0)
-	Sfx.play_at("slam", pos, 2.0)
-	Sfx.play("thunder", -8.0, 0.2)
+	Sfx.play_at("explosion", pos, 2.0, 0.1)
 	raid.astar.set_point_solid(cell, false)
 	raid._contract("barrel")
 	collision_layer = 0

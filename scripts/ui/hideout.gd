@@ -406,7 +406,7 @@ func _build_prep() -> void:
 	else:
 		_benefit(risk, "산탄총은 실내 근거리, 권총은 비상용")
 
-	var keys := UITheme.label("WASD 이동 · 마우스 조준/사격 · R 재장전 · Space 구르기 · V 근접 · E 뒤지기 · Tab 배낭 · Q 회복 · G 간식 · F 스킬 · C 웅크리기(풀숲 은신) · M 지도", 13, DB.C_MUTED)
+	var keys := UITheme.label("WASD 이동 · 마우스 조준/사격 · R 재장전 · Space 구르기 · V 근접 · E 뒤지기 · Tab 배낭 · Q 회복 · G 간식 · T 연막 · F 스킬 · 우클릭 조준 · C 웅크리기(풀숲 은신·쥐덫 해제) · M 지도", 13, DB.C_MUTED)
 	keys.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prep_box.add_child(keys)
 

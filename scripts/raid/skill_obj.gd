@@ -56,7 +56,7 @@ func _process(delta: float) -> void:
 			position = from.lerp(to, ks) + Vector2(0, -sin(ks * PI) * 70.0)
 			if ks >= 1.0:
 				raid.add_smoke(to, 105.0, 9.0)
-				Sfx.play_at("dodge", to, -2.0, 0.2)
+				Sfx.play_at("smoke_hiss", to, -2.0, 0.1)
 				queue_free()
 				return
 		"bomb":

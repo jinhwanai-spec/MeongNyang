@@ -49,7 +49,7 @@ func _process(delta: float) -> void:
 
 func _flush() -> void:
 	flushed = true
-	Sfx.play_at("dodge", center2d, -4.0, 0.3)
+	Sfx.play_at("flap", center2d, -3.0, 0.15)
 	raid.emit_noise(center2d, 260.0)
 	var away := (center2d - raid.player.global_position).normalized()
 	for f in flock:

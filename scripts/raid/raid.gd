@@ -520,7 +520,7 @@ func _update_traps(delta: float) -> void:
 				notify("쥐덫에서 치즈 미끼를 살짝 빼냈다", Color("#6CCB5F"))
 			_contract("bait")
 		else:
-			Sfx.play("slam", -2.0, 0.1)
+			Sfx.play("trap_snap", -1.0, 0.08)
 			shake(7.0)
 			player.take_damage(16.0, tr[1] + Vector2(0, -6))
 			player.trap_t = 1.2
@@ -684,7 +684,7 @@ func _build_pause() -> void:
 	var b1 := UITheme.button("계속하기", 20, true)
 	b1.pressed.connect(func(): _set_pause(false))
 	vb.add_child(b1)
-	var keys := UITheme.label("WASD 이동 · 좌클릭 사격 · R 재장전 · Space 구르기\nV 근접 · E 상호작용 · Tab 배낭 · Q 회복 · M 지도 · 1/2 무기", 14, DB.C_MUTED)
+	var keys := UITheme.label("WASD 이동 · 좌클릭 사격 · R 재장전 · Space 구르기\nV 근접 · E 상호작용 · Tab 배낭 · Q 회복 · T 연막 · 우클릭 조준 · M 지도 · 1/2 무기", 14, DB.C_MUTED)
 	vb.add_child(keys)
 	var b2 := UITheme.button("원정 포기 (장비를 잃음)", 17)
 	b2.pressed.connect(func():

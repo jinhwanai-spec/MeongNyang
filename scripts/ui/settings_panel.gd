@@ -33,7 +33,7 @@ func _ready() -> void:
 	le.text_changed.connect(func(t): Settings.nickname = t.strip_edges() if t.strip_edges() != "" else "햄찌")
 	nk.add_child(le)
 	v.add_child(nk)
-	var keys := UITheme.label("조작: WASD 이동 · 마우스 조준/사격 · Shift 달리기 · Space 구르기 · E 상호작용 · F 스킬 · C 웅크리기 · Tab 배낭 · Esc 메뉴", 13, DB.C_MUTED)
+	var keys := UITheme.label("조작: WASD 이동 · 마우스 조준/사격 · Shift 달리기 · Space 구르기 · E 상호작용 · F 스킬 · T 연막 · 우클릭 조준 · C 웅크리기 · Tab 배낭 · Esc 메뉴", 13, DB.C_MUTED)
 	keys.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(keys)
 	var ok := UITheme.button("저장하고 닫기", 20, true)
