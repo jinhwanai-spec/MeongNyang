@@ -189,6 +189,46 @@ func kill(pos: Vector2, c: Color) -> void:
 	hitstop(0.06)
 
 ## 아주 짧게 시간을 멈칫 → 타격감 (협동 중엔 안 함)
+## 폭발: 불덩이가 부풀었다 사라지고, 잠깐 주황 빛 + 파편 + 연기
+func boom(pos: Vector2, radius_px: float) -> void:
+	var r := radius_px / T
+	var at := p3(pos, 0.3)
+	var fire := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 0.5
+	sm.height = 1.0
+	fire.mesh = sm
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.albedo_color = Color(1.0, 0.62, 0.22, 0.9)
+	fire.material_override = m
+	fire.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	fire.position = at
+	fire.scale = Vector3.ONE * 0.2
+	add_child(fire)
+	var tw := fire.create_tween()
+	tw.set_ignore_time_scale(true)
+	tw.tween_property(fire, "scale", Vector3.ONE * r * 1.3, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(m, "albedo_color", Color(1.0, 0.35, 0.1, 0.0), 0.45)
+	tw.tween_callback(fire.queue_free)
+	var l := OmniLight3D.new()
+	l.light_color = Color(1.0, 0.6, 0.25)
+	l.light_energy = 6.0
+	l.omni_range = r * 3.0
+	l.position = at + Vector3(0, 0.6, 0)
+	add_child(l)
+	var tl := l.create_tween()
+	tl.set_ignore_time_scale(true)
+	tl.tween_property(l, "light_energy", 0.0, 0.5)
+	tl.tween_callback(l.queue_free)
+	sparks(pos, Vector2.UP, Color(1.0, 0.7, 0.3), 18, 0.4)
+	var smoke := _mat("smoke", Color(0.25, 0.25, 0.27, 0.55), false, true)
+	for i in 8:
+		var a := randf() * TAU
+		_spawn(_quad, smoke, at + Vector3(cos(a), 0.2, sin(a)) * r * 0.4, Vector3(cos(a) * 0.6, 1.2 + randf(), sin(a) * 0.6), 1.2, -0.6, 0.6 + randf() * 0.5)
+
 ## 근접 무기 휘두르기: 조준 방향으로 부채꼴 궤적이 휙 그려지고 사라진다
 func slash(pos: Vector2, d: Vector2, reach_px: float, arc_deg: float, c: Color, heavy: bool = false) -> void:
 	var r := reach_px / T

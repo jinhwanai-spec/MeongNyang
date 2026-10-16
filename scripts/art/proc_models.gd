@@ -568,8 +568,32 @@ static func proc_prop(n: String) -> Node3D:
 		"mailbox": return mailbox()
 		"picnic": return picnic_table()
 		"mousetrap": return mousetrap(false)
+		"barrel_boom": return fuel_barrel(false)
+		"barrel_burnt": return fuel_barrel(true)
 		"mousetrap_sprung": return mousetrap(true)
 	return backpack()
+
+## 기름통 (총으로 쏘면 터진다). burnt = 터지고 남은 그을린 통
+static func fuel_barrel(burnt: bool) -> Node3D:
+	var r := _root("fuel_barrel")
+	var body := mat(Color("#1E1B1A") if burnt else Color("#C9342B"), 0.55, 0.4)
+	var rim := mat(Color("#121212") if burnt else Color("#8E211B"), 0.5, 0.5)
+	var h := 0.55 if burnt else 0.82
+	cyl(r, 0.27 if burnt else 0.24, 0.24, h, Vector3(0, h * 0.5, 0), body, Vector3.ZERO, 18)
+	for y in ([0.12, 0.42] if burnt else [0.14, 0.41, 0.68]):
+		torus(r, 0.235, 0.26, Vector3(0, y, 0), rim)
+	if not burnt:
+		box(r, Vector3(0.2, 0.2, 0.01), Vector3(0, 0.45, 0.245), mat(Color("#F2C14E"), 0.5))
+		var l := Label3D.new()
+		l.text = "!"
+		l.font_size = 64
+		l.pixel_size = 0.004
+		l.modulate = Color("#1E1B1A")
+		l.outline_size = 0
+		l.position = Vector3(0, 0.45, 0.252)
+		r.add_child(l)
+		cyl(r, 0.04, 0.04, 0.03, Vector3(0.1, 0.835, 0.05), rim)
+	return r
 
 ## 쥐덫 (햄스터 크기에 맞춘 큰 덫). sprung = 이미 튕긴 상태
 static func mousetrap(sprung: bool) -> Node3D:

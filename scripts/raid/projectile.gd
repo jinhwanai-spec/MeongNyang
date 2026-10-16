@@ -64,6 +64,9 @@ func _physics_process(delta: float) -> void:
 			(col as Player).take_damage(dmg, origin)
 			queue_free()
 			return
+		# 기름통
+		if col is ExplosiveBarrel and not visual:
+			(col as ExplosiveBarrel).bullet_hit(dmg, hit.position)
 		# 벽
 		FX.hit_spark(raid.fx_layer, hit.position, hit.normal, Color("#C9D1DA"))
 		Sfx.play_at("impact_hard" if randf() < 0.7 else "ricochet", hit.position, -10.0, 0.15)

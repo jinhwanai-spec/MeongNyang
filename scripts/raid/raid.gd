@@ -291,6 +291,7 @@ func _spawn_entities() -> void:
 		world.add_child(sp)
 	_spawn_lost_bags()
 	_spawn_traps(a_cells + b_cells)
+	_spawn_barrels(a_cells + b_cells)
 	var rx: Dictionary = Regions.cur().exits
 	var ea := _make_exit(str(rx.A[0]), a_cells, 6.0)
 	ea.kind = str(rx.A[1])
@@ -404,6 +405,53 @@ func _spawn_traps(exit_cells: Array) -> void:
 		used.append(c)
 		var pos := Vector2(c.x * T + T * 0.5, c.y * T + T * 0.6)
 		traps.append([_trap_node(pos, false), pos, false])
+
+## 빨간 기름통: 창고·주차장 바닥에 몇 개 (가끔 두 개씩 붙어 있어 연쇄 폭발)
+func _spawn_barrels(exit_cells: Array) -> void:
+	if Net.active:
+		return
+	var cand := []
+	for y in LevelData.height():
+		for x in LevelData.width():
+			var c := LevelData.code(x, y)
+			if c != "=" and c != ".":
+				continue
+			var ok := true
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 1), Vector2i(-1, -1)]:
+				var n := LevelData.code(x + d.x, y + d.y)
+				if n != c:
+					ok = false
+			for ec in exit_cells:
+				if Vector2i(ec).distance_to(Vector2i(x, y)) < 4.0:
+					ok = false
+			if ok and player.global_position.distance_to(Vector2(x * T + T * 0.5, y * T + T * 0.5)) > T * 7:
+				cand.append(Vector2i(x, y))
+	cand.shuffle()
+	var want: int = {"mart": 4, "dock": 6, "town": 3}.get(LevelData.region, 4)
+	var used := []
+	for c in cand:
+		if used.size() >= want:
+			break
+		var near := false
+		for u in used:
+			if Vector2i(u).distance_to(c) < 6.0:
+				near = true
+		for tr in traps:
+			if cell_of(tr[1]) == c:
+				near = true
+		if near:
+			continue
+		used.append(c)
+		_add_barrel(c)
+		# 절반은 옆에 한 통 더
+		var c2: Vector2i = c + Vector2i(1, 0)
+		if randf() < 0.5 and LevelData.code(c2.x, c2.y) == LevelData.code(c.x, c.y):
+			_add_barrel(c2)
+
+func _add_barrel(c: Vector2i) -> void:
+	var b := ExplosiveBarrel.new()
+	b.setup(self, Vector2(c.x * T + T * 0.5, c.y * T + T * 0.6), c)
+	world.add_child(b)
 
 func _trap_node(pos: Vector2, sprung: bool) -> Node2D:
 	var nd := Node2D.new()
