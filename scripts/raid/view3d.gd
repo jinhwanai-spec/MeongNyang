@@ -56,6 +56,7 @@ func build(r: Raid) -> void:
 	_floor()
 	_walls()
 	_lights()
+	_birds()
 	cam = Camera3D.new()
 	cam.fov = FOV
 	cam.near = 1.0
@@ -233,6 +234,21 @@ func _update_flashlight() -> void:
 	var from := Vector3(pp.x / T + a.x * 0.35, 0.95, pp.y / T + a.y * 0.35)
 	var to := from + Vector3(a.x, -0.32, a.y)
 	flashlight.global_transform = Transform3D(Basis.looking_at(to - from, Vector3.UP), from)
+
+## 새 무리 (지역마다 종류·자리)
+const BIRD_SPOTS := {
+	"mart": ["pigeon", [Vector2(6, 18), Vector2(28, 21.5), Vector2(50, 26.5), Vector2(3, 6)]],
+	"dock": ["gull", [Vector2(10, 7.5), Vector2(36, 6.5), Vector2(14, 33), Vector2(44, 35)]],
+	"town": ["sparrow", [Vector2(8, 4.5), Vector2(36, 5.5), Vector2(46, 10.5), Vector2(28, 37), Vector2(10, 35)]],
+}
+func _birds() -> void:
+	if Net.active or not BIRD_SPOTS.has(LevelData.region):
+		return
+	var spec: Array = BIRD_SPOTS[LevelData.region]
+	for c in spec[1]:
+		if LevelData.is_solid_code(LevelData.code(int(c.x), int(c.y))):
+			continue
+		add_child(Birds.make(raid, c, str(spec[0]), randi_range(3, 5)))
 
 func _lights() -> void:
 	# [타일 위치, 색, 반경(타일), 세기]

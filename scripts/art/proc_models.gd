@@ -573,6 +573,28 @@ static func proc_prop(n: String) -> Node3D:
 		"mousetrap_sprung": return mousetrap(true)
 	return backpack()
 
+## 작은 새 (비둘기·갈매기·참새). 원점 = 발, 앞쪽 +X. wings 노드를 펄럭여 날게 한다
+static func bird(kind: String) -> Node3D:
+	var r := _root("bird")
+	var body_c: Color = {"pigeon": Color("#8A8F9C"), "gull": Color("#F2F2F2"), "sparrow": Color("#9A6B45")}.get(kind, Color("#8A8F9C"))
+	var wing_c: Color = {"pigeon": Color("#6E7380"), "gull": Color("#B9C0C8"), "sparrow": Color("#6B4A33")}.get(kind, Color("#6E7380"))
+	var body := mat(body_c, 0.8)
+	var wing := mat(wing_c, 0.8)
+	sphere(r, 0.09, Vector3(0, 0.1, 0), body, Vector3(1.4, 1.0, 1.0))
+	sphere(r, 0.055, Vector3(0.11, 0.17, 0), body)
+	box(r, Vector3(0.05, 0.015, 0.02), Vector3(0.17, 0.165, 0), mat(Color("#F2C14E") if kind != "pigeon" else Color("#3A3A3A"), 0.6))
+	box(r, Vector3(0.08, 0.02, 0.06), Vector3(-0.13, 0.11, 0), wing)
+	var wings := Node3D.new()
+	wings.name = "wings"
+	wings.position = Vector3(0, 0.13, 0)
+	r.add_child(wings)
+	for side in [-1.0, 1.0]:
+		var w := Node3D.new()
+		w.name = "L" if side < 0 else "R"
+		wings.add_child(w)
+		box(w, Vector3(0.12, 0.012, 0.11), Vector3(0, 0, side * 0.06), wing)
+	return r
+
 ## 기름통 (총으로 쏘면 터진다). burnt = 터지고 남은 그을린 통
 static func fuel_barrel(burnt: bool) -> Node3D:
 	var r := _root("fuel_barrel")
