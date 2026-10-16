@@ -423,6 +423,10 @@ func _minimap_marks(p: Player, mr: Rect2, k: float, dot: float) -> void:
 			var bp: Vector2 = mr.position + lb.global_position / T * k
 			canvas.draw_circle(bp, 5.0 * dot, Art.OUTLINE)
 			canvas.draw_circle(bp, 3.8 * dot, Color("#F2C14E"))
+	if raid.supply_pos != null:
+		var sp2: Vector2 = mr.position + raid.supply_pos / T * k
+		canvas.draw_circle(sp2, 6.0 * dot, Art.OUTLINE)
+		canvas.draw_circle(sp2, 4.6 * dot, Color("#7FC8FF"))
 	for e in get_tree().get_nodes_in_group("enemy"):
 		if e.dead:
 			continue

@@ -491,6 +491,11 @@ const RECIPES := [
 ]
 
 # ── 상점 (냥이 시장) ─────────────────────────────────
+## 원정 중 떨어지는 보급 상자 (낙하산) 전리품
+const SUPPLY_TABLE := [["att_holo", 8], ["att_scope_4x", 5], ["att_suppressor", 6], ["att_ext_mag", 7], ["att_drum_mag", 4], ["att_laser", 6],
+	["potion_iron", 8], ["potion_swift", 8], ["potion_focus", 6], ["potion_big", 8], ["medkit", 10], ["helmet_2", 6], ["vest_2", 6], ["helmet_3", 2], ["vest_3", 2],
+	["ammo_rifle", 14], ["ammo_shell", 10], ["smoke_can", 10], ["lens", 6], ["circuit", 6], ["gold_collar", 3]]
+
 ## 냥이 시장 '오늘의 특가' 후보 (원정을 다녀올 때마다 3개가 바뀐다, 30% 할인)
 const DEAL_POOL := ["helmet_2", "vest_2", "att_holo", "att_scope_4x", "att_suppressor", "att_ext_mag", "att_laser", "att_drum_mag", "att_stock",
 	"potion_iron", "potion_swift", "potion_focus", "potion_shadow", "lens", "circuit", "battery"]

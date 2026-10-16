@@ -12,6 +12,7 @@ var drop_color := Color.WHITE
 var tile_size := Vector2(DB.TILE, DB.TILE)
 var anim := 0.0
 var _seed := 0.0
+var supply := false        # 하늘에서 떨어진 보급 상자
 var prop_spr: Sprite2D      # 3D 화면용: 세워 그릴 소품 스프라이트
 var _prop_shown := ""
 

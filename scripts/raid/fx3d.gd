@@ -203,6 +203,33 @@ func _soft_dot() -> GradientTexture2D:
 		_dot_tex.height = 64
 	return _dot_tex
 
+## 보급 상자 낙하: 낙하산 상자가 하늘에서 천천히 내려온다 (그림자 원 미리 표시)
+func supply_fall(pos: Vector2, dur: float) -> void:
+	var at := p3(pos, 0.0)
+	var cr := ProcModels.supply_crate(true)
+	cr.position = at + Vector3(1.5, 14.0, -1.0)
+	add_child(cr)
+	var tw := cr.create_tween()
+	tw.tween_property(cr, "position", at, dur).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(cr, "rotation:y", 1.5, dur)
+	tw.tween_callback(cr.queue_free)
+	var ring := MeshInstance3D.new()
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.7
+	cm.bottom_radius = 0.7
+	cm.height = 0.01
+	ring.mesh = cm
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = Color(0.5, 0.8, 1.0, 0.35)
+	ring.material_override = m
+	ring.position = at + Vector3(0, 0.02, 0)
+	add_child(ring)
+	var tr := ring.create_tween()
+	tr.tween_interval(dur)
+	tr.tween_callback(ring.queue_free)
+
 ## 연막 구름: 커다란 회색 덩어리들이 피어올라 dur초 동안 머문 뒤 흩어진다
 func smoke_cloud(pos: Vector2, radius_px: float, dur: float) -> void:
 	var r := radius_px / T

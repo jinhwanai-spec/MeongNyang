@@ -30,6 +30,13 @@ func setup_container(c: LootContainer) -> void:
 	if c.lost_bag:
 		_build_lost_bag()
 		return
+	if c.supply:
+		_place()
+		var cr := ProcModels.supply_crate()
+		add_child(cr)
+		beam = ProcModels.light_beam(Color("#7FC8FF"), 6.0, 0.4)
+		add_child(beam)
+		return
 	if c.is_drop:
 		sc = 0.45
 		off = Vector2(0, -0.1)

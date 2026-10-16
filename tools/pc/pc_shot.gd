@@ -142,6 +142,8 @@ func _process(_d: float) -> void:
 			"boom":
 				get_tree().get_nodes_in_group("fuel_barrel")[int(arg)].explode()
 			"smoke": main.current.add_smoke(main.current.player.global_position + Vector2(140, 0), 105.0, 9.0)
+			"supply": main.current.supply_at = main.current.time_left + 1.0
+			"tpsupply": main.current.player.global_position = main.current.supply_pos + Vector2(-200, 60)
 			"god":
 				main.current.player.hp = 99999.0
 				main.current.player.max_hp = 99999.0

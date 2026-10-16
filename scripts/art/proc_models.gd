@@ -580,6 +580,44 @@ static func proc_prop(n: String) -> Node3D:
 		"mousetrap_sprung": return mousetrap(true)
 	return backpack()
 
+## 보급 상자 (파란 군용 상자 + 흰 별). chute=true면 위에 낙하산
+static func supply_crate(chute: bool = false) -> Node3D:
+	var r := _root("supply")
+	var blue := mat(Color("#2F5E8C"), 0.6, 0.2)
+	var dark := mat(Color("#1C2A38"), 0.5, 0.5)
+	box(r, Vector3(0.9, 0.6, 0.65), Vector3(0, 0.3, 0), blue)
+	box(r, Vector3(0.94, 0.08, 0.69), Vector3(0, 0.62, 0), dark)
+	for x in [-0.36, 0.36]:
+		box(r, Vector3(0.06, 0.62, 0.69), Vector3(x, 0.31, 0), dark)
+	var l := Label3D.new()
+	l.text = "★"
+	l.font_size = 72
+	l.pixel_size = 0.005
+	l.modulate = Color("#F2F2F2")
+	l.outline_size = 0
+	l.position = Vector3(0, 0.33, 0.33)
+	r.add_child(l)
+	if chute:
+		var cloth := mat(Color("#F2F2F2"), 0.9)
+		var red := mat(Color("#D8483C"), 0.9)
+		var canopy := Node3D.new()
+		canopy.position = Vector3(0, 2.4, 0)
+		r.add_child(canopy)
+		for i in 8:
+			var a := i * TAU / 8.0
+			var seg := box(canopy, Vector3(0.75, 0.04, 0.55), Vector3(cos(a) * 0.65, -absf(sin(a * 0.5)) * 0.05, sin(a) * 0.65), red if i % 2 == 0 else cloth)
+			seg.rotation = Vector3(0, -a, 0.35)
+		sphere(canopy, 0.6, Vector3(0, 0.05, 0), cloth, Vector3(1.5, 0.45, 1.5), true)
+		var rope := mat(Color("#CFCFCF"), 0.9)
+		for i in 4:
+			var a := i * TAU / 4.0 + PI / 4.0
+			var top := Vector3(cos(a) * 1.0, 2.35, sin(a) * 1.0)
+			var bot := Vector3(cos(a) * 0.4, 0.62, sin(a) * 0.3)
+			var mid := (top + bot) * 0.5
+			var rp := box(r, Vector3(0.015, (top - bot).length(), 0.015), mid, rope)
+			rp.transform = Transform3D(Basis(Quaternion(Vector3.UP, (top - bot).normalized())), mid)
+	return r
+
 ## 항구 컨테이너 크레인 (원점 = 다리 가운데 바닥, 붐은 바다 쪽 -Z로 뻗는다)
 static func harbor_crane() -> Node3D:
 	var r := _root("crane")

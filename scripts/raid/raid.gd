@@ -294,6 +294,7 @@ func _spawn_entities() -> void:
 	_spawn_lost_bags()
 	_spawn_traps(a_cells + b_cells)
 	_spawn_barrels(a_cells + b_cells)
+	_plan_supply()
 	var rx: Dictionary = Regions.cur().exits
 	var ea := _make_exit(str(rx.A[0]), a_cells, 6.0)
 	ea.kind = str(rx.A[1])
@@ -350,6 +351,51 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 		spr.position = Vector2(0, -T * 0.5)
 		holder.add_child(spr)
 	world.add_child(holder)
+
+# ── 보급 상자: 원정 중간에 한 번(60%) 낙하산으로 떨어진다. 냥이들도 소리를 듣고 몰려온다 ──
+var supply_at := -1.0          # 남은 시간이 이 값이 되면 투하 시작
+var supply_pos = null          # 지도 표시용 (Vector2 또는 null)
+var supply_land_t := -1.0
+
+func _plan_supply() -> void:
+	if Net.active or randf() > 0.6:
+		return
+	supply_at = randf_range(360.0, 600.0)
+
+func _update_supply(delta: float) -> void:
+	if supply_at > 0.0 and time_left <= supply_at:
+		supply_at = -1.0
+		var cand := []
+		for y in LevelData.height():
+			for x in LevelData.width():
+				var c := LevelData.code(x, y)
+				if (c == "." or c == "," or c == "g") and LevelData.code(x + 1, y) == c and LevelData.code(x, y + 1) == c:
+					var p := Vector2(x * T + T, y * T + T)
+					var d := p.distance_to(player.global_position)
+					if d > T * 8 and d < T * 22:
+						cand.append(p)
+		if cand.is_empty():
+			return
+		supply_pos = cand.pick_random()
+		supply_land_t = 7.0
+		notify("보급 상자가 떨어진다! 지도에 파란 표시 — 냥이들도 노린다", Color("#7FC8FF"))
+		Sfx.play("alarm", -10.0)
+		if is_instance_valid(FX.fx3d):
+			FX.fx3d.supply_fall(supply_pos, 7.0)
+	if supply_land_t > 0.0:
+		supply_land_t -= delta
+		if supply_land_t <= 0.0:
+			var lc := LootContainer.new()
+			lc.setup(self, "drop", supply_pos)
+			lc.supply = true
+			var its := []
+			for i in randi_range(4, 6):
+				its.append(LootContainer._roll(DB.SUPPLY_TABLE))
+			lc.items = its
+			world.add_child(lc)
+			emit_noise(supply_pos, 700.0)
+			Sfx.play_at("slam", supply_pos, 0.0)
+			shake(4.0)
 
 # ── 연막: 구름 안이나 너머는 냥이가 못 본다 ──
 var smokes: Array = []   # [중심, 반지름, 남은 시간]
@@ -847,6 +893,7 @@ func _physics_process(delta: float) -> void:
 	_update_traps(delta)
 	_update_boss_intro()
 	_update_smokes(delta)
+	_update_supply(delta)
 	_update_tutorial(delta)
 	if power_on_t >= 0.0:
 		power_on_t += delta
