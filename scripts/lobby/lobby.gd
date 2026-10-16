@@ -61,7 +61,7 @@ func _ready() -> void:
 	view.add_child(cam)
 	cam_pos = Vector3(sp.x, 0, sp.z)
 	_build_ui()
-	if not GameState.seen.has("v27"):
+	if not GameState.seen.has("v50"):
 		_whats_new()
 
 func _make_avatar() -> void:
@@ -118,7 +118,7 @@ func _build_ui() -> void:
 
 ## 새 기능 안내 (한 번만)
 func _whats_new() -> void:
-	GameState.seen["v27"] = true
+	GameState.seen["v50"] = true
 	GameState.save_game()
 	var pc := PanelContainer.new()
 	news_panel = pc
@@ -153,9 +153,9 @@ func _whats_new() -> void:
 		var l := UITheme.label(line, 15, DB.C_TEXT)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		v.add_child(l)
-	v.add_child(UITheme.label("(12초 뒤 사라져요)", 12, DB.C_MUTED))
+	v.add_child(UITheme.label("(20초 뒤 사라져요 · 제작소를 열면 닫혀요)", 12, DB.C_MUTED))
 	var tw := pc.create_tween()
-	tw.tween_interval(12.0)
+	tw.tween_interval(20.0)
 	tw.tween_property(pc, "modulate:a", 0.0, 0.8)
 	tw.tween_callback(pc.queue_free)
 
