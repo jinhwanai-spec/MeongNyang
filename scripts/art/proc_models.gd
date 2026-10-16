@@ -557,6 +557,10 @@ static func proc_prop(n: String) -> Node3D:
 		return shipping_container(CONTAINER_COLORS[i % CONTAINER_COLORS.size()])
 	if n == "boat":
 		return boat()
+	if n == "gate":
+		return ticket_gate()
+	if n == "station_sign":
+		return station_sign()
 	if n.begins_with("train_"):
 		return subway_car(int(n.get_slice("_", 1)))
 	match n:
@@ -618,6 +622,36 @@ static func supply_crate(chute: bool = false) -> Node3D:
 			var mid := (top + bot) * 0.5
 			var rp := box(r, Vector3(0.015, (top - bot).length(), 0.015), mid, rope)
 			rp.transform = Transform3D(Basis(Quaternion(Vector3.UP, (top - bot).normalized())), mid)
+	return r
+
+## 개찰구 한 칸 (원점 = 칸 바닥 가운데)
+static func ticket_gate() -> Node3D:
+	var r := _root("gate")
+	var steel := mat(Color("#B8BEC6"), 0.35, 0.8)
+	var dark := mat(Color("#2B2F36"), 0.5, 0.4)
+	box(r, Vector3(0.3, 0.75, 0.85), Vector3(0, 0.375, 0), steel)
+	box(r, Vector3(0.32, 0.05, 0.87), Vector3(0, 0.77, 0), dark)
+	box(r, Vector3(0.12, 0.02, 0.18), Vector3(0, 0.8, -0.25), mat(Color("#3E8EDE"), 0.4, 0.0, 1.5))
+	box(r, Vector3(0.05, 0.05, 0.05), Vector3(0.12, 0.8, 0.3), mat(Color("#7CFF9A"), 0.4, 0.0, 2.0))
+	for side in [-1.0, 1.0]:
+		box(r, Vector3(0.35, 0.4, 0.02), Vector3(side * 0.32, 0.5, 0.0), glass(Color(0.6, 0.75, 0.9), 0.1, 0.55), Vector3(0, 0, 0))
+	return r
+
+## 승강장 안내판 (두 기둥 + 파란 판 + 글씨)
+static func station_sign() -> Node3D:
+	var r := _root("station_sign")
+	var pole := mat(Color("#6B6F76"), 0.4, 0.7)
+	for x in [-0.7, 0.7]:
+		box(r, Vector3(0.06, 1.9, 0.06), Vector3(x, 0.95, 0), pole)
+	box(r, Vector3(1.7, 0.45, 0.06), Vector3(0, 1.7, 0), mat(Color("#1F4E8C"), 0.5))
+	var l := Label3D.new()
+	l.text = "냥냥역  ← 은신처 · 마트 →"
+	l.font_size = 40
+	l.pixel_size = 0.004
+	l.modulate = Color("#FFFFFF")
+	l.outline_size = 0
+	l.position = Vector3(0, 1.7, 0.04)
+	r.add_child(l)
 	return r
 
 ## 멈춘 지하철 한 량 (길이 L칸, 깊이 2칸 — 원점은 윗줄 칸의 아래쪽 가운데)

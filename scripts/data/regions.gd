@@ -119,6 +119,7 @@ const SUBWAY := {
 		[Vector2(7, 34), "#FFD9A0", 6.0, 1.4], [Vector2(26, 34), "#B0C8FF", 7.0, 1.4], [Vector2(46, 34), "#FF8A4A", 6.0, 1.6], [Vector2(53, 34), "#7CFF9A", 3.5, 1.6],
 	],
 	"decor": [
+		["proc:station_sign", 16.0, 14.4, 1.0], ["proc:station_sign", 40.0, 14.4, 1.0], ["proc:station_sign", 28.0, 19.6, 1.0, 180.0],
 		["proc:bench", 9.0, 10.8, 1.0, 180.0], ["proc:bench", 33.0, 10.8, 1.0, 180.0], ["proc:bench", 50.0, 10.8, 1.0, 180.0],
 		["proc:bench", 9.0, 23.6, 1.0], ["proc:bench", 22.0, 23.6, 1.0], ["proc:bench", 45.0, 23.6, 1.0],
 		["cone", 30.5, 31.5, 0.7], ["cone", 31.5, 31.6, 0.7], ["barrier_stripe", 12.5, 33.0, 0.8], ["pallet", 22.5, 37.6, 0.9], ["tires", 34.5, 37.6, 0.9],

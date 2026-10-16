@@ -340,6 +340,13 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 		tr.set_meta("prop_off", Vector2((run - 1) * 0.5, 0.0))
 		world.add_child(tr)
 		return
+	if c == "f" and str(Regions.cur().get("z_model", "")) == "train":
+		var gt := Node2D.new()
+		gt.position = Vector2(x * T + T * 0.5, y * T + T * 0.5)
+		gt.set_meta("prop3d", "proc:gate")
+		gt.set_meta("prop_off", Vector2.ZERO)
+		world.add_child(gt)
+		return
 	var sheet := ""
 	if c == "o":
 		sheet = ["crate", "barrel_red", "sandbags", "crate_blue", "barrel_blue", "tires", "cardboard", "barrier_concrete", "crate_small", "ammo_locker"][(x * 5 + y * 11) % 10]
