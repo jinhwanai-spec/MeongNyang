@@ -65,7 +65,7 @@ const DATA := {
 		"lock": "차고 안 발전기를 켜면 셔터가 열린다",
 		"glass_row": -1, "loot": 1.1,
 		"boss": ["hyena", "골목대장 길냥이", "smg"],
-		"mood": {"sun": "#FFC48A", "sun_e": 1.4, "sun_rot": Vector3(-34, -62, 0), "amb": "#C9B4D6", "amb_e": 0.68, "bg": "#2A2033", "sat": 1.16},
+		"mood": {"sun": "#FFC48A", "sun_e": 1.4, "sun_rot": Vector3(-34, -62, 0), "amb": "#C9B4D6", "amb_e": 0.68, "bg": "#1E1A24", "sat": 1.16},
 		"reinforce": [Vector2(54, 2), Vector2(1, 2), Vector2(54, 37), Vector2(28, 1)],
 		"lights": [
 			[Vector2(7.5, 25), "#FFE9C4", 6.0, 1.6], [Vector2(21.5, 25), "#FFE9C4", 6.0, 1.6], [Vector2(35, 25), "#FFE9C4", 6.0, 1.6],

@@ -71,7 +71,7 @@ func _ready() -> void:
 	if Net.in_raid:
 		Net.raid = self
 		seed(Net.raid_seed)   # 모두 같은 맵·같은 상자 내용
-	LevelData.set_region("mart" if Net.in_raid else str(kit.get("region", "mart")))
+	LevelData.set_region(Net.raid_region if Net.in_raid else str(kit.get("region", "mart")))
 	_build_world()
 	_build_nav()
 	_spawn_entities()

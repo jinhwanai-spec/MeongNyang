@@ -164,6 +164,18 @@ func _refresh() -> void:
 		row.add_child(UITheme.label("준비 완료" if bool(p.ready) else "준비 중", 16, Color("#6CCB5F") if bool(p.ready) else DB.C_MUTED, true))
 		body.add_child(row)
 	if Net.is_host():
+		# 방장이 원정 지역을 고른다
+		var rrow := HBoxContainer.new()
+		rrow.add_theme_constant_override("separation", 6)
+		rrow.add_child(UITheme.label("원정 지역", 16, DB.C_TEXT, true))
+		for rid in Regions.ORDER:
+			var rb2 := UITheme.button(str(Regions.DATA[rid].short), 14, GameState.region == rid)
+			rb2.pressed.connect(func():
+				GameState.region = rid
+				GameState.save_game()
+				_refresh())
+			rrow.add_child(rb2)
+		body.add_child(rrow)
 		var go := UITheme.button("원정 출발 ▶", 24, true)
 		go.custom_minimum_size = Vector2(0, 58)
 		go.disabled = not Net.all_ready()
@@ -172,6 +184,7 @@ func _refresh() -> void:
 		if not Net.all_ready():
 			body.add_child(UITheme.label("모두 준비하면 출발할 수 있어요", 14, DB.C_MUTED))
 	else:
+		body.add_child(UITheme.label("원정 지역은 방장이 정해요", 14, DB.C_MUTED))
 		var rb := UITheme.button("준비 취소" if is_ready else "준비 완료", 22, not is_ready)
 		rb.custom_minimum_size = Vector2(0, 56)
 		rb.pressed.connect(func():

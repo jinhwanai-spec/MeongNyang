@@ -17,6 +17,7 @@ const ENEMY_HZ := 15.0
 var active := false          # 멀티 세션 중
 var in_raid := false
 var raid_seed := 0
+var raid_region := "mart"   # 협동 원정 지역 (호스트가 고른 지역)
 var players := {}            # peer_id -> {"name", "hamster", "ready"}
 var raid: Raid
 var _st := 0.0
@@ -145,11 +146,12 @@ func order_of(id: int) -> int:
 func host_start() -> void:
 	if not is_host():
 		return
-	_start.rpc(randi())
+	_start.rpc(randi(), str(GameState.region))
 
 @rpc("authority", "reliable", "call_local")
-func _start(s: int) -> void:
+func _start(s: int, region: String = "mart") -> void:
 	raid_seed = s
+	raid_region = region if LevelData.MAPS.has(region) else "mart"
 	in_raid = true
 	coop_start.emit()
 

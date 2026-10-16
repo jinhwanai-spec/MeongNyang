@@ -705,7 +705,7 @@ func _update_storm3d(delta: float) -> void:
 		_flash = 1.0
 		var d := randf_range(0.25, 0.9)
 		get_tree().create_timer(d).timeout.connect(func(): Sfx.play("thunder", -6.0 - (1.0 - k) * 6.0, 0.2))
-	sun.light_energy = _sun_e0 * (1.0 - 0.6 * k) + _flash * 2.5
+	sun.light_energy = _sun_e0 * (1.0 - 0.5 * k) + _flash * 2.5
 	sun.light_color = _sun_c0.lerp(Color(0.75, 0.8, 0.95), k)
 	env.ambient_light_color = _amb0.lerp(Color(0.72, 0.74, 0.78), k * 0.6)
 	env.ambient_light_energy = _amb_e0 * (1.0 - 0.05 * k) + _flash * 1.2
