@@ -479,6 +479,11 @@ func _spawn_barrels(exit_cells: Array) -> void:
 		if randf() < 0.5 and LevelData.code(c2.x, c2.y) == LevelData.code(c.x, c.y):
 			_add_barrel(c2)
 
+func _contract(ev: String) -> void:
+	for c in GameState.contract_event(ev, {"region": LevelData.region}):
+		notify("의뢰 완료! %s — 은신처에서 보상 받기" % GameState.contract_text(c), DB.C_LEGEND)
+		Sfx.play("pickup_rare", -2.0)
+
 func _add_barrel(c: Vector2i) -> void:
 	var b := ExplosiveBarrel.new()
 	b.setup(self, Vector2(c.x * T + T * 0.5, c.y * T + T * 0.6), c)
@@ -513,6 +518,7 @@ func _update_traps(delta: float) -> void:
 			Sfx.play("pick", -4.0)
 			if bag.try_add("cheese"):
 				notify("쥐덫에서 치즈 미끼를 살짝 빼냈다", Color("#6CCB5F"))
+			_contract("bait")
 		else:
 			Sfx.play("slam", -2.0, 0.1)
 			shake(7.0)

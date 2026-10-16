@@ -446,8 +446,12 @@ func fill_contracts() -> void:
 			pick = "kill"
 		elif not kinds.has("extract") and r < 0.85:
 			pick = "extract"
-		elif not kinds.has("boss") and r < 0.95 and int(stats.extracts) >= 2:
+		elif not kinds.has("boss") and r < 0.92 and int(stats.extracts) >= 2:
 			pick = "boss"
+		elif not kinds.has("barrel") and r < 0.96:
+			pick = "barrel"
+		elif not kinds.has("bait") and r < 1.0:
+			pick = "bait"
 		kinds.append(pick)
 		contracts.append(_new_contract(pick))
 
@@ -470,8 +474,18 @@ func _new_contract(kind: String) -> Dictionary:
 			c.target = "value"
 			c.need = [300, 500, 800].pick_random()
 			c.coins = int(c.need * 0.5) + 100
+		"barrel":
+			c.region = ["", "dock", "mart"].pick_random()
+			c.target = "barrel"
+			c.need = [2, 3, 4].pick_random()
+			c.coins = 120 + int(c.need) * 40
+		"bait":
+			c.region = ["", "town"].pick_random()
+			c.target = "bait"
+			c.need = [1, 2, 3].pick_random()
+			c.coins = 100 + int(c.need) * 50
 		"boss":
-			c.region = "dock"
+			c.region = ["mart", "dock", "town"].pick_random()
 			c.target = "elite"
 			c.need = 1
 			c.coins = 600
@@ -488,7 +502,15 @@ func contract_text(c: Dictionary) -> String:
 		"extract":
 			return "%s전리품 %d냥 이상 들고 탈출" % [where, int(c.need)]
 		"boss":
-			return "%s항구 대장 흑냥이 쓰러뜨리기" % where
+			var bname := "보스"
+			var bd: Dictionary = Regions.get_info(str(c.get("region", "dock")))
+			if bd.has("boss"):
+				bname = str(bd.boss[1])
+			return "%s%s 쓰러뜨리기" % [where, bname]
+		"barrel":
+			return "%s기름통 %d개 터뜨리기" % [where, int(c.need)]
+		"bait":
+			return "%s쥐덫에서 미끼 치즈 %d개 빼 오기" % [where, int(c.need)]
 	return "?"
 
 ## 원정 중 일어난 일 → 의뢰 진행
@@ -510,6 +532,12 @@ func contract_event(ev: String, info: Dictionary) -> Array:
 			"extract":
 				if ev == "extract" and int(info.get("value", 0)) >= int(c.need):
 					c.have = int(c.need)
+			"barrel":
+				if ev == "barrel":
+					c.have = int(c.have) + 1
+			"bait":
+				if ev == "bait":
+					c.have = int(c.have) + 1
 		if int(c.have) >= int(c.need) and str(c.kind) != "fetch":
 			c.done = true
 			finished.append(c)

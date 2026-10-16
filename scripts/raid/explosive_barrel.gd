@@ -68,6 +68,7 @@ func explode() -> void:
 	Sfx.play_at("slam", pos, 2.0)
 	Sfx.play("thunder", -8.0, 0.2)
 	raid.astar.set_point_solid(cell, false)
+	raid._contract("barrel")
 	collision_layer = 0
 	# 3D 모형을 바꾸려고 표시 노드를 새로 만든다
 	var burnt := Node2D.new()
