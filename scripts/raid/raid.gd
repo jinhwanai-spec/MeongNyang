@@ -348,6 +348,20 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 		holder.add_child(spr)
 	world.add_child(holder)
 
+# ── 보스 등장 알림 (처음 마주쳤을 때 한 번) ──
+var _boss_seen := {}
+func _update_boss_intro() -> void:
+	if Engine.get_physics_frames() % 10 != 0:
+		return
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not e.elite or e.dead or _boss_seen.has(e):
+			continue
+		if e.is_aware() or e.global_position.distance_to(player.global_position) < T * 7.0:
+			_boss_seen[e] = true
+			notify("보스 등장! — %s" % str(e.data.name), DB.C_DANGER)
+			Sfx.play("alarm", -6.0)
+			shake(6.0)
+
 # ── 쥐덫: 실내 바닥 곳곳. 서서 밟으면 '탁!' (피해·발 묶임·큰 소리), 웅크려 다가가면 미끼 치즈만 쏙 ──
 var traps: Array = []   # [Node2D, 위치, 튕겼나]
 var _trap_hint := false
@@ -746,6 +760,7 @@ func _physics_process(delta: float) -> void:
 	_update_extraction(delta)
 	_update_pickups()
 	_update_traps(delta)
+	_update_boss_intro()
 	_update_tutorial(delta)
 	if power_on_t >= 0.0:
 		power_on_t += delta
@@ -935,7 +950,7 @@ func on_enemy_killed(e: Enemy) -> void:
 		items.append(e.vest)
 	if e.elite:
 		items.append_array(["gold_collar", ["att_drum_mag", "att_holo", "att_scope_4x"].pick_random(), "lens", "metal_sheet", "metal_sheet", "gunpowder", "potion_big", "ammo_rifle", "ammo_rifle"])
-		notify("항구 대장을 쓰러뜨렸다! 귀한 전리품이 떨어졌다", DB.C_LEGEND)
+		notify("%s를 쓰러뜨렸다! 귀한 전리품이 떨어졌다" % str(e.data.name), DB.C_LEGEND)
 		Sfx.play("rare", -2.0)
 	if not items.is_empty():
 		var drop := LootContainer.new()
