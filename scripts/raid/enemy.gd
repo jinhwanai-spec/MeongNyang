@@ -639,7 +639,8 @@ func take_damage(amount: float, from_pos: Vector2, kick_force: float) -> void:
 		Net.send_hit(net_id, amount, from_pos, kick_force)
 		return
 	var crit := not is_aware()
-	if shield_blocks(from_pos):
+	var blocked := shield_blocks(from_pos)
+	if blocked:
 		amount *= 0.15
 		crit = false
 		if is_instance_valid(FX.fx3d):
@@ -653,7 +654,7 @@ func take_damage(amount: float, from_pos: Vector2, kick_force: float) -> void:
 			Sfx.play_at("impact_hard", global_position, -10.0, 0.15)
 	hp -= amount
 	if is_instance_valid(FX.fx3d):
-		FX.fx3d.damage_number(global_position, amount, crit, 1.25 if type != "bulldog" else 1.45)
+		FX.fx3d.damage_number(global_position, amount, crit, 1.25 if type != "bulldog" else 1.45, blocked)
 		if amount >= 40.0:
 			FX.fx3d.hitstop(0.03, 0.2)
 	Sfx.play_at("impact_flesh", global_position, -6.0, 0.12)

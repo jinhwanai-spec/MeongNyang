@@ -19,14 +19,17 @@ func _ready() -> void:
 	var deco := Control.new()
 	deco.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	deco.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var hk := "hamster_" + str(result.get("hamster", ""))
+	if Sprites.char_info(hk).is_empty():
+		hk = "hamster"
 	deco.draw.connect(func():
 		var vs := deco.size
 		if ok:
-			Sprites.draw_char(deco, "hamster", Sprites.char_frame("hamster", "happy", 0), Vector2(vs.x * 0.12, vs.y * 0.78), 1.5)
+			Sprites.draw_char(deco, hk if Sprites.has_anim(hk, "happy") else "hamster", Sprites.char_frame(hk if Sprites.has_anim(hk, "happy") else "hamster", "happy", 0), Vector2(vs.x * 0.12, vs.y * 0.78), 1.5)
 			Sprites.draw_fit(deco, Sprites.fx_tex("coin"), Rect2(Vector2(vs.x * 0.84, vs.y * 0.36), Vector2(56, 56)))
-			Sprites.draw_char(deco, "hamster", Sprites.char_frame("hamster", "portrait_happy", 0), Vector2(vs.x * 0.88, vs.y * 0.78), 1.2, true)
+			Sprites.draw_char(deco, hk if Sprites.has_anim(hk, "portrait_happy") else "hamster", Sprites.char_frame(hk if Sprites.has_anim(hk, "portrait_happy") else "hamster", "portrait_happy", 0), Vector2(vs.x * 0.88, vs.y * 0.78), 1.2, true)
 		else:
-			Sprites.draw_char(deco, "hamster", Sprites.char_frame("hamster", "hurt", 0), Vector2(vs.x * 0.12, vs.y * 0.8), 1.3, false, Color(0.8, 0.75, 0.8))
+			Sprites.draw_char(deco, hk if Sprites.has_anim(hk, "hurt") else "hamster", Sprites.char_frame(hk if Sprites.has_anim(hk, "hurt") else "hamster", "hurt", 0), Vector2(vs.x * 0.12, vs.y * 0.8), 1.3, false, Color(0.8, 0.75, 0.8))
 			Sprites.draw_char(deco, "cat_black", Sprites.char_frame("cat_black", "idle", 0), Vector2(vs.x * 0.89, vs.y * 0.8), 1.6, true, Color(0.75, 0.75, 0.85)))
 	add_child(deco)
 	var center := CenterContainer.new()

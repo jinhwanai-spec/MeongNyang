@@ -154,9 +154,9 @@ func fur(pos: Vector2, c: Color, n: int, h: float = 0.55) -> void:
 		_spawn(_box, _mat("fur", c, false), at, v, randf_range(0.5, 0.9), 6.0, randf_range(0.7, 1.4), Vector3(randf_range(-8, 8), randf_range(-8, 8), randf_range(-8, 8)))
 
 # ── 피해 숫자: 톡 튀어 올랐다 사라짐 (치명타는 크고 노랗게) ──
-func damage_number(pos: Vector2, amount: float, crit: bool, h: float = 1.2) -> void:
+func damage_number(pos: Vector2, amount: float, crit: bool, h: float = 1.2, blocked: bool = false) -> void:
 	var l := Label3D.new()
-	l.text = str(int(round(amount)))
+	l.text = str(int(round(amount))) if not blocked else "막힘 %d" % int(round(amount))
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	l.no_depth_test = true
 	l.fixed_size = true
@@ -164,8 +164,8 @@ func damage_number(pos: Vector2, amount: float, crit: bool, h: float = 1.2) -> v
 	l.font = FX.font()
 	l.font_size = 30
 	l.outline_size = 10
-	l.modulate = DB.C_LEGEND if crit else Color(1, 1, 1)
-	l.outline_modulate = Color(0.15, 0.05, 0.05)
+	l.modulate = Color("#9FC3FF") if blocked else (DB.C_LEGEND if crit else Color(1, 1, 1))
+	l.outline_modulate = Color(0.15, 0.05, 0.05) if not blocked else Color(0.03, 0.06, 0.15)
 	l.position = p3(pos, h) + Vector3(randf_range(-0.25, 0.25), 0, 0)
 	add_child(l)
 	var tw := l.create_tween()
