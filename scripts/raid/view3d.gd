@@ -705,10 +705,10 @@ func _update_storm3d(delta: float) -> void:
 		_flash = 1.0
 		var d := randf_range(0.25, 0.9)
 		get_tree().create_timer(d).timeout.connect(func(): Sfx.play("thunder", -6.0 - (1.0 - k) * 6.0, 0.2))
-	sun.light_energy = _sun_e0 * (1.0 - 0.75 * k) + _flash * 2.5
+	sun.light_energy = _sun_e0 * (1.0 - 0.6 * k) + _flash * 2.5
 	sun.light_color = _sun_c0.lerp(Color(0.75, 0.8, 0.95), k)
-	env.ambient_light_color = _amb0.lerp(Color(0.56, 0.62, 0.8), k)
-	env.ambient_light_energy = _amb_e0 * (1.0 - 0.15 * k) + _flash * 1.2
+	env.ambient_light_color = _amb0.lerp(Color(0.72, 0.74, 0.78), k * 0.6)
+	env.ambient_light_energy = _amb_e0 * (1.0 - 0.05 * k) + _flash * 1.2
 	env.background_color = _bg0.lerp(Color(0.06, 0.07, 0.1), k)
 	if k > 0.02:
 		if _rain3d == null:
@@ -721,7 +721,7 @@ func _update_storm3d(delta: float) -> void:
 func _make_rain3d() -> GPUParticles3D:
 	# 바닥에 톡톡 튀는 작은 물방울 고리
 	var p := GPUParticles3D.new()
-	p.amount = 240
+	p.amount = 180
 	p.lifetime = 0.35
 	p.visibility_aabb = AABB(Vector3(-14, -1, -10), Vector3(28, 3, 20))
 	var pm := ParticleProcessMaterial.new()

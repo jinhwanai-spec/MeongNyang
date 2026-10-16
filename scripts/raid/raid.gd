@@ -674,7 +674,8 @@ func _update_storm(delta: float) -> void:
 			Sfx.play("thunder", -2.0)
 		storm_k = minf(1.0, storm_k + delta / 60.0)
 	vision_mul = 1.0 - storm_k * 0.25
-	var base := DAY_TINT.lerp(Color(0.5, 0.54, 0.68), storm_k)
+	# 3D 화면은 조명으로 어둡게 하므로 화면 색조는 조금만
+	var base := DAY_TINT.lerp(Color(0.5, 0.54, 0.68), storm_k * (0.35 if view3d else 1.0))
 	modulate_node.color = base
 	rain.set("strength", storm_k)
 	reinforce_t -= delta * (1.0 + storm_k)
