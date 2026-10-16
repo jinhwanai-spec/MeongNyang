@@ -958,6 +958,28 @@ func _buy(s: Dictionary) -> void:
 
 # ── 보관함 ───────────────────────────────────────────
 func _build_stash() -> void:
+	# 원정 기록
+	var rc := _card(stash_box, Color(DB.C_HERO, 0.5))
+	rc.add_child(UITheme.label("원정 기록", 19, DB.C_TEXT, true))
+	var st: Dictionary = GameState.stats
+	var raids := int(st.get("raids", 0))
+	var ex := int(st.get("extracts", 0))
+	var rate := (100.0 * ex / raids) if raids > 0 else 0.0
+	var rg := HFlowContainer.new()
+	rg.add_theme_constant_override("h_separation", 22)
+	rc.add_child(rg)
+	for kv in [["원정", str(raids)], ["탈출", str(ex)], ["생존율", "%d%%" % int(rate)], ["실종", str(int(st.get("deaths", 0)))],
+			["처치", str(int(st.get("kills", 0)))], ["보스 처치", str(int(st.get("boss_kills", 0)))], ["최고 전리품", "%s냥" % HUD._fmt(int(st.get("best_haul", 0)))]]:
+		var vb := VBoxContainer.new()
+		vb.add_child(UITheme.label(kv[1], 20, DB.C_LEGEND, true))
+		vb.add_child(UITheme.label(kv[0], 12, DB.C_MUTED))
+		rg.add_child(vb)
+	var lvs := []
+	for hid in DB.HAMSTER_ORDER:
+		if GameState.ham_level(hid) > 1:
+			lvs.append("%s Lv.%d" % [DB.HAMSTERS[hid].name, GameState.ham_level(hid)])
+	if not lvs.is_empty():
+		rc.add_child(UITheme.label("용병: " + " · ".join(lvs), 13, Color("#9FE38A")))
 	var c := _card(stash_box)
 	var h := HBoxContainer.new()
 	c.add_child(h)

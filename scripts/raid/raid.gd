@@ -98,7 +98,7 @@ func _ready() -> void:
 	_build_pause()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	Sfx.music("raid")
-	Sfx.ambient({"dock": "harbor", "town": "park", "mart": "mart"}.get(LevelData.region, ""))
+	Sfx.ambient({"dock": "harbor", "town": "park", "mart": "mart"}.get(LevelData.region, ""), {"mart": -16.0, "town": -12.0}.get(LevelData.region, -10.0))
 	tree_exiting.connect(func(): Sfx.ambient(""))
 	notify("원정 시작 — " + str(Regions.cur().short), DB.C_HERO)
 	if not GameState.tutorial_done:
@@ -996,6 +996,8 @@ func on_enemy_killed(e: Enemy) -> void:
 		items.append(e.helmet)
 	if e.vest != "" and (e.elite or randf() < 0.6):
 		items.append(e.vest)
+	if e.elite and (not Net.active or e.last_hitter == Net.my_id()):
+		GameState.stats["boss_kills"] = int(GameState.stats.get("boss_kills", 0)) + 1
 	if e.elite:
 		items.append_array(["gold_collar", ["att_drum_mag", "att_holo", "att_scope_4x"].pick_random(), "lens", "metal_sheet", "metal_sheet", "gunpowder", "potion_big", "ammo_rifle", "ammo_rifle"])
 		notify("%s를 쓰러뜨렸다! 귀한 전리품이 떨어졌다" % str(e.data.name), DB.C_LEGEND)
