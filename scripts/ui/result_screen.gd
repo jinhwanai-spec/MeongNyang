@@ -49,6 +49,10 @@ func _ready() -> void:
 	var sl := UITheme.label(sub, 17, DB.C_MUTED)
 	sl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(sl)
+	var wn: String = str(DB.WEATHER.get(Raid.weather_now, DB.WEATHER.clear).name)
+	var where := UITheme.label("%s  ·  날씨 %s" % [str(Regions.get_info(LevelData.region).name), wn], 14, Color("#9FC3FF"))
+	where.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(where)
 	if not ok and result.has("bag_rule"):
 		var bt := "가방이 쓰러진 자리에 남았다! 다음 원정에서 노란 표시를 따라가 회수하자."
 		if not bool(result.get("bag_left", false)):
