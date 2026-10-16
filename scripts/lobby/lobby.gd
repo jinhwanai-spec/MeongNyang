@@ -12,6 +12,7 @@ var room: HideoutRoom
 var view: Node3D
 var cam: Camera3D
 var player: LobbyPlayer
+var news_panel: Control
 var avatar: Node3D
 var ui: CanvasLayer
 var prompt: Label
@@ -120,6 +121,7 @@ func _whats_new() -> void:
 	GameState.seen["v27"] = true
 	GameState.save_game()
 	var pc := PanelContainer.new()
+	news_panel = pc
 	pc.add_theme_stylebox_override("panel", UITheme.box(Color(DB.C_UI_SOLID, 0.94), 14, Color(DB.C_LEGEND, 0.7), 2, 18))
 	pc.position = Vector2(24, 24)
 	pc.custom_minimum_size = Vector2(520, 0)
@@ -213,6 +215,8 @@ func _unhandled_input(e: InputEvent) -> void:
 
 func _open_station(k: String) -> void:
 	Sfx.play("click", -4.0)
+	if is_instance_valid(news_panel):
+		news_panel.queue_free()
 	var h := Hideout.new()
 	h.overlay_mode = true
 	h.start_tab = int(HideoutRoom.STATIONS[k][2])
