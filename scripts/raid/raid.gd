@@ -63,6 +63,8 @@ func setup(k: Dictionary) -> void:
 	weather_now = "clear" if Net.active else str(k.get("weather", "clear"))
 	if force_weather != "":
 		weather_now = force_weather
+	if str(k.get("region", "")) == "subway" and not Net.active:
+		weather_now = "clear"   # 지하는 날씨 영향 없음
 	if not DB.WEATHER.has(weather_now):
 		weather_now = "clear"
 
@@ -100,7 +102,7 @@ func _ready() -> void:
 	_build_pause()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	Sfx.music("raid")
-	Sfx.ambient({"dock": "harbor", "town": "park", "mart": "mart"}.get(LevelData.region, ""), {"mart": -16.0, "town": -12.0}.get(LevelData.region, -10.0))
+	Sfx.ambient({"dock": "harbor", "town": "park", "mart": "mart", "subway": "mart"}.get(LevelData.region, ""), {"mart": -16.0, "town": -12.0, "subway": -14.0}.get(LevelData.region, -10.0))
 	tree_exiting.connect(func(): Sfx.ambient(""))
 	notify("원정 시작 — " + str(Regions.cur().short), DB.C_HERO)
 	if not GameState.tutorial_done:
@@ -325,6 +327,19 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 		if LevelData.code(x - 1, y) == c:
 			return
 		name_ = "car%d" % ((x * 7 + y * 3) % 3)
+	# 지하철역: 길게 이어진 Z 는 멈춘 열차 한 량 (윗줄에서만 만든다)
+	if c == "Z" and str(Regions.cur().get("z_model", "")) == "train":
+		if LevelData.code(x, y - 1) == "Z":
+			return
+		var run := 0
+		while LevelData.code(x + run, y) == "Z":
+			run += 1
+		var tr := Node2D.new()
+		tr.position = Vector2(x * T + T * 0.5, y * T + T)
+		tr.set_meta("prop3d", "proc:train_%d" % run)
+		tr.set_meta("prop_off", Vector2((run - 1) * 0.5, 0.0))
+		world.add_child(tr)
+		return
 	var sheet := ""
 	if c == "o":
 		sheet = ["crate", "barrel_red", "sandbags", "crate_blue", "barrel_blue", "tires", "cardboard", "barrier_concrete", "crate_small", "ammo_locker"][(x * 5 + y * 11) % 10]
@@ -927,7 +942,7 @@ func _update_storm(delta: float) -> void:
 	# 3D 화면은 조명으로 어둡게 하므로 화면 색조는 조금만
 	var base := DAY_TINT.lerp(Color(0.5, 0.54, 0.68), storm_k * (0.35 if view3d else 1.0))
 	modulate_node.color = base
-	rain.set("strength", storm_k)
+	rain.set("strength", 0.0 if Regions.cur().get("indoor", false) else storm_k)
 	reinforce_t -= delta * (1.0 + storm_k)
 	if reinforce_t <= 0.0 and not Net.is_client():
 		reinforce_t = 95.0

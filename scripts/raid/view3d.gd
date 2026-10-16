@@ -755,7 +755,7 @@ func _update_gates(delta: float) -> void:
 ## 폭풍: 해가 가려지고 어두워지며, 가끔 번개가 번쩍인다 + 바닥에 튀는 빗방울
 func _update_storm3d(delta: float) -> void:
 	var k: float = float(raid.storm_k)
-	if sun == null or env == null:
+	if sun == null or env == null or Regions.cur().get("indoor", false):
 		return
 	_flash = maxf(0.0, _flash - delta * 5.0)
 	if k > 0.3 and randf() < delta * 0.07 * k:

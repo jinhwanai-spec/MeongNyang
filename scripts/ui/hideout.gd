@@ -167,7 +167,7 @@ func _build_prep() -> void:
 	region.add_child(rsel)
 	rsel.add_child(UITheme.label("원정 지역", 17, DB.C_TEXT, true))
 	for rid in Regions.ORDER:
-		var rb := UITheme.button(str(Regions.DATA[rid].short), 15, GameState.region == rid)
+		var rb := UITheme.button(str(Regions.get_info(rid).short), 15, GameState.region == rid)
 		rb.pressed.connect(func():
 			GameState.region = rid
 			GameState.save_game()

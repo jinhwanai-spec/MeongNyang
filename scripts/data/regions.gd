@@ -2,7 +2,7 @@ class_name Regions
 extends RefCounted
 ## 원정 지역 정보 (지도는 LevelData.MAPS). 은신처 출발 준비에서 고른다.
 
-const ORDER := ["mart", "dock", "town"]
+const ORDER := ["mart", "dock", "town", "subway"]
 
 const DATA := {
 	"mart": {
@@ -101,8 +101,35 @@ const DATA := {
 	},
 }
 
+const SUBWAY := {
+	"name": "지역 4 · 냥냥 지하철역", "short": "냥냥 지하철역", "danger": "★★★", "reward": "★★★",
+	"info": "제한 14분 · 탈출구 2곳 (A 비상계단: 항상 열림 / B 정비 터널: 정비 창고 발전기 필요)\n대합실 개찰구 · 승강장 둘 · 선로에 멈춘 열차 사이를 오가며 싸운다 · 실내라 날씨 영향 없음 · 매점·사물함이 많다",
+	"floor": "res://assets/sprites/map/floor_subway.png", "minimap": "res://assets/sprites/map/floor_subway.png",
+	"exits": {"A": ["A 비상계단", "manhole"], "B": ["B 정비 터널", "truck"]},
+	"lock": "정비 창고 발전기를 켜면 셔터가 열린다",
+	"glass_row": -1, "loot": 1.2, "indoor": true, "z_model": "train",
+	"boss": ["bulldog", "역무원 대장 흑냥이", "battle_rifle"],
+	"mood": {"sun": "#DDE6F0", "sun_e": 0.25, "sun_rot": Vector3(-80, -20, 0), "amb": "#C8D4E0", "amb_e": 0.62, "bg": "#0C0E12", "sat": 1.0},
+	"reinforce": [Vector2(9, 3), Vector2(1, 12), Vector2(54, 22), Vector2(2, 35)],
+	"lights": [
+		[Vector2(8, 4), "#FFE9C4", 6.0, 1.5], [Vector2(20, 4), "#E6F0FF", 7.0, 1.6], [Vector2(30, 4), "#E6F0FF", 7.0, 1.6], [Vector2(44, 4), "#FFE9C4", 7.0, 1.6],
+		[Vector2(6, 12), "#E6F0FF", 7.0, 1.7], [Vector2(18, 12), "#E6F0FF", 7.0, 1.7], [Vector2(30, 12), "#E6F0FF", 7.0, 1.7], [Vector2(42, 12), "#E6F0FF", 7.0, 1.7], [Vector2(52, 12), "#E6F0FF", 6.0, 1.6],
+		[Vector2(6, 22), "#E6F0FF", 7.0, 1.7], [Vector2(18, 22), "#E6F0FF", 7.0, 1.7], [Vector2(30, 22), "#E6F0FF", 7.0, 1.7], [Vector2(42, 22), "#E6F0FF", 7.0, 1.7], [Vector2(52, 22), "#E6F0FF", 6.0, 1.6],
+		[Vector2(14, 17), "#FF5A4A", 4.0, 1.0], [Vector2(40, 27), "#FF5A4A", 4.0, 1.0],
+		[Vector2(7, 34), "#FFD9A0", 6.0, 1.4], [Vector2(26, 34), "#B0C8FF", 7.0, 1.4], [Vector2(46, 34), "#FF8A4A", 6.0, 1.6], [Vector2(53, 34), "#7CFF9A", 3.5, 1.6],
+	],
+	"decor": [
+		["proc:bench", 9.0, 10.8, 1.0, 180.0], ["proc:bench", 33.0, 10.8, 1.0, 180.0], ["proc:bench", 50.0, 10.8, 1.0, 180.0],
+		["proc:bench", 9.0, 23.6, 1.0], ["proc:bench", 22.0, 23.6, 1.0], ["proc:bench", 45.0, 23.6, 1.0],
+		["cone", 30.5, 31.5, 0.7], ["cone", 31.5, 31.6, 0.7], ["barrier_stripe", 12.5, 33.0, 0.8], ["pallet", 22.5, 37.6, 0.9], ["tires", 34.5, 37.6, 0.9],
+		["cardboard", 3.4, 7.6, 0.8], ["crate_small", 33.6, 6.6, 0.8],
+	],
+}
+
 static func cur() -> Dictionary:
-	return DATA.get(LevelData.region, DATA.mart)
+	return get_info(LevelData.region)
 
 static func get_info(id: String) -> Dictionary:
+	if id == "subway":
+		return SUBWAY
 	return DATA.get(id, DATA.mart)

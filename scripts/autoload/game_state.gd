@@ -147,7 +147,7 @@ func load_game() -> bool:
 			if typeof(c) == TYPE_DICTIONARY and c.has("kind"):
 				contracts.append(c)
 	fill_contracts()
-	if not Regions.DATA.has(region):
+	if not Regions.ORDER.has(region):
 		region = "mart"
 	if not DB.HAMSTERS.has(hamster):
 		hamster = "baragi"
@@ -468,9 +468,9 @@ func _new_contract(kind: String) -> Dictionary:
 			c.target = k[0]
 			c.need = int(k[1])
 			c.coins = {"hyena": 180, "bulldog": 260, "cat": 240, "any": 300}[k[0]]
-			c.region = ["", "mart", "dock", "town"].pick_random()
+			c.region = ["", "mart", "dock", "town", "subway"].pick_random()
 		"extract":
-			c.region = ["mart", "dock", "town"].pick_random()
+			c.region = ["mart", "dock", "town", "subway"].pick_random()
 			c.target = "value"
 			c.need = [300, 500, 800].pick_random()
 			c.coins = int(c.need * 0.5) + 100
@@ -485,7 +485,7 @@ func _new_contract(kind: String) -> Dictionary:
 			c.need = [1, 2, 3].pick_random()
 			c.coins = 100 + int(c.need) * 50
 		"boss":
-			c.region = ["mart", "dock", "town"].pick_random()
+			c.region = ["mart", "dock", "town", "subway"].pick_random()
 			c.target = "elite"
 			c.need = 1
 			c.coins = 600

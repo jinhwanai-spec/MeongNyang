@@ -557,6 +557,8 @@ static func proc_prop(n: String) -> Node3D:
 		return shipping_container(CONTAINER_COLORS[i % CONTAINER_COLORS.size()])
 	if n == "boat":
 		return boat()
+	if n.begins_with("train_"):
+		return subway_car(int(n.get_slice("_", 1)))
 	match n:
 		"tree": return tree(0)
 		"tree2": return tree(1)
@@ -616,6 +618,45 @@ static func supply_crate(chute: bool = false) -> Node3D:
 			var mid := (top + bot) * 0.5
 			var rp := box(r, Vector3(0.015, (top - bot).length(), 0.015), mid, rope)
 			rp.transform = Transform3D(Basis(Quaternion(Vector3.UP, (top - bot).normalized())), mid)
+	return r
+
+## 멈춘 지하철 한 량 (길이 L칸, 깊이 2칸 — 원점은 윗줄 칸의 아래쪽 가운데)
+static func subway_car(L: int) -> Node3D:
+	var r := _root("subway_car")
+	var body := mat(Color("#C9CED6"), 0.35, 0.6)
+	var stripe := mat(Color("#3E8EDE"), 0.4, 0.2)
+	var dark := mat(Color("#2B2F36"), 0.5, 0.5)
+	var win := glass(Color(0.2, 0.3, 0.4), 0.15, 0.85)
+	var len_ := float(L) - 0.2
+	var cz := 0.0      # 두 줄(위·아래)의 가운데 = 원점 그대로 (원점이 윗줄 바닥 끝)
+	box(r, Vector3(len_, 1.35, 1.8), Vector3(0, 0.85, cz), body)
+	box(r, Vector3(len_ + 0.02, 0.16, 1.82), Vector3(0, 0.62, cz), stripe)
+	box(r, Vector3(len_ - 0.1, 0.12, 1.7), Vector3(0, 1.57, cz), mat(Color("#AEB4BC"), 0.4, 0.6))
+	box(r, Vector3(len_, 0.18, 1.6), Vector3(0, 0.12, cz), dark)
+	# 창문 줄 (양쪽)
+	var n := int(len_ / 1.1)
+	for i in n:
+		var x := -len_ * 0.5 + 0.55 + i * (len_ - 1.1) / maxf(1.0, float(n - 1))
+		for side in [-1.0, 1.0]:
+			if i % 3 == 1:
+				box(r, Vector3(0.5, 0.95, 0.02), Vector3(x, 0.78, cz + side * 0.91), dark)   # 문
+				box(r, Vector3(0.22, 0.42, 0.025), Vector3(x - 0.12, 1.0, cz + side * 0.915), win)
+				box(r, Vector3(0.22, 0.42, 0.025), Vector3(x + 0.12, 1.0, cz + side * 0.915), win)
+			else:
+				box(r, Vector3(0.75, 0.42, 0.02), Vector3(x, 1.08, cz + side * 0.91), win)
+	# 앞뒤 끝
+	for ex in [-1.0, 1.0]:
+		box(r, Vector3(0.04, 0.5, 1.2), Vector3(ex * (len_ * 0.5 + 0.01), 1.05, cz), win)
+	var l := Label3D.new()
+	l.text = "냥냥선"
+	l.font_size = 48
+	l.pixel_size = 0.006
+	l.modulate = Color("#3E8EDE")
+	l.outline_size = 0
+	l.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+	l.rotation.x = -PI * 0.5
+	l.position = Vector3(0, 1.64, cz)
+	r.add_child(l)
 	return r
 
 ## 항구 컨테이너 크레인 (원점 = 다리 가운데 바닥, 붐은 바다 쪽 -Z로 뻗는다)

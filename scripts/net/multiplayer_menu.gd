@@ -169,7 +169,7 @@ func _refresh() -> void:
 		rrow.add_theme_constant_override("separation", 6)
 		rrow.add_child(UITheme.label("원정 지역", 16, DB.C_TEXT, true))
 		for rid in Regions.ORDER:
-			var rb2 := UITheme.button(str(Regions.DATA[rid].short), 14, GameState.region == rid)
+			var rb2 := UITheme.button(str(Regions.get_info(rid).short), 14, GameState.region == rid)
 			rb2.pressed.connect(func():
 				GameState.region = rid
 				GameState.save_game()
