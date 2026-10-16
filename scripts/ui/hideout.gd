@@ -175,15 +175,42 @@ func _build_prep() -> void:
 			refresh())
 		rsel.add_child(rb)
 	var rd: Dictionary = Regions.get_info(GameState.region)
+	# 지역 지도 미리보기 + 설명
+	var rrow := HBoxContainer.new()
+	rrow.add_theme_constant_override("separation", 12)
+	region.add_child(rrow)
+	var thumb_tex = load(str(rd.minimap))
+	if thumb_tex:
+		var tp := PanelContainer.new()
+		tp.add_theme_stylebox_override("panel", UITheme.box(Color(0, 0, 0, 0.35), 8, Color(DB.C_HERO, 0.5), 2, 3))
+		var th := TextureRect.new()
+		th.texture = thumb_tex
+		th.custom_minimum_size = Vector2(150, 106)
+		th.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		th.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tp.add_child(th)
+		tp.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		rrow.add_child(tp)
+	var rcol := VBoxContainer.new()
+	rcol.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	rrow.add_child(rcol)
 	var rh := HBoxContainer.new()
-	region.add_child(rh)
+	rcol.add_child(rh)
 	var rl := UITheme.label(str(rd.name), 21, DB.C_TEXT, true)
 	rl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rh.add_child(rl)
 	rh.add_child(UITheme.label("위험 %s  보상 %s" % [rd.danger, rd.reward], 15, DB.C_LEGEND))
 	var info := UITheme.label(str(rd.info), 14, DB.C_MUTED)
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	region.add_child(info)
+	rcol.add_child(info)
+	if rd.has("boss"):
+		rcol.add_child(UITheme.label("보스: %s (처치하면 좋은 갑옷·무기)" % str(rd.boss[1]), 14, DB.C_DANGER.lightened(0.25), true))
+	var nbag := 0
+	for b in GameState.lost_bags:
+		if str(b.get("region", "mart")) == GameState.region:
+			nbag += 1
+	if nbag > 0:
+		rcol.add_child(UITheme.label("이 지역에 두고 온 내 가방 %d개" % nbag, 14, DB.C_LEGEND, true))
 
 	# 출격 용병 선택
 	var hc := _card(prep_box, Color(DB.C_LEGEND, 0.5))
