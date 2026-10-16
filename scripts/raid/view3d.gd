@@ -41,6 +41,14 @@ var shutter_panel: Node3D
 var exit3d := {}            # ExitZone -> {root, beam, ...}
 var player_model: Node3D
 var extracting := false
+var sun: DirectionalLight3D
+var _sun_e0 := 1.0
+var _sun_c0 := Color.WHITE
+var _amb0 := Color.WHITE
+var _amb_e0 := 0.7
+var _bg0 := Color.BLACK
+var _flash := 0.0
+var _rain3d: GPUParticles3D
 
 func build(r: Raid) -> void:
 	raid = r
@@ -179,6 +187,12 @@ func _env() -> void:
 		e.adjustment_saturation = float(mood.get("sat", 1.12))
 	add_child(moon)
 	Settings.apply_env(e, moon)
+	sun = moon
+	_sun_e0 = moon.light_energy
+	_sun_c0 = moon.light_color
+	_amb0 = e.ambient_light_color
+	_amb_e0 = e.ambient_light_energy
+	_bg0 = e.background_color
 
 func _lights() -> void:
 	# [타일 위치, 색, 반경(타일), 세기]
@@ -564,6 +578,7 @@ func world_to_screen(p: Vector2) -> Vector2:
 func _process(delta: float) -> void:
 	if raid == null or raid.player == null:
 		return
+	_update_storm3d(delta)
 	# 카메라: 플레이어(부드럽게 보간한 위치) + 마우스 쪽으로 살짝 앞당김.
 	# 앞당김은 '화면 좌표'로 계산해서 카메라↔조준점이 서로 끌고 다니지 않게 한다.
 	var pp: Vector2 = _player_smooth()
@@ -680,6 +695,74 @@ func _update_gates(delta: float) -> void:
 		(info.beam as Node3D).scale.y = 1.4 if active else 1.0
 
 ## 탈출 성공 연출: A 맨홀이면 햄스터가 쏙 들어가고, B 트럭이면 트럭에 타고 떠난다
+## 폭풍: 해가 가려지고 어두워지며, 가끔 번개가 번쩍인다 + 바닥에 튀는 빗방울
+func _update_storm3d(delta: float) -> void:
+	var k: float = float(raid.storm_k)
+	if sun == null or env == null:
+		return
+	_flash = maxf(0.0, _flash - delta * 5.0)
+	if k > 0.3 and randf() < delta * 0.07 * k:
+		_flash = 1.0
+		var d := randf_range(0.25, 0.9)
+		get_tree().create_timer(d).timeout.connect(func(): Sfx.play("thunder", -6.0 - (1.0 - k) * 6.0, 0.2))
+	sun.light_energy = _sun_e0 * (1.0 - 0.75 * k) + _flash * 2.5
+	sun.light_color = _sun_c0.lerp(Color(0.75, 0.8, 0.95), k)
+	env.ambient_light_color = _amb0.lerp(Color(0.56, 0.62, 0.8), k)
+	env.ambient_light_energy = _amb_e0 * (1.0 - 0.15 * k) + _flash * 1.2
+	env.background_color = _bg0.lerp(Color(0.06, 0.07, 0.1), k)
+	if k > 0.02:
+		if _rain3d == null:
+			_rain3d = _make_rain3d()
+			add_child(_rain3d)
+		_rain3d.position = cam_target + Vector3(0, 0.02, 0)
+		_rain3d.amount_ratio = k
+		_rain3d.emitting = true
+
+func _make_rain3d() -> GPUParticles3D:
+	# 바닥에 톡톡 튀는 작은 물방울 고리
+	var p := GPUParticles3D.new()
+	p.amount = 240
+	p.lifetime = 0.35
+	p.visibility_aabb = AABB(Vector3(-14, -1, -10), Vector3(28, 3, 20))
+	var pm := ParticleProcessMaterial.new()
+	pm.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+	pm.emission_box_extents = Vector3(12, 0, 8)
+	pm.gravity = Vector3.ZERO
+	pm.scale_min = 0.4
+	pm.scale_max = 1.0
+	var sc := Curve.new()
+	sc.add_point(Vector2(0, 0.2))
+	sc.add_point(Vector2(1, 1.0))
+	var sct := CurveTexture.new()
+	sct.curve = sc
+	pm.scale_curve = sct
+	var ca := Gradient.new()
+	ca.colors = PackedColorArray([Color(0.85, 0.9, 1.0, 0.55), Color(0.85, 0.9, 1.0, 0.0)])
+	var cat := GradientTexture1D.new()
+	cat.gradient = ca
+	pm.color_ramp = cat
+	p.process_material = pm
+	var q := QuadMesh.new()
+	q.size = Vector2(0.22, 0.22)
+	q.orientation = PlaneMesh.FACE_Y
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.vertex_color_use_as_albedo = true
+	var gt := GradientTexture2D.new()
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.55, 0.75, 1.0])
+	g.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 0.1), Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	gt.gradient = g
+	gt.fill = GradientTexture2D.FILL_RADIAL
+	gt.fill_from = Vector2(0.5, 0.5)
+	gt.fill_to = Vector2(1.0, 0.5)
+	m.albedo_texture = gt
+	q.material = m
+	p.draw_pass_1 = q
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return p
+
 ## 쓰러질 때: 가방이 바닥에 툭 떨어지고 빛기둥이 선다 (다음 원정에서 회수)
 func play_death_bag(p: Vector2, stays: bool) -> void:
 	var bp := ProcModels.backpack()

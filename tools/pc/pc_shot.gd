@@ -130,6 +130,7 @@ func _process(_d: float) -> void:
 			"unfreeze":
 				for e in get_tree().get_nodes_in_group("enemy"):
 					e.process_mode = Node.PROCESS_MODE_INHERIT
+			"storm": main.current.storm_k = float(arg)
 			"god":
 				main.current.player.hp = 99999.0
 				main.current.player.max_hp = 99999.0
