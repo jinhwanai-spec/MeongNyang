@@ -251,7 +251,8 @@ func _spawn_entities() -> void:
 				"c":
 					_spawn_enemy("cat", foot - Vector2(0, 8))
 				"Y":
-					_spawn_enemy("bulldog", foot - Vector2(0, 8), 0, "항구 대장 흑냥이")
+					var bs: Array = Regions.cur().get("boss", ["bulldog", "항구 대장 흑냥이", "lmg"])
+					_spawn_enemy(str(bs[0]), foot - Vector2(0, 8), 0, str(bs[1]), str(bs[2]))
 				"G":
 					generator = Generator.new()
 					generator.raid = self
@@ -417,11 +418,11 @@ func _make_exit(label: String, cells: Array, need: float) -> ExitZone:
 	ez.add_child(l)
 	return ez
 
-func _spawn_enemy(t: String, pos: Vector2, eid: int = 0, elite_title: String = "") -> Enemy:
+func _spawn_enemy(t: String, pos: Vector2, eid: int = 0, elite_title: String = "", elite_wpn: String = "lmg") -> Enemy:
 	var e := Enemy.new()
 	e.setup(self, t, pos)
 	if elite_title != "":
-		e.make_elite(elite_title)
+		e.make_elite(elite_title, elite_wpn)
 	e.net_id = eid if eid > 0 else next_eid
 	next_eid = maxi(next_eid, e.net_id) + 1
 	e.puppet = Net.is_client()

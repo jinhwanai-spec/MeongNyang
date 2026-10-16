@@ -12,6 +12,7 @@ const DATA := {
 		"exits": {"A": ["A 맨홀", "manhole"], "B": ["B 하역장", "truck"]},
 		"lock": "창고의 비상 발전기를 켜야 열린다",
 		"glass_row": 16, "loot": 1.0,
+		"boss": ["bulldog", "창고지기 흑냥이", "auto_shotgun"],
 		"reinforce": [Vector2(56, 22), Vector2(1, 24), Vector2(30, 1), Vector2(56, 30)],
 		"lights": [
 			[Vector2(14, 8), "#FFE9C4", 7.0, 1.6], [Vector2(23, 8), "#FFE9C4", 7.0, 1.6], [Vector2(31, 7), "#CFE8FF", 6.0, 1.4],
@@ -36,6 +37,7 @@ const DATA := {
 		"exits": {"A": ["A 선착장", "boat"], "B": ["B 하역장", "truck"]},
 		"lock": "창고 안 비상 발전기를 켜면 셔터가 열린다",
 		"glass_row": -1, "loot": 1.15,
+		"boss": ["bulldog", "항구 대장 흑냥이", "lmg"],
 		"mood": {"sun": "#F2EEE6", "sun_e": 1.2, "sun_rot": Vector3(-56, -20, 0), "amb": "#BCC4D0", "amb_e": 0.82, "bg": "#1B2633", "sat": 1.04},
 		"reinforce": [Vector2(54, 7), Vector2(1, 33), Vector2(30, 6), Vector2(54, 34)],
 		"lights": [
@@ -62,6 +64,7 @@ const DATA := {
 		"exits": {"A": ["A 맨홀", "manhole"], "B": ["B 차고 트럭", "truck"]},
 		"lock": "차고 안 발전기를 켜면 셔터가 열린다",
 		"glass_row": -1, "loot": 1.1,
+		"boss": ["hyena", "골목대장 길냥이", "smg"],
 		"mood": {"sun": "#FFC48A", "sun_e": 1.4, "sun_rot": Vector3(-34, -62, 0), "amb": "#C9B4D6", "amb_e": 0.68, "bg": "#2A2033", "sat": 1.16},
 		"reinforce": [Vector2(54, 2), Vector2(1, 2), Vector2(54, 37), Vector2(28, 1)],
 		"lights": [

@@ -107,16 +107,16 @@ func _roll_armor() -> void:
 		vest = str((rr[1][1] as Array).pick_random())
 
 ## 대장: 체력 4.5배, 경기관총, 최고급 갑옷
-func make_elite(title: String) -> void:
+func make_elite(title: String, wpn: String = "lmg") -> void:
 	elite = true
 	data = data.duplicate()
 	data.name = title
 	data.name_color = DB.C_LEGEND
 	data.radius = float(data.radius) * 1.25
 	radius = float(data.radius)
-	hp = float(DB.ENEMIES[type].hp) * 4.5 * float(GameState.diff("enemy_hp"))
+	hp = float(DB.ENEMIES[type].hp) * (4.5 if type == "bulldog" else 7.0) * float(GameState.diff("enemy_hp"))
 	max_hp = hp
-	weapon = "lmg"
+	weapon = wpn
 	gunner = true
 	helmet = "helmet_3"
 	vest = "vest_3"
