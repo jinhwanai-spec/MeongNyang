@@ -201,18 +201,18 @@ func _apply_weather(e: Environment, moon: DirectionalLight3D) -> void:
 	match Raid.weather_now:
 		"night":
 			moon.light_color = Color(0.62, 0.72, 1.0)
-			moon.light_energy = 0.32
+			moon.light_energy = 0.4
 			e.ambient_light_color = Color(0.42, 0.5, 0.75)
-			e.ambient_light_energy = 0.42
+			e.ambient_light_energy = 0.55
 			e.background_color = Color(0.03, 0.04, 0.07)
 			e.glow_intensity = 0.7
 			flashlight = SpotLight3D.new()
 			flashlight.light_color = Color(1.0, 0.95, 0.82)
-			flashlight.light_energy = 4.0
-			flashlight.spot_range = 9.0
-			flashlight.spot_angle = 30.0
+			flashlight.light_energy = 7.0
+			flashlight.spot_range = 10.0
+			flashlight.spot_angle = 32.0
 			flashlight.spot_attenuation = 0.8
-			flashlight.shadow_enabled = true
+			flashlight.shadow_enabled = false   # 햄스터 몸이 빛을 가리지 않게
 			add_child(flashlight)
 		"fog":
 			e.fog_enabled = true
@@ -230,8 +230,8 @@ func _update_flashlight() -> void:
 	var a: Vector2 = raid.player.aim_dir
 	if a == Vector2.ZERO:
 		a = Vector2.DOWN
-	var from := Vector3(pp.x / T, 0.95, pp.y / T)
-	var to := from + Vector3(a.x, -0.18, a.y)
+	var from := Vector3(pp.x / T + a.x * 0.35, 0.95, pp.y / T + a.y * 0.35)
+	var to := from + Vector3(a.x, -0.32, a.y)
 	flashlight.global_transform = Transform3D(Basis.looking_at(to - from, Vector3.UP), from)
 
 func _lights() -> void:
