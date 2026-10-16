@@ -366,9 +366,9 @@ func _new_contract(kind: String) -> Dictionary:
 			c.target = k[0]
 			c.need = int(k[1])
 			c.coins = {"hyena": 180, "bulldog": 260, "cat": 240, "any": 300}[k[0]]
-			c.region = ["", "mart", "dock"].pick_random()
+			c.region = ["", "mart", "dock", "town"].pick_random()
 		"extract":
-			c.region = ["mart", "dock"].pick_random()
+			c.region = ["mart", "dock", "town"].pick_random()
 			c.target = "value"
 			c.need = [300, 500, 800].pick_random()
 			c.coins = int(c.need * 0.5) + 100

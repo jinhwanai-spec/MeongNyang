@@ -91,8 +91,51 @@ const MAP_DOCK := [
 	"########################################################",
 ]
 
+const MAP_TOWN := [
+	"########################################################",
+	"#ggggggggggggg,ggggggggggggggggggggggggg,gggggggggggggg#",
+	"#ggggggggggggg,gg,gggggggggggggggg,ggggg,gggggggggggggg#",
+	"#ggggPgggggggg,gg,gggg~~~~~~~~gggg,gTggg,gggggggggogggg#",
+	"#gggggggoggBgg,gg,gg~~~~~~~~~~~~gg,ggggg,gggggPgggggggg#",
+	"#ggggggggghggg,gg,gg~~~~~~~~~~~~gg,ggggg,gggggggggggcgg#",
+	"#ggggggggggggg,gg,gg~~~~~~~~~~~~gg,ggggg,gggggggggggggg#",
+	"#,,,,,,,,,,,,,,,,,,,~~~~~~~~~~~~,,,,,,,,,,,,,,,,,,,,,,,#",
+	"#ggggggggggggg,gg,gg~~~~~~~~~~~~gg,ggggg,gggghggggggggg#",
+	"#ggggggggggggg,gg,gg~~~~~~~~~~~~gg,ggggg,gggggggggggggg#",
+	"#ggggggggPgggg,gg,gggg~~~~~~~~gggg,ggggg,ggggogggggTggg#",
+	"#ggggghggggggg,gg,,,,,,,,,,,,,,,,,,ggggg,gggggggggggggg#",
+	"#ggggggggggggg,gg,,,,,,,,,,,,,c,,,,ggggg,gggggggggggggg#",
+	"#ggggggggggggg,ggggggggggggggggggggggggg,gggggggggggggg#",
+	"#ffffff..fffffffffffffffff..fffffffffffffffffff..ffffff#",
+	"#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#",
+	"#..11....XX.................................XX.........#",
+	"#.-11.-...-...-...-...-..h-...-...-...-...-...-...b....#",
+	"#..11.........................XX.......................#",
+	"#,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#",
+	"#......................................................#",
+	"#.#####__#####..#####__#####..#####_#####..###==#####..#",
+	"#.#FsS_M____L#..#QF__R___ML#..#F_S_M___L#..#K==G==LB#..#",
+	"#.#__________#..#__________#..#_________#..#========#..#",
+	"#.#__________#..#______c___#..#_________#..#========####",
+	"#.#__CC______#..#___CCC____#..___CC__T__#..#========#22#",
+	"#.#___________..#__________#..#_________#..#o====o==H22#",
+	"#.#_____h____#..#__________#..#_____b___#..#========H22#",
+	"#.#S_______KV#..#B______sSP#..#_K__B____#..#===b====H22#",
+	"#.#__________#..#__________#..#_________#..#========#22#",
+	"#.############..############..###########..#B==T==oK#22#",
+	"#ffffggfffffffffffffggfffffffffffffggfffff.#========####",
+	"#gggggggggggggfgmmmmmmmmmmmmfggggggggggggg.##########..#",
+	"#gggPgggggggggfgmmmmmmmmmmmmfggogggggggggg.............#",
+	"#gggggggggggggfgmmmmcmmmmmmmfgggggggggBggg.............#",
+	"#gggggggggggggfgmmmmmmmmTmmmfggggggggggghg....XX.......#",
+	"#gggggggggogggfgmmmmmmmmmmmmfggggggggggggg.............#",
+	"#gggggggggggggfgggggggggggggfggggggggggggg.............#",
+	"#,,p,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,#",
+	"########################################################",
+]
+
 ## 지역 2: 냥냥 항구 창고단지. ~=바다(못 들어감)  Z=컨테이너(가로 2칸)  1=선착장 보트  2=트럭 하역장
-const MAPS := {"mart": MAP_MART, "dock": MAP_DOCK}
+const MAPS := {"mart": MAP_MART, "dock": MAP_DOCK, "town": MAP_TOWN}
 static var region := "mart"
 static var MAP: Array = MAP_MART
 

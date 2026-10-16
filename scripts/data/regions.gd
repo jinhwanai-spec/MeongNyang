@@ -2,7 +2,7 @@ class_name Regions
 extends RefCounted
 ## 원정 지역 정보 (지도는 LevelData.MAPS). 은신처 출발 준비에서 고른다.
 
-const ORDER := ["mart", "dock"]
+const ORDER := ["mart", "dock", "town"]
 
 const DATA := {
 	"mart": {
@@ -51,6 +51,31 @@ const DATA := {
 			["tires", 30.6, 26.4, 0.9], ["cone", 21.6, 31.5, 0.7], ["cone", 23.2, 31.6, 0.7], ["crate_small", 17.6, 8.5, 0.8],
 			["barrier_concrete", 2.6, 31.0, 0.9], ["barrier_stripe", 52.0, 31.0, 0.8], ["sandbags", 28.5, 7.9, 0.9], ["crate_blue", 49.4, 8.5, 0.9],
 			["bush", 3.4, 23.6, 0.9], ["rock", 8.5, 29.6, 0.8], ["stump", 11.6, 23.8, 0.8], ["cardboard", 35.5, 22.6, 0.8],
+		],
+	},
+	"town": {
+		"name": "지역 3 · 냥냥 주택가와 공원", "short": "냥냥 주택가 · 공원", "danger": "★★☆", "reward": "★★★",
+		"info": "제한 14분 · 탈출구 2곳 (A 맨홀: 항상 열림 / B 차고 트럭: 차고 발전기 필요)
+넓은 풀숲 공원(웅크리면 숨기 좋다) · 연못 · 집 세 채를 뒤지면 냉장고·약품함·사물함이 많다",
+		"floor": "res://assets/sprites/map/floor_town.png", "minimap": "res://assets/sprites/map/floor_town.png",
+		"exits": {"A": ["A 맨홀", "manhole"], "B": ["B 차고 트럭", "truck"]},
+		"lock": "차고 안 발전기를 켜면 셔터가 열린다",
+		"glass_row": -1, "loot": 1.1,
+		"reinforce": [Vector2(54, 2), Vector2(1, 2), Vector2(54, 37), Vector2(28, 1)],
+		"lights": [
+			[Vector2(7.5, 25), "#FFE9C4", 6.0, 1.6], [Vector2(21.5, 25), "#FFE9C4", 6.0, 1.6], [Vector2(35, 25), "#FFE9C4", 6.0, 1.6],
+			[Vector2(47.5, 26), "#FFD9A0", 6.0, 1.5], [Vector2(47, 23), "#FF8A4A", 3.0, 1.4], [Vector2(53.5, 27.5), "#FF6A5A", 4.0, 1.3],
+			[Vector2(10, 17), "#FFD89A", 6.0, 2.0], [Vector2(26, 17), "#FFD89A", 6.0, 2.0], [Vector2(42, 17), "#FFD89A", 6.0, 2.0],
+			[Vector2(26, 7), "#9FD8FF", 7.0, 1.4], [Vector2(8, 5), "#C8FFB0", 6.0, 1.0], [Vector2(46, 9), "#C8FFB0", 6.0, 1.0],
+			[Vector2(21, 34), "#FFB070", 5.0, 1.2], [Vector2(48, 35), "#B0C8FF", 5.0, 1.4], [Vector2(3.5, 17), "#7CFF9A", 3.5, 1.6],
+		],
+		"decor": [
+			["lamp", 6.5, 15.9, 1.0], ["lamp", 22.5, 15.9, 1.0], ["lamp", 38.5, 15.9, 1.0], ["lamp", 50.5, 15.9, 1.0],
+			["lamp", 12.5, 19.9, 1.0], ["lamp", 32.5, 19.9, 1.0],
+			["bush", 3.5, 2.6, 1.0], ["bush", 11.6, 2.8, 0.9], ["bush", 6.4, 9.6, 1.0], ["bush", 37.5, 9.6, 0.9], ["bush", 44.2, 3.0, 1.0],
+			["bush", 52.6, 12.4, 0.9], ["bush", 24.0, 12.9, 0.8], ["bush", 30.5, 1.9, 0.8], ["stump", 19.5, 2.5, 0.9], ["rock", 33.5, 9.6, 0.9],
+			["rock", 18.6, 9.5, 0.8], ["bush", 9.5, 33.6, 0.9], ["bush", 33.6, 35.6, 0.9], ["bush", 38.6, 32.6, 0.8],
+			["cone", 27.4, 18.6, 0.7], ["barrier_stripe", 49.6, 19.5, 0.8], ["tires", 44.6, 33.6, 0.9], ["pallet", 50.5, 36.6, 0.9],
 		],
 	},
 }
