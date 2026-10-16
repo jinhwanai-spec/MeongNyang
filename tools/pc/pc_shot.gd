@@ -8,6 +8,7 @@ var steps := []
 var _save_backup := ""
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS   # 출격 카드(일시정지) 중에도 프레임을 센다
 	# 테스트 실행이 실제 저장 파일(원정 횟수·장비)을 바꾸지 않도록 백업 후 종료 시 복원
 	out = ProjectSettings.globalize_path("res://_patch/shots/")
 	DirAccess.make_dir_recursive_absolute(out)

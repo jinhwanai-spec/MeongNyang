@@ -167,6 +167,16 @@ func _env() -> void:
 	moon.shadow_blur = 2.5
 	moon.directional_shadow_max_distance = 45.0
 	moon.rotation_degrees = Vector3(-48, -38, 0)
+	# 지역마다 하늘·햇빛 분위기 (마트: 늦은 오후 / 항구: 흐린 바닷바람 / 주택가: 해질녘 노을)
+	var mood: Dictionary = Regions.cur().get("mood", {})
+	if mood.has("sun"):
+		moon.light_color = Color(str(mood.sun))
+		moon.light_energy = float(mood.sun_e)
+		moon.rotation_degrees = mood.sun_rot
+		e.ambient_light_color = Color(str(mood.amb))
+		e.ambient_light_energy = float(mood.amb_e)
+		e.background_color = Color(str(mood.bg))
+		e.adjustment_saturation = float(mood.get("sat", 1.12))
 	add_child(moon)
 	Settings.apply_env(e, moon)
 
