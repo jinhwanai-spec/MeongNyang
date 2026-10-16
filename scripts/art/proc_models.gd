@@ -568,10 +568,66 @@ static func proc_prop(n: String) -> Node3D:
 		"mailbox": return mailbox()
 		"picnic": return picnic_table()
 		"mousetrap": return mousetrap(false)
+		"bed": return bed()
+		"sofa": return sofa()
+		"rug": return rug(0)
+		"rug2": return rug(1)
+		"tv": return tv_stand()
+		"table": return small_table()
 		"barrel_boom": return fuel_barrel(false)
 		"barrel_burnt": return fuel_barrel(true)
 		"mousetrap_sprung": return mousetrap(true)
 	return backpack()
+
+# ── 집 안 가구 ───────────────────────────────────────
+static func bed() -> Node3D:
+	var r := _root("bed")
+	var wood := mat(Color("#8A5A3B"), 0.8)
+	box(r, Vector3(0.95, 0.22, 1.7), Vector3(0, 0.11, 0), wood)
+	box(r, Vector3(0.95, 0.5, 0.08), Vector3(0, 0.25, -0.85), wood)
+	box(r, Vector3(0.88, 0.12, 1.6), Vector3(0, 0.28, 0.02), mat(Color("#F3F0EA"), 0.9))
+	box(r, Vector3(0.9, 0.08, 1.0), Vector3(0, 0.36, 0.3), mat(Color("#6FA3D8"), 0.9))
+	box(r, Vector3(0.55, 0.1, 0.28), Vector3(0, 0.38, -0.62), mat(Color("#FFFFFF"), 0.9))
+	return r
+
+static func sofa() -> Node3D:
+	var r := _root("sofa")
+	var c := mat(Color("#C0645A"), 0.85)
+	var c2 := mat(Color("#A8524A"), 0.85)
+	box(r, Vector3(1.5, 0.28, 0.6), Vector3(0, 0.17, 0), c)
+	box(r, Vector3(1.5, 0.45, 0.16), Vector3(0, 0.4, -0.25), c2)
+	for x in [-0.7, 0.7]:
+		box(r, Vector3(0.14, 0.38, 0.6), Vector3(x, 0.28, 0), c2)
+	for x in [-0.36, 0.36]:
+		box(r, Vector3(0.66, 0.08, 0.5), Vector3(x, 0.35, 0.03), mat(Color("#D9786C"), 0.9))
+	return r
+
+static func rug(kind: int) -> Node3D:
+	var r := _root("rug")
+	var a := Color("#C9A86A") if kind == 0 else Color("#7E9CC4")
+	var b := Color("#9C3D36") if kind == 0 else Color("#3E5C8A")
+	box(r, Vector3(1.9, 0.012, 1.3), Vector3(0, 0.006, 0), mat(b, 0.95))
+	box(r, Vector3(1.7, 0.014, 1.1), Vector3(0, 0.008, 0), mat(a, 0.95))
+	box(r, Vector3(1.2, 0.016, 0.6), Vector3(0, 0.009, 0), mat(b.lightened(0.15), 0.95))
+	return r
+
+static func tv_stand() -> Node3D:
+	var r := _root("tv")
+	box(r, Vector3(1.1, 0.35, 0.4), Vector3(0, 0.175, 0), mat(Color("#5A4030"), 0.8))
+	box(r, Vector3(0.9, 0.52, 0.06), Vector3(0, 0.66, 0), mat(Color("#18191C"), 0.3, 0.3))
+	box(r, Vector3(0.8, 0.44, 0.01), Vector3(0, 0.66, 0.035), glass(Color(0.25, 0.45, 0.65), 0.6, 1.0))
+	box(r, Vector3(0.12, 0.1, 0.12), Vector3(0, 0.39, 0), mat(Color("#18191C"), 0.4))
+	return r
+
+static func small_table() -> Node3D:
+	var r := _root("table")
+	var wood := mat(Color("#B07A45"), 0.75)
+	box(r, Vector3(0.9, 0.05, 0.6), Vector3(0, 0.45, 0), wood)
+	for x in [-0.38, 0.38]:
+		for z in [-0.24, 0.24]:
+			box(r, Vector3(0.05, 0.45, 0.05), Vector3(x, 0.22, z), wood)
+	cyl(r, 0.05, 0.05, 0.1, Vector3(0.15, 0.53, 0.05), mat(Color("#F2F2F2"), 0.4))
+	return r
 
 ## 작은 새 (비둘기·갈매기·참새). 원점 = 발, 앞쪽 +X. wings 노드를 펄럭여 날게 한다
 static func bird(kind: String) -> Node3D:
