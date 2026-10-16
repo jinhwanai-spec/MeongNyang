@@ -121,6 +121,24 @@ func make_elite(title: String, wpn: String = "lmg") -> void:
 	helmet = "helmet_3"
 	vest = "vest_3"
 
+static var force_shield := false   # 테스트용
+var shield := false          # 방패 흑냥이: 정면에서 오는 공격을 대부분 막는다
+
+func make_shield() -> void:
+	shield = true
+	data = data.duplicate()
+	data.name = "방패 흑냥이"
+	data.name_color = Color("#9FC3FF")
+
+## 공격이 방패 정면(±65°)에서 왔는가
+func shield_blocks(from_pos: Vector2) -> bool:
+	if not shield:
+		return false
+	var to := (from_pos - global_position)
+	if to.length() < 1.0:
+		return false
+	return aim.normalized().dot(to.normalized()) > cos(deg_to_rad(65.0))
+
 func armor_prot() -> float:
 	var p := 0.0
 	for aid in [helmet, vest]:
@@ -621,6 +639,12 @@ func take_damage(amount: float, from_pos: Vector2, kick_force: float) -> void:
 		Net.send_hit(net_id, amount, from_pos, kick_force)
 		return
 	var crit := not is_aware()
+	if shield_blocks(from_pos):
+		amount *= 0.15
+		crit = false
+		if is_instance_valid(FX.fx3d):
+			FX.fx3d.sparks(global_position + aim.normalized() * radius, (from_pos - global_position).normalized(), Color(0.75, 0.88, 1.0), 6, 0.6)
+		Sfx.play_at("ricochet", global_position, -6.0, 0.2)
 	var prot := armor_prot()
 	if prot > 0.0:
 		amount *= 1.0 - prot

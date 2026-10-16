@@ -124,6 +124,8 @@ func setup(e: Enemy) -> void:
 		pivot.scale = Vector3.ONE * big
 	_attach_weapon(e.weapon)
 	_attach_armor(e.helmet, e.vest)
+	if e.shield:
+		_attach_shield()
 	flash_mat = StandardMaterial3D.new()
 	flash_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	flash_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -187,6 +189,25 @@ func _attach_armor(hid: String, vid: String) -> void:
 		armor_roots.append([root2, 0.72 * k])
 		for mi in v.find_children("*", "MeshInstance3D", true, false):
 			meshes.append(mi)
+
+func _attach_shield() -> void:
+	var sk_list := model.find_children("*", "Skeleton3D", true, false)
+	if sk_list.is_empty():
+		return
+	var sk := sk_list[0] as Skeleton3D
+	if sk.find_bone("Spine02") < 0:
+		return
+	var ba := BoneAttachment3D.new()
+	ba.bone_name = "Spine02"
+	sk.add_child(ba)
+	var root := Node3D.new()
+	ba.add_child(root)
+	var sh := ProcModels.riot_shield()
+	sh.position = Vector3(-0.12, -0.12, 0.42)
+	root.add_child(sh)
+	armor_roots.append([root, 0.95 * height / 1.15])
+	for mi in sh.find_children("*", "MeshInstance3D", true, false):
+		meshes.append(mi)
 
 func _orient_armor() -> void:
 	var b := pivot.global_basis.orthonormalized()

@@ -430,6 +430,8 @@ func _spawn_enemy(t: String, pos: Vector2, eid: int = 0, elite_title: String = "
 	e.setup(self, t, pos)
 	if elite_title != "":
 		e.make_elite(elite_title, elite_wpn)
+	elif t == "bulldog" and not Net.active and LevelData.region != "mart" and (Enemy.force_shield or randf() < 0.35):
+		e.make_shield()
 	e.net_id = eid if eid > 0 else next_eid
 	next_eid = maxi(next_eid, e.net_id) + 1
 	e.puppet = Net.is_client()

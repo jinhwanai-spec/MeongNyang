@@ -569,6 +569,27 @@ static func proc_prop(n: String) -> Node3D:
 		"picnic": return picnic_table()
 	return backpack()
 
+## 방패 흑냥이의 진압 방패 (원점 = 방패 중심, 앞면 +Z)
+static func riot_shield() -> Node3D:
+	var r := _root("riot_shield")
+	var rim := mat(Color("#2B2F36"), 0.5, 0.6)
+	var pane := glass(Color(0.25, 0.32, 0.42), 0.0, 0.75)
+	box(r, Vector3(0.5, 0.72, 0.03), Vector3.ZERO, pane)
+	box(r, Vector3(0.54, 0.04, 0.05), Vector3(0, 0.37, 0), rim)
+	box(r, Vector3(0.54, 0.04, 0.05), Vector3(0, -0.37, 0), rim)
+	box(r, Vector3(0.04, 0.76, 0.05), Vector3(0.26, 0, 0), rim)
+	box(r, Vector3(0.04, 0.76, 0.05), Vector3(-0.26, 0, 0), rim)
+	box(r, Vector3(0.3, 0.06, 0.012), Vector3(0, 0.12, 0.022), mat(Color("#F2C14E"), 0.5))
+	var l := Label3D.new()
+	l.text = "냥경"
+	l.font_size = 40
+	l.pixel_size = 0.004
+	l.modulate = Color("#F2F2F2")
+	l.outline_size = 0
+	l.position = Vector3(0, 0.0, 0.03)
+	r.add_child(l)
+	return r
+
 # ── 주택가·공원 소품 ─────────────────────────────────
 static func tree(kind: int = 0) -> Node3D:
 	var r := _root("tree")
