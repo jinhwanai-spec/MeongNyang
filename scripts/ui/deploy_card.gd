@@ -16,10 +16,12 @@ var t := 0.0
 var dur := 2.4
 var route: Control
 var region := "mart"
+var from_region := ""
 
-static func make(region_id: String) -> DeployCard:
+static func make(region_id: String, from_id: String = "") -> DeployCard:
 	var c := DeployCard.new()
 	c.region = region_id
+	c.from_region = from_id
 	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c._build()
@@ -47,7 +49,7 @@ func _build() -> void:
 	vb.position = Vector2(-380, -170)
 	vb.add_theme_constant_override("separation", 10)
 	add_child(vb)
-	var top := UITheme.label("출격", 20, DB.C_HERO, true)
+	var top := UITheme.label("연속 원정 — 다음 지역으로 이동" if from_region != "" else "출격", 20, DB.C_HERO, true)
 	top.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vb.add_child(top)
 	var nm := UITheme.label(str(info.name), 40, Color.WHITE, true)
@@ -97,7 +99,7 @@ func _draw_route() -> void:
 	route.draw_circle(a, 12, Color(0.35, 0.75, 0.45))
 	route.draw_circle(b, 12, DB.C_DANGER)
 	var f := UITheme.bold()
-	route.draw_string(f, a + Vector2(-40, 34), "은신처", HORIZONTAL_ALIGNMENT_CENTER, 80, 15, Color(0.8, 0.85, 0.9))
+	route.draw_string(f, a + Vector2(-90, 34), "은신처" if from_region == "" else str(Regions.get_info(from_region).short), HORIZONTAL_ALIGNMENT_CENTER, 180, 15, Color(0.8, 0.85, 0.9))
 	route.draw_string(f, b + Vector2(-90, 34), str(Regions.get_info(region).short), HORIZONTAL_ALIGNMENT_CENTER, 180, 15, Color(0.8, 0.85, 0.9))
 	# 이동 중인 햄스터 표시 (주황 동그라미 + 귀)
 	var h := a.lerp(b, k) + Vector2(0, -2 + sin(t * 14.0) * 2.0)

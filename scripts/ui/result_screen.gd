@@ -3,6 +3,7 @@ extends Control
 ## 원정 결과: 생존 여부, 시간, 처치, 가져온(또는 잃은) 전리품
 
 signal done
+signal next_raid(region: String)
 
 var result: Dictionary
 
@@ -99,7 +100,22 @@ func _ready() -> void:
 	var b := UITheme.button("은신처로 돌아가기", 22, true)
 	b.custom_minimum_size = Vector2(0, 56)
 	b.pressed.connect(func(): done.emit())
-	v.add_child(b)
+	if ok and not Net.active:
+		# 연속 원정: 은신처에 들르지 않고 다음 지역으로 바로 이동 (전리품은 이미 보관함에 안전)
+		var i := Regions.ORDER.find(LevelData.region)
+		var nx: String = Regions.ORDER[(i + 1) % Regions.ORDER.size()]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		v.add_child(row)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(b)
+		var nb := UITheme.button("다음 지역으로 바로 출격 ▶  %s" % str(Regions.get_info(nx).short), 18, false)
+		nb.custom_minimum_size = Vector2(0, 56)
+		nb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		nb.pressed.connect(func(): next_raid.emit(nx))
+		row.add_child(nb)
+	else:
+		v.add_child(b)
 	Sfx.music("hideout")
 
 func _josa(s: String) -> String:

@@ -3,6 +3,7 @@ extends Node
 
 var current: Node
 var fade: ColorRect
+var deploy_from := ""   # 연속 원정이면 출발 지역 (출격 카드 왼쪽 이름)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -35,7 +36,8 @@ func _swap(n: Node) -> void:
 	var tw := create_tween()
 	if n is Raid:
 		# 출격 카드: 어두운 화면 뒤에서 3D 셰이더를 미리 굽는 동안 이동 연출
-		var card := DeployCard.make(LevelData.region)
+		var card := DeployCard.make(LevelData.region, deploy_from)
+		deploy_from = ""
 		fade.get_parent().add_child(card)
 		if not Net.active:
 			get_tree().paused = true
@@ -88,4 +90,9 @@ func show_result(result: Dictionary) -> void:
 			show_multiplayer()
 		else:
 			show_hideout())
+	rs.next_raid.connect(func(rid: String):
+		deploy_from = LevelData.region
+		GameState.region = rid
+		GameState.save_game()
+		start_raid())
 	_swap(rs)
