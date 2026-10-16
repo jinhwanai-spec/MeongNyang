@@ -25,6 +25,7 @@ var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
 var region := "mart"      # 원정 지역 (Regions)
 var seen := {}            # 한 번 보여 준 안내 (새 기능 소개 등)
+var contracts: Array = [] # 의뢰 게시판 [{kind, target, need, have, region, coins, item, done}]
 # 직전 원정 결과 (결과 화면용)
 var last_result := {}
 
@@ -49,13 +50,15 @@ func new_game() -> void:
 	mods = {}
 	armor = {"vest_1": 1}
 	armor_dur = {}
+	contracts = []
+	fill_contracts()
 	save_game()
 
 # ── 저장 ─────────────────────────────────────────────
 func save_game() -> void:
 	var data := {"coins": coins, "stash": stash, "weapons": weapons, "ammo": ammo, "crafted": crafted,
 		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster,
-		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "mods": mods, "armor": armor, "armor_dur": armor_dur}
+		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "mods": mods, "armor": armor, "armor_dur": armor_dur}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "\t"))
@@ -113,6 +116,13 @@ func load_game() -> bool:
 	hamster = str(d.get("hamster", "baragi"))
 	region = str(d.get("region", "mart"))
 	seen = d.get("seen", {}) if typeof(d.get("seen", {})) == TYPE_DICTIONARY else {}
+	contracts = []
+	var ct = d.get("contracts", [])
+	if typeof(ct) == TYPE_ARRAY:
+		for c in ct:
+			if typeof(c) == TYPE_DICTIONARY and c.has("kind"):
+				contracts.append(c)
+	fill_contracts()
 	if not Regions.DATA.has(region):
 		region = "mart"
 	if not DB.HAMSTERS.has(hamster):
@@ -324,6 +334,121 @@ func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Arra
 
 func finish_raid_death() -> void:
 	stats.deaths = int(stats.deaths) + 1
+	save_game()
+
+# ── 의뢰 ─────────────────────────────────────────────
+func fill_contracts() -> void:
+	var kinds := []
+	for c in contracts:
+		kinds.append(str(c.kind))
+	while contracts.size() < 3:
+		var pick := "fetch"
+		var r := randf()
+		if not kinds.has("kill") and r < 0.6:
+			pick = "kill"
+		elif not kinds.has("extract") and r < 0.85:
+			pick = "extract"
+		elif not kinds.has("boss") and r < 0.95 and int(stats.extracts) >= 2:
+			pick = "boss"
+		kinds.append(pick)
+		contracts.append(_new_contract(pick))
+
+func _new_contract(kind: String) -> Dictionary:
+	var c := {"kind": kind, "have": 0, "done": false, "item": DB.CONTRACT_BONUS.pick_random(), "region": ""}
+	match kind:
+		"fetch":
+			var f: Array = DB.CONTRACT_FETCH.pick_random()
+			c.target = f[0]
+			c.need = int(f[1])
+			c.coins = int(round(float(DB.ITEMS[f[0]].v) * int(f[1]) * 1.7 / 10.0)) * 10 + 40
+		"kill":
+			var k: Array = DB.CONTRACT_KILL.pick_random()
+			c.target = k[0]
+			c.need = int(k[1])
+			c.coins = {"hyena": 180, "bulldog": 260, "cat": 240, "any": 300}[k[0]]
+			c.region = ["", "mart", "dock"].pick_random()
+		"extract":
+			c.region = ["mart", "dock"].pick_random()
+			c.target = "value"
+			c.need = [300, 500, 800].pick_random()
+			c.coins = int(c.need * 0.5) + 100
+		"boss":
+			c.region = "dock"
+			c.target = "elite"
+			c.need = 1
+			c.coins = 600
+			c.item = ["att_holo", "att_drum_mag", "vest_3", "helmet_3"].pick_random()
+	return c
+
+func contract_text(c: Dictionary) -> String:
+	var where := "" if str(c.get("region", "")) == "" else "[%s] " % str(Regions.get_info(str(c.region)).short).get_slice(" ·", 0)
+	match str(c.kind):
+		"fetch":
+			return "%s %d개 납품" % [DB.ITEMS[c.target].name, int(c.need)]
+		"kill":
+			return "%s%s %d마리 처치" % [where, DB.CAT_NAMES.get(c.target, "고양이"), int(c.need)]
+		"extract":
+			return "%s전리품 %d냥 이상 들고 탈출" % [where, int(c.need)]
+		"boss":
+			return "%s항구 대장 흑냥이 쓰러뜨리기" % where
+	return "?"
+
+## 원정 중 일어난 일 → 의뢰 진행
+func contract_event(ev: String, info: Dictionary) -> Array:
+	var finished := []
+	for c in contracts:
+		if c.done:
+			continue
+		var reg := str(c.get("region", ""))
+		if reg != "" and reg != str(info.get("region", "")):
+			continue
+		match str(c.kind):
+			"kill":
+				if ev == "kill" and (c.target == "any" or c.target == str(info.get("type", ""))):
+					c.have = int(c.have) + 1
+			"boss":
+				if ev == "kill" and bool(info.get("elite", false)):
+					c.have = int(c.have) + 1
+			"extract":
+				if ev == "extract" and int(info.get("value", 0)) >= int(c.need):
+					c.have = int(c.need)
+		if int(c.have) >= int(c.need) and str(c.kind) != "fetch":
+			c.done = true
+			finished.append(c)
+	return finished
+
+func can_turn_in(c: Dictionary) -> bool:
+	if c.done:
+		return true
+	return str(c.kind) == "fetch" and int(stash.get(c.target, 0)) >= int(c.need)
+
+## 보상 받기 (납품 의뢰는 물건을 낸다) → 새 의뢰로 교체
+func claim_contract(i: int) -> String:
+	if i < 0 or i >= contracts.size():
+		return ""
+	var c: Dictionary = contracts[i]
+	if not can_turn_in(c):
+		return ""
+	if str(c.kind) == "fetch":
+		remove_item(c.target, int(c.need))
+	coins += int(c.coins)
+	var it := str(c.item)
+	if DB.ITEMS.get(it, {}).get("cat", "") == "armor":
+		armor[it] = int(armor.get(it, 0)) + 1
+	else:
+		add_item(it, 1)
+	contracts.remove_at(i)
+	stats["contracts"] = int(stats.get("contracts", 0)) + 1
+	fill_contracts()
+	save_game()
+	return "%d냥 + %s" % [int(c.coins), DB.ITEMS[it].name]
+
+func reroll_contract(i: int) -> void:
+	if i < 0 or i >= contracts.size() or coins < 30:
+		return
+	coins -= 30
+	var k := str(contracts[i].kind)
+	contracts[i] = _new_contract(k if k != "boss" else "fetch")
 	save_game()
 
 # ── 쓰러진 자리의 가방 ───────────────────────────────

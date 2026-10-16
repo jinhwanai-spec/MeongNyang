@@ -5,6 +5,7 @@ extends Node3D
 
 const STATIONS := {
 	"st_prep": ["출발 준비", "용병·무기·갑옷·난이도", 0],
+	"st_board": ["의뢰 게시판", "의뢰 확인·보상 받기 (출발 준비 탭)", 0],
 	"st_craft": ["무기 제작소", "총·탄약·부품 만들기 / 부품 장착", 1],
 	"st_potion": ["물약 제작소", "물약·구급상자 달이기", 2],
 	"st_armor": ["갑옷 제작소", "헬멧·조끼 만들기 / 수리", 3],
@@ -16,6 +17,7 @@ const STATIONS := {
 const EXTRA_MARKERS := {
 	"st_potion": Vector3(12.6, 0, 2.7), "npc_potion": Vector3(13.25, 0, 3.75),
 	"st_armor": Vector3(9.6, 0, 7.6), "npc_armor": Vector3(12.05, 0, 8.25),
+	"st_board": Vector3(12.9, 0, 7.75),
 }
 
 var room: Node3D
@@ -65,6 +67,10 @@ func _stations() -> void:
 	forge.rotation.y = 0.0
 	add_child(forge)
 	colliders.append([Vector2(10.4, 8.5), Vector2(0.9, 0.55)])
+	var board := ProcModels.quest_board()
+	board.position = Vector3(13.85, 0, 7.6)
+	board.rotation.y = -PI * 0.5
+	add_child(board)
 	var rack := ProcModels.weapon_wall(["assault_rifle", "shotgun", "sniper", "smg", "katana"])
 	rack.position = Vector3(7.2, 0, 0.62)
 	add_child(rack)

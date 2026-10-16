@@ -212,6 +212,7 @@ func _build_prep() -> void:
 	hc.add_child(sk)
 	_benefit(hc, "특성: " + str(hd.trait))
 
+	_build_contracts(prep_box)
 	_build_difficulty(prep_box)
 
 	var w := _card(prep_box)
@@ -367,6 +368,51 @@ func _build_prep() -> void:
 	var keys := UITheme.label("WASD 이동 · 마우스 조준/사격 · R 재장전 · Space 구르기 · V 근접 · E 뒤지기 · Tab 배낭 · Q 회복 · G 간식 · F 스킬 · C 웅크리기(풀숲 은신) · M 지도", 13, DB.C_MUTED)
 	keys.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	prep_box.add_child(keys)
+
+# ── 의뢰 게시판 ──────────────────────────────────────
+func _build_contracts(box: VBoxContainer) -> void:
+	var c := _card(box, Color(DB.C_LEGEND, 0.7))
+	var h := HBoxContainer.new()
+	c.add_child(h)
+	var t := UITheme.label("의뢰 게시판", 17, DB.C_LEGEND, true)
+	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(t)
+	h.add_child(UITheme.label("완료 %d건" % int(GameState.stats.get("contracts", 0)), 13, DB.C_MUTED))
+	for i in GameState.contracts.size():
+		var ct: Dictionary = GameState.contracts[i]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		c.add_child(row)
+		var icon_id: String = str(ct.target) if str(ct.kind) == "fetch" else str(ct.item)
+		row.add_child(ItemIcon.make(icon_id, 40))
+		var v := VBoxContainer.new()
+		v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(v)
+		v.add_child(UITheme.label(GameState.contract_text(ct), 15, DB.C_TEXT, true))
+		var prog := ""
+		match str(ct.kind):
+			"fetch": prog = "보관함 %d/%d" % [int(GameState.stash.get(ct.target, 0)), int(ct.need)]
+			"extract": prog = "완료!" if ct.done else "다음 원정에서 도전"
+			_: prog = "완료!" if ct.done else "%d/%d" % [int(ct.have), int(ct.need)]
+		v.add_child(UITheme.label("%s  ·  보상 %d냥 + %s" % [prog, int(ct.coins), DB.ITEMS[ct.item].name], 13, Color("#6CCB5F") if GameState.can_turn_in(ct) else DB.C_MUTED))
+		var ok := GameState.can_turn_in(ct)
+		var b := UITheme.button("납품하기" if str(ct.kind) == "fetch" and not ct.done else "보상 받기", 14, ok)
+		b.disabled = not ok
+		var idx := i
+		b.pressed.connect(func():
+			var got := GameState.claim_contract(idx)
+			if got != "":
+				Sfx.play("coin", -2.0)
+				show_toast("의뢰 완료! " + got, Color("#6CCB5F"))
+			refresh())
+		row.add_child(b)
+		if not ct.done:
+			var rb := UITheme.button("교체 30냥", 12)
+			rb.disabled = GameState.coins < 30
+			rb.pressed.connect(func():
+				GameState.reroll_contract(idx)
+				refresh())
+			row.add_child(rb)
 
 # ── 난이도 ───────────────────────────────────────────
 func _build_difficulty(box: VBoxContainer) -> void:

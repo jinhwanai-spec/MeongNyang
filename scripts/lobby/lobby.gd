@@ -60,7 +60,7 @@ func _ready() -> void:
 	view.add_child(cam)
 	cam_pos = Vector3(sp.x, 0, sp.z)
 	_build_ui()
-	if not GameState.seen.has("v18"):
+	if not GameState.seen.has("v19"):
 		_whats_new()
 
 func _make_avatar() -> void:
@@ -117,7 +117,7 @@ func _build_ui() -> void:
 
 ## 새 기능 안내 (한 번만)
 func _whats_new() -> void:
-	GameState.seen["v18"] = true
+	GameState.seen["v19"] = true
 	GameState.save_game()
 	var pc := PanelContainer.new()
 	pc.add_theme_stylebox_override("panel", UITheme.box(Color(DB.C_UI_SOLID, 0.94), 14, Color(DB.C_LEGEND, 0.7), 2, 18))
@@ -134,6 +134,8 @@ func _whats_new() -> void:
 		"• 갑옷 제작소: 헬멧·조끼 3단계 + 수리 (입으면 몸에 보여요)",
 		"• 쓰러지면 가방이 그 자리에 남아요 — 다음 원정에서 회수!",
 		"• 출발 준비: 난이도(가방 규칙 등) · 새 지역 '냥냥 항구' 선택",
+		"• 의뢰 게시판: 납품·처치·탈출 의뢰를 깨고 보상 받기 (항구 대장도 있어요)",
+		"• 원정 중 우클릭: 조준 (스코프를 달면 더 멀리 보여요)",
 	]:
 		var l := UITheme.label(line, 15, DB.C_TEXT)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

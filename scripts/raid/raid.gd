@@ -811,6 +811,9 @@ func on_enemy_killed(e: Enemy) -> void:
 	enemies_by_id.erase(e.net_id)
 	if not Net.active or e.last_hitter == Net.my_id():
 		kills += 1
+		for c in GameState.contract_event("kill", {"type": e.type, "elite": e.elite, "region": LevelData.region}):
+			notify("의뢰 완료! %s — 은신처에서 보상 받기" % GameState.contract_text(c), DB.C_LEGEND)
+			Sfx.play("pickup_rare", -2.0)
 	var items := e.roll_loot()
 	# 고양이가 들고 있던 무기는 꼭 떨어진다 + 총이면 맞는 탄약도
 	if e.weapon != "" and DB.ITEMS.has("w_" + e.weapon):
@@ -920,6 +923,8 @@ func _end(survived: bool, reason: String) -> void:
 		GameState.settle_lost_bags(_remaining_lost_bags(), not survived, new_bag)
 		result["bag_rule"] = str(GameState.diff("bag_rule"))
 		result["bag_left"] = not survived and str(GameState.diff("bag_rule")) != "instant"
+	if survived:
+		GameState.contract_event("extract", {"region": LevelData.region, "value": bag.total_value()})
 	if survived and view3d and extract_zone:
 		view3d.play_extract(extract_zone)
 	if survived:

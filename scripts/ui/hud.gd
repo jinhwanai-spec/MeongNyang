@@ -173,6 +173,7 @@ func _draw_hud() -> void:
 	_draw_extract(vs)
 	_draw_exit_arrows(p, vs)
 	_draw_boss(p, vs)
+	_draw_contracts(vs)
 	if hint_t > 0.0 and hint != "":
 		var a := minf(1.0, hint_t)
 		var w := font_b.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x + 40
@@ -531,6 +532,30 @@ func _draw_exit_arrows(p: Player, vs: Vector2) -> void:
 		if bt:
 			Sprites.draw_fit(canvas, bt, Rect2(edge2 - Vector2(11, 11), Vector2(22, 22)))
 		_txt(edge2 - dir2 * 26 + Vector2(-40, 6), "내 가방 %dm" % int(d2.length() / DB.TILE), 13, bcol, true, HORIZONTAL_ALIGNMENT_CENTER, 80)
+
+## 진행 중인 의뢰 (화면 왼쪽 위)
+func _draw_contracts(_vs: Vector2) -> void:
+	var y := 22.0
+	var shown := 0
+	for c in GameState.contracts:
+		if str(c.kind) == "fetch":
+			continue
+		var reg := str(c.get("region", ""))
+		if reg != "" and reg != LevelData.region:
+			continue
+		var txt := GameState.contract_text(c)
+		var prog := "완료!" if c.done else "%d/%d" % [int(c.have), int(c.need)]
+		if str(c.kind) == "extract" and not c.done:
+			prog = "%d/%d냥" % [raid.bag.total_value(), int(c.need)]
+		var w := font_b.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 90
+		var r := Rect2(Vector2(18, y), Vector2(w, 28))
+		_panel(r, 0.7)
+		_txt(r.position + Vector2(10, 19), txt, 14, DB.C_LEGEND if c.done else DB.C_TEXT, false, HORIZONTAL_ALIGNMENT_LEFT, -1, font_b)
+		_txt(r.position + Vector2(10, 19), prog, 13, Color("#6CCB5F") if c.done else DB.C_MUTED, false, HORIZONTAL_ALIGNMENT_RIGHT, w - 20)
+		y += 32.0
+		shown += 1
+		if shown >= 3:
+			break
 
 ## 대장 고양이 체력 막대 (화면 위 가운데)
 func _draw_boss(p: Player, vs: Vector2) -> void:

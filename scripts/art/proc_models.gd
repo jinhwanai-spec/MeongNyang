@@ -708,3 +708,29 @@ static func smoke(pos: Vector3, c: Color = Color(0.55, 0.55, 0.58, 0.3)) -> CPUP
 	g.offsets = PackedFloat32Array([0.0, 0.25, 1.0])
 	p.color_ramp = g
 	return p
+
+
+## 의뢰 게시판: 코르크 판 + 핀으로 꽂은 종이들
+static func quest_board() -> Node3D:
+	var r := _root("quest_board")
+	var wood := mat(Color("#6B4A2E"), 0.85)
+	box(r, Vector3(1.3, 0.9, 0.06), Vector3(0, 1.35, 0), mat(Color("#B88A55"), 0.95))
+	box(r, Vector3(1.4, 0.07, 0.09), Vector3(0, 1.82, 0.0), wood)
+	box(r, Vector3(1.4, 0.07, 0.09), Vector3(0, 0.88, 0.0), wood)
+	for sx in [-0.68, 0.68]:
+		box(r, Vector3(0.07, 1.0, 0.09), Vector3(sx, 1.35, 0.0), wood)
+		box(r, Vector3(0.06, 0.9, 0.06), Vector3(sx, 0.45, 0.0), wood)
+	var papers := [[-0.38, 1.5, 0.08, Color("#F3EEE6")], [0.05, 1.45, -0.06, Color("#FFF4C8")], [0.42, 1.52, 0.1, Color("#F3EEE6")], [-0.2, 1.12, -0.05, Color("#FFE0E0")], [0.3, 1.13, 0.07, Color("#E6F3FF")]]
+	for pp in papers:
+		var pz := box(r, Vector3(0.3, 0.34, 0.01), Vector3(pp[0], pp[1], 0.04), mat(pp[3], 0.9), Vector3(0, 0, pp[2]))
+		sphere(r, 0.022, Vector3(pp[0], float(pp[1]) + 0.14, 0.055), mat(Color("#D64545"), 0.4))
+	var l := Label3D.new()
+	l.text = "의뢰"
+	l.font = FX.font()
+	l.font_size = 40
+	l.outline_size = 8
+	l.modulate = Color("#FFE7B0")
+	l.pixel_size = 0.004
+	l.position = Vector3(0, 1.95, 0.05)
+	r.add_child(l)
+	return r

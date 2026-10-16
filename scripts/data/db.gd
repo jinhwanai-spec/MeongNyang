@@ -238,6 +238,13 @@ const ENEMY_WEAPONS := {
 	"cat": ["sniper", "hunting_rifle", "dmr", "carbine", "battle_rifle", "assault_rifle", "crossbow", "compound_bow", "harpoon_gun"],
 }
 
+# ── 의뢰 (출발 준비의 의뢰 게시판) ──────────────────
+# fetch = 보관함에서 물건 납품 / kill = 고양이 처치 / extract = 지역에서 일정 가치 이상 들고 탈출 / boss = 대장 처치
+const CONTRACT_FETCH := [["lens", 2], ["metal_sheet", 3], ["herb", 4], ["battery", 2], ["circuit", 1], ["gunpowder", 2], ["silver_bell", 1], ["cloth", 4], ["spring", 3], ["catnip", 1], ["toy_mouse", 2], ["bottle", 3]]
+const CONTRACT_KILL := [["hyena", 6], ["bulldog", 3], ["cat", 3], ["any", 10]]
+const CONTRACT_BONUS := ["att_red_dot", "att_foregrip", "att_quick_mag", "att_compensator", "potion_heal", "potion_iron", "potion_swift", "helmet_1", "vest_1", "lens", "metal_sheet", "gunpowder"]
+const CAT_NAMES := {"hyena": "길냥이 돌격병", "bulldog": "중장갑 흑냥이", "cat": "흰냥 저격수", "any": "고양이"}
+
 # ── 난이도 ───────────────────────────────────────────
 # bag_rule: instant = 쓰러지면 가방이 바로 사라짐 / two = 회수 못 하고 또 쓰러지면 이전 가방이 사라짐 / keep = 회수할 때까지 남음
 const DIFFICULTY := {
