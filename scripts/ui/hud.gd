@@ -431,7 +431,13 @@ func _minimap_marks(p: Player, mr: Rect2, k: float, dot: float) -> void:
 		if e.dead:
 			continue
 		var visible_e: bool = e.is_aware() or p.scout_t > 0.0 or e.global_position.distance_to(p.global_position) < 260.0
-		if visible_e:
+		if e.elite and raid._boss_seen.has(e):
+			# 한 번 마주친 보스는 지도에 계속 표시 (큰 빨간 점 + 테두리)
+			var bpos: Vector2 = mr.position + e.global_position / T * k
+			canvas.draw_circle(bpos, 6.0 * dot, Color(0, 0, 0, 0.7))
+			canvas.draw_circle(bpos, 4.6 * dot, DB.C_DANGER)
+			canvas.draw_arc(bpos, 7.5 * dot, 0, TAU, 20, Color(DB.C_DANGER, 0.6), 1.5)
+		elif visible_e:
 			canvas.draw_circle(mr.position + e.global_position / T * k, 2.6 * dot, DB.C_DANGER)
 	var pp := mr.position + p.global_position / T * k
 	canvas.draw_circle(pp, 4.5 * dot, Art.OUTLINE)
