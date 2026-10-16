@@ -557,7 +557,129 @@ static func proc_prop(n: String) -> Node3D:
 		return shipping_container(CONTAINER_COLORS[i % CONTAINER_COLORS.size()])
 	if n == "boat":
 		return boat()
+	match n:
+		"tree": return tree(0)
+		"tree2": return tree(1)
+		"bench": return bench()
+		"swing": return swing()
+		"slide": return slide()
+		"seesaw": return seesaw()
+		"flowerbed": return flowerbed()
+		"mailbox": return mailbox()
+		"picnic": return picnic_table()
 	return backpack()
+
+# ── 주택가·공원 소품 ─────────────────────────────────
+static func tree(kind: int = 0) -> Node3D:
+	var r := _root("tree")
+	var bark := mat(Color("#6B4A33"), 0.9)
+	cyl(r, 0.09, 0.14, 1.2, Vector3(0, 0.6, 0), bark, Vector3.ZERO, 10)
+	cyl(r, 0.035, 0.05, 0.5, Vector3(0.18, 1.05, 0), bark, Vector3(0, 0, -0.7), 8)
+	var g1 := mat(Color("#4F8F3F") if kind == 0 else Color("#6FA347"), 0.85)
+	var g2 := mat(Color("#3E7A33") if kind == 0 else Color("#5C9140"), 0.85)
+	var g3 := mat(Color("#69A84F") if kind == 0 else Color("#8FBF55"), 0.85)
+	sphere(r, 0.62, Vector3(0, 1.55, 0), g1, Vector3(1, 0.85, 1))
+	sphere(r, 0.45, Vector3(0.42, 1.38, 0.12), g2, Vector3(1, 0.85, 1))
+	sphere(r, 0.42, Vector3(-0.38, 1.42, -0.1), g2, Vector3(1, 0.85, 1))
+	sphere(r, 0.38, Vector3(0.1, 1.95, 0.05), g3, Vector3(1, 0.8, 1))
+	if kind == 1:
+		# 꽃 핀 나무: 분홍 점
+		var pink := mat(Color("#F6A9C8"), 0.6)
+		for i in 10:
+			var a := i * 2.4
+			sphere(r, 0.06, Vector3(cos(a) * 0.5, 1.45 + (i % 3) * 0.18, sin(a) * 0.5), pink)
+	return r
+
+static func bench() -> Node3D:
+	var r := _root("bench")
+	var wood := mat(Color("#A8723F"), 0.8)
+	var iron := mat(Color("#2F3338"), 0.5, 0.6)
+	for k in 3:
+		box(r, Vector3(1.3, 0.04, 0.1), Vector3(0, 0.42, -0.12 + k * 0.12), wood)
+	for k in 2:
+		box(r, Vector3(1.3, 0.1, 0.035), Vector3(0, 0.6 + k * 0.13, -0.2), wood, Vector3(-0.15, 0, 0))
+	for x in [-0.55, 0.55]:
+		box(r, Vector3(0.05, 0.42, 0.05), Vector3(x, 0.21, 0.08), iron)
+		box(r, Vector3(0.05, 0.8, 0.05), Vector3(x, 0.4, -0.2), iron)
+		box(r, Vector3(0.05, 0.04, 0.4), Vector3(x, 0.4, -0.05), iron)
+	return r
+
+static func swing() -> Node3D:
+	var r := _root("swing")
+	var frame := mat(Color("#D8483C"), 0.5, 0.3)
+	var chain := mat(Color("#9AA0A6"), 0.4, 0.8)
+	var seat := mat(Color("#F2C14E"), 0.6)
+	for x in [-0.9, 0.9]:
+		box(r, Vector3(0.06, 1.55, 0.06), Vector3(x, 0.72, 0.28), frame, Vector3(0.35, 0, 0))
+		box(r, Vector3(0.06, 1.55, 0.06), Vector3(x, 0.72, -0.28), frame, Vector3(-0.35, 0, 0))
+	box(r, Vector3(1.9, 0.07, 0.07), Vector3(0, 1.45, 0), frame)
+	for x in [-0.45, 0.45]:
+		for dz in [-0.07, 0.07]:
+			box(r, Vector3(0.015, 1.05, 0.015), Vector3(x, 0.92, dz), chain)
+		box(r, Vector3(0.36, 0.04, 0.2), Vector3(x, 0.38, 0), seat)
+	return r
+
+static func slide() -> Node3D:
+	var r := _root("slide")
+	var blue := mat(Color("#3E8EDE"), 0.4, 0.2)
+	var rail := mat(Color("#F2C14E"), 0.5)
+	var step := mat(Color("#9AA0A6"), 0.5, 0.6)
+	box(r, Vector3(0.6, 0.06, 0.6), Vector3(-0.6, 1.0, 0), rail)
+	for x in [-0.88, -0.32]:
+		for z in [-0.27, 0.27]:
+			box(r, Vector3(0.05, 1.0, 0.05), Vector3(x, 0.5, z), step)
+	for k in 5:
+		box(r, Vector3(0.06, 0.03, 0.45), Vector3(-0.95 - k * 0.0, 0.2 + k * 0.18, 0), step)
+	box(r, Vector3(1.5, 0.05, 0.5), Vector3(0.3, 0.55, 0), blue, Vector3(0, 0, -0.62))
+	for z in [-0.26, 0.26]:
+		box(r, Vector3(1.5, 0.12, 0.04), Vector3(0.3, 0.6, z), blue, Vector3(0, 0, -0.62))
+	return r
+
+static func seesaw() -> Node3D:
+	var r := _root("seesaw")
+	var plank := mat(Color("#6CCB5F"), 0.6)
+	var base := mat(Color("#D8483C"), 0.5, 0.3)
+	box(r, Vector3(0.18, 0.3, 0.3), Vector3(0, 0.15, 0), base)
+	box(r, Vector3(1.8, 0.05, 0.22), Vector3(0, 0.3, 0), plank, Vector3(0, 0, 0.12))
+	for x in [-0.78, 0.78]:
+		box(r, Vector3(0.04, 0.18, 0.2), Vector3(x, 0.3 + x * 0.12 + 0.1, 0), base)
+	return r
+
+static func flowerbed() -> Node3D:
+	var r := _root("flowerbed")
+	var brick := mat(Color("#B9775A"), 0.9)
+	var soil := mat(Color("#5A4030"), 0.95)
+	box(r, Vector3(1.4, 0.18, 0.6), Vector3(0, 0.09, 0), brick)
+	box(r, Vector3(1.3, 0.04, 0.5), Vector3(0, 0.18, 0), soil)
+	var cols := [Color("#F6A9C8"), Color("#FFE066"), Color("#E85D75"), Color("#B48EF0"), Color("#FFFFFF")]
+	var leaf := mat(Color("#4F8F3F"), 0.8)
+	for i in 14:
+		var x := -0.55 + (i % 7) * 0.18
+		var z := -0.12 + (i / 7) * 0.24
+		cyl(r, 0.01, 0.01, 0.16, Vector3(x, 0.27, z), leaf, Vector3.ZERO, 4)
+		sphere(r, 0.055, Vector3(x, 0.36, z), mat(cols[i % cols.size()], 0.6))
+	return r
+
+static func mailbox() -> Node3D:
+	var r := _root("mailbox")
+	var post := mat(Color("#6B4A33"), 0.9)
+	var red := mat(Color("#D8483C"), 0.5, 0.2)
+	box(r, Vector3(0.07, 0.75, 0.07), Vector3(0, 0.37, 0), post)
+	box(r, Vector3(0.22, 0.2, 0.36), Vector3(0, 0.82, 0), red)
+	cyl(r, 0.11, 0.11, 0.36, Vector3(0, 0.92, 0), red, Vector3(PI * 0.5, 0, 0), 12)
+	box(r, Vector3(0.02, 0.14, 0.05), Vector3(0.12, 0.98, 0.1), mat(Color("#F2C14E"), 0.5))
+	return r
+
+static func picnic_table() -> Node3D:
+	var r := _root("picnic")
+	var wood := mat(Color("#B07A45"), 0.8)
+	box(r, Vector3(1.3, 0.05, 0.6), Vector3(0, 0.62, 0), wood)
+	for z in [-0.48, 0.48]:
+		box(r, Vector3(1.3, 0.04, 0.22), Vector3(0, 0.36, z), wood)
+	for x in [-0.5, 0.5]:
+		box(r, Vector3(0.06, 0.72, 0.06), Vector3(x, 0.32, 0.25), wood, Vector3(0.6, 0, 0))
+		box(r, Vector3(0.06, 0.72, 0.06), Vector3(x, 0.32, -0.25), wood, Vector3(-0.6, 0, 0))
+	return r
 
 ## 선적 컨테이너 (가로 2칸, 원점 = 바닥 가운데). 골판 무늬 + 문짝 손잡이
 static func shipping_container(c: Color) -> Node3D:

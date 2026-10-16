@@ -268,7 +268,14 @@ func _spawn_entities() -> void:
 				"2":
 					b_cells.append(Vector2i(x, y))
 	for d in Regions.cur().decor:
-		var sp := Sprites.make_sprop_sprite(d[0], float(d[3]))
+		var sp: Node2D
+		if str(d[0]).begins_with("proc:"):
+			# 코드로 만든 3D 소품 (2D 그림 없음): 나무·벤치·놀이터 등
+			sp = Node2D.new()
+			if d.size() > 4:
+				sp.set_meta("prop_rot", float(d[4]))
+		else:
+			sp = Sprites.make_sprop_sprite(d[0], float(d[3]))
 		sp.position = Vector2(float(d[1]) * T, float(d[2]) * T)
 		sp.set_meta("prop3d", str(SHEET_TO_3D.get(d[0], d[0])))
 		sp.set_meta("prop_off", Vector2(0, -0.25))

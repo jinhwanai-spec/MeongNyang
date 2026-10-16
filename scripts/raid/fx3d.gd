@@ -204,8 +204,8 @@ func slash(pos: Vector2, d: Vector2, reach_px: float, arc_deg: float, c: Color, 
 		var k1 := float(i + 1) / seg
 		var o0 := Vector3(cos(a0), 0, sin(a0))
 		var o1 := Vector3(cos(a1), 0, sin(a1))
-		var ca := Color(c, 0.05 + 0.8 * k0)
-		var cb := Color(c, 0.05 + 0.8 * k1)
+		var ca := Color(c, 0.04 + 0.55 * k0)
+		var cb := Color(c, 0.04 + 0.55 * k1)
 		var ci := Color(c, 0.0)
 		st.set_color(ci); st.add_vertex(o0 * r0)
 		st.set_color(ca); st.add_vertex(o0 * r)
