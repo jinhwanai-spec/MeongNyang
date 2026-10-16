@@ -568,6 +568,7 @@ static func proc_prop(n: String) -> Node3D:
 		"mailbox": return mailbox()
 		"picnic": return picnic_table()
 		"mousetrap": return mousetrap(false)
+		"crane": return harbor_crane()
 		"bed": return bed()
 		"sofa": return sofa()
 		"rug": return rug(0)
@@ -578,6 +579,44 @@ static func proc_prop(n: String) -> Node3D:
 		"barrel_burnt": return fuel_barrel(true)
 		"mousetrap_sprung": return mousetrap(true)
 	return backpack()
+
+## 항구 컨테이너 크레인 (원점 = 다리 가운데 바닥, 붐은 바다 쪽 -Z로 뻗는다)
+static func harbor_crane() -> Node3D:
+	var r := _root("crane")
+	var yel := mat(Color("#E8B33A"), 0.55, 0.35)
+	var dark := mat(Color("#2B2F36"), 0.5, 0.6)
+	var H := 5.2
+	for x in [-1.3, 1.3]:
+		for z in [-0.9, 0.9]:
+			box(r, Vector3(0.22, H, 0.22), Vector3(x, H * 0.5, z), yel)
+		# 다리 사이 가로대
+		box(r, Vector3(0.14, 0.14, 1.8), Vector3(x, H * 0.45, 0), yel)
+		box(r, Vector3(0.14, 0.14, 1.8), Vector3(x, 0.5, 0), yel)
+		# 바퀴
+		for z in [-0.9, 0.9]:
+			box(r, Vector3(0.4, 0.22, 0.5), Vector3(x, 0.11, z), dark)
+	box(r, Vector3(2.8, 0.18, 0.18), Vector3(0, H * 0.78, 0.9), yel)
+	box(r, Vector3(2.8, 0.18, 0.18), Vector3(0, H * 0.78, -0.9), yel)
+	# 위쪽 붐 (바다 쪽으로 길게)
+	box(r, Vector3(0.5, 0.35, 7.5), Vector3(0, H + 0.2, -2.2), yel)
+	box(r, Vector3(0.4, 0.3, 2.0), Vector3(0, H + 0.2, 2.4), yel)
+	# 균형추·조종실
+	box(r, Vector3(1.0, 0.7, 0.9), Vector3(0, H - 0.1, 2.9), mat(Color("#6B6F76"), 0.6, 0.3))
+	box(r, Vector3(0.6, 0.55, 0.6), Vector3(0.45, H - 0.45, -1.2), mat(Color("#F2F2F2"), 0.5))
+	box(r, Vector3(0.62, 0.25, 0.4), Vector3(0.45, H - 0.38, -1.38), glass(Color(0.3, 0.5, 0.7), 0.2, 0.8))
+	# 꼭대기 삼각 지지대
+	box(r, Vector3(0.14, 1.6, 0.14), Vector3(0, H + 1.0, 0.6), yel)
+	box(r, Vector3(0.08, 0.08, 4.2), Vector3(0, H + 1.0, -1.4), dark, Vector3(-0.35, 0, 0))
+	box(r, Vector3(0.08, 0.08, 2.4), Vector3(0, H + 1.0, 1.5), dark, Vector3(0.55, 0, 0))
+	# 트롤리·와이어·후크
+	box(r, Vector3(0.6, 0.25, 0.6), Vector3(0, H - 0.05, -4.2), dark)
+	for x in [-0.12, 0.12]:
+		box(r, Vector3(0.02, 2.6, 0.02), Vector3(x, H - 1.45, -4.2), dark)
+	box(r, Vector3(0.9, 0.12, 0.5), Vector3(0, H - 2.8, -4.2), yel)
+	# 줄무늬 (안전 표시)
+	for i in 6:
+		box(r, Vector3(0.24, 0.12, 0.24), Vector3(-1.3 if i < 3 else 1.3, 0.9 + (i % 3) * 0.3, 0.9), dark)
+	return r
 
 # ── 집 안 가구 ───────────────────────────────────────
 static func bed() -> Node3D:
