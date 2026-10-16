@@ -137,6 +137,10 @@ func _process(_d: float) -> void:
 			"weather": Raid.force_weather = arg
 			"tptrap":
 				main.current.player.global_position = main.current.traps[int(arg)][1] + Vector2(-60, 0)
+			"tpbarrel":
+				main.current.player.global_position = get_tree().get_nodes_in_group("fuel_barrel")[int(arg)].global_position + Vector2(-150, 30)
+			"boom":
+				get_tree().get_nodes_in_group("fuel_barrel")[int(arg)].explode()
 			"god":
 				main.current.player.hp = 99999.0
 				main.current.player.max_hp = 99999.0

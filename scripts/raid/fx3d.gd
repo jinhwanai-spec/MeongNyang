@@ -189,6 +189,20 @@ func kill(pos: Vector2, c: Color) -> void:
 	hitstop(0.06)
 
 ## 아주 짧게 시간을 멈칫 → 타격감 (협동 중엔 안 함)
+var _dot_tex: GradientTexture2D
+func _soft_dot() -> GradientTexture2D:
+	if _dot_tex == null:
+		_dot_tex = GradientTexture2D.new()
+		var g := Gradient.new()
+		g.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+		_dot_tex.gradient = g
+		_dot_tex.fill = GradientTexture2D.FILL_RADIAL
+		_dot_tex.fill_from = Vector2(0.5, 0.5)
+		_dot_tex.fill_to = Vector2(1.0, 0.5)
+		_dot_tex.width = 64
+		_dot_tex.height = 64
+	return _dot_tex
+
 ## 폭발: 불덩이가 부풀었다 사라지고, 잠깐 주황 빛 + 파편 + 연기
 func boom(pos: Vector2, radius_px: float) -> void:
 	var r := radius_px / T
@@ -210,9 +224,24 @@ func boom(pos: Vector2, radius_px: float) -> void:
 	add_child(fire)
 	var tw := fire.create_tween()
 	tw.set_ignore_time_scale(true)
-	tw.tween_property(fire, "scale", Vector3.ONE * r * 1.3, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tw.parallel().tween_property(m, "albedo_color", Color(1.0, 0.35, 0.1, 0.0), 0.45)
+	tw.tween_property(fire, "scale", Vector3(1.0, 0.75, 1.0) * r * 0.8, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(m, "albedo_color", Color(1.0, 0.3, 0.08, 0.0), 0.32)
 	tw.tween_callback(fire.queue_free)
+	# 하얗게 빛나는 속불
+	var core := MeshInstance3D.new()
+	core.mesh = sm
+	var mc := m.duplicate() as StandardMaterial3D
+	mc.albedo_color = Color(1.0, 0.95, 0.7, 1.0)
+	core.material_override = mc
+	core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	core.position = at
+	core.scale = Vector3.ONE * 0.15
+	add_child(core)
+	var tc := core.create_tween()
+	tc.set_ignore_time_scale(true)
+	tc.tween_property(core, "scale", Vector3.ONE * r * 0.4, 0.08)
+	tc.parallel().tween_property(mc, "albedo_color:a", 0.0, 0.2)
+	tc.tween_callback(core.queue_free)
 	var l := OmniLight3D.new()
 	l.light_color = Color(1.0, 0.6, 0.25)
 	l.light_energy = 6.0
@@ -224,7 +253,7 @@ func boom(pos: Vector2, radius_px: float) -> void:
 	tl.tween_property(l, "light_energy", 0.0, 0.5)
 	tl.tween_callback(l.queue_free)
 	sparks(pos, Vector2.UP, Color(1.0, 0.7, 0.3), 18, 0.4)
-	var smoke := _mat("smoke", Color(0.25, 0.25, 0.27, 0.55), false, true)
+	var smoke := _mat("smoke", Color(0.3, 0.3, 0.32, 0.5), false, true, _soft_dot())
 	for i in 8:
 		var a := randf() * TAU
 		_spawn(_quad, smoke, at + Vector3(cos(a), 0.2, sin(a)) * r * 0.4, Vector3(cos(a) * 0.6, 1.2 + randf(), sin(a) * 0.6), 1.2, -0.6, 0.6 + randf() * 0.5)
