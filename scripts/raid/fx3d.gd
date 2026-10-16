@@ -203,6 +203,38 @@ func _soft_dot() -> GradientTexture2D:
 		_dot_tex.height = 64
 	return _dot_tex
 
+## 연막 구름: 커다란 회색 덩어리들이 피어올라 dur초 동안 머문 뒤 흩어진다
+func smoke_cloud(pos: Vector2, radius_px: float, dur: float) -> void:
+	var r := radius_px / T
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.albedo_texture = _soft_dot()
+	m.albedo_color = Color(0.82, 0.84, 0.86, 0.0)
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var root := Node3D.new()
+	root.position = p3(pos, 0.0)
+	add_child(root)
+	for i in 22:
+		var q := MeshInstance3D.new()
+		q.mesh = _quad
+		q.material_override = m
+		q.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var a := randf() * TAU
+		var d := sqrt(randf()) * r * 0.75
+		q.position = Vector3(cos(a) * d, randf_range(0.2, 1.0), sin(a) * d)
+		q.scale = Vector3.ONE * 0.3
+		root.add_child(q)
+		var tq := q.create_tween()
+		tq.tween_property(q, "scale", Vector3.ONE * randf_range(2.2, 3.2), 1.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		tq.parallel().tween_property(q, "position:y", q.position.y + 0.4, dur)
+	var tm := root.create_tween()
+	tm.tween_property(m, "albedo_color:a", 0.93, 0.8)
+	tm.tween_interval(maxf(0.1, dur - 2.3))
+	tm.tween_property(m, "albedo_color:a", 0.0, 1.5)
+	tm.tween_callback(root.queue_free)
+
 ## 폭발: 불덩이가 부풀었다 사라지고, 잠깐 주황 빛 + 파편 + 연기
 func boom(pos: Vector2, radius_px: float) -> void:
 	var r := radius_px / T

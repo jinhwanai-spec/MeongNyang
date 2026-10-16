@@ -26,7 +26,7 @@ static func spawn(r: Raid, k: String, pos: Vector2, target: Vector2 = Vector2.ZE
 		"snack":
 			o.life = 8.0
 			o.z_index = -3
-		"bomb":
+		"bomb", "smoke":
 			o.life = 0.6
 			o.z_index = 5
 	r.fx_layer.add_child(o)
@@ -51,6 +51,14 @@ func _process(delta: float) -> void:
 				if armed <= -0.6:
 					armed = 0.0
 					FX.heal_burst(raid.fx_layer, p.global_position + Vector2(0, -30))
+		"smoke":
+			var ks := clampf(t / life, 0.0, 1.0)
+			position = from.lerp(to, ks) + Vector2(0, -sin(ks * PI) * 70.0)
+			if ks >= 1.0:
+				raid.add_smoke(to, 105.0, 9.0)
+				Sfx.play_at("dodge", to, -2.0, 0.2)
+				queue_free()
+				return
 		"bomb":
 			var k := clampf(t / life, 0.0, 1.0)
 			position = from.lerp(to, k) + Vector2(0, -sin(k * PI) * 70.0)

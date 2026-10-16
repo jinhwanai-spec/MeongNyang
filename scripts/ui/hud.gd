@@ -305,6 +305,7 @@ func _draw_hotbar(p: Player, vs: Vector2) -> void:
 			sfirst = sid
 		sn += c
 	slots.append({"key": "G", "item": sfirst, "n": sn})
+	slots.append({"key": "T", "item": "smoke_can", "n": raid.bag.count("smoke_can")})
 	slots.append({"key": "F", "skill": true, "sel": p.skill_cd <= 0.0})
 	var sz := 58.0
 	var gap := 8.0

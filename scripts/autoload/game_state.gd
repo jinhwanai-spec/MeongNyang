@@ -381,6 +381,11 @@ func begin_raid() -> Dictionary:
 			remove_item(sid, 1)
 			kit.snacks.append(sid)
 			want -= 1
+	# 연막 깡통은 보관함에서 최대 2개 자동으로 챙긴다
+	kit.throws = []
+	while kit.throws.size() < 2 and int(stash.get("smoke_can", 0)) > 0:
+		remove_item("smoke_can", 1)
+		kit.throws.append("smoke_can")
 	kit.hamster = hamster
 	kit.region = region
 	kit.weather = roll_weather()
@@ -574,7 +579,7 @@ func _setup_input() -> void:
 	var keys := {
 		"move_up": [KEY_W, KEY_UP], "move_down": [KEY_S, KEY_DOWN], "move_left": [KEY_A, KEY_LEFT], "move_right": [KEY_D, KEY_RIGHT],
 		"reload": [KEY_R], "dodge": [KEY_SPACE], "melee": [KEY_V], "interact": [KEY_E], "inventory": [KEY_TAB, KEY_I],
-		"map": [KEY_M], "heal": [KEY_Q], "skill": [KEY_F], "crouch": [KEY_C, KEY_CTRL], "eat": [KEY_G], "sprint": [KEY_SHIFT], "weapon_1": [KEY_1], "weapon_2": [KEY_2], "pause": [KEY_ESCAPE],
+		"map": [KEY_M], "heal": [KEY_Q], "skill": [KEY_F], "crouch": [KEY_C, KEY_CTRL], "eat": [KEY_G], "throw": [KEY_T], "sprint": [KEY_SHIFT], "weapon_1": [KEY_1], "weapon_2": [KEY_2], "pause": [KEY_ESCAPE],
 	}
 	for action in keys:
 		if not InputMap.has_action(action):

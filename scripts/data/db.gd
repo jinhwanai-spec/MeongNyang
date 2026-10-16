@@ -87,6 +87,7 @@ const ITEMS := {
 	"w_frying_pan": {"name": "프라이팬", "w": 2, "h": 1, "r": 0, "v": 33, "cat": "weapon", "weapon": "frying_pan", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
 	"w_sledgehammer": {"name": "오함마", "w": 4, "h": 1, "r": 3, "v": 231, "cat": "weapon", "weapon": "sledgehammer", "desc": "무기. 가방에서 사용하면 바로 장착한다."},
 	# ── 제작 재료 (새) ──
+	"smoke_can": {"name": "연막 깡통", "w": 1, "h": 1, "r": 1, "v": 60, "cat": "throw", "desc": "T로 던진다. 9초간 짙은 연기 — 냥이가 연기 너머를 보지 못한다."},
 	"herb": {"name": "약초 잎", "w": 1, "h": 1, "r": 0, "v": 20, "cat": "part", "desc": "물약의 기본 재료. 화분·약품함에서 나온다."},
 	"bottle": {"name": "빈 유리병", "w": 1, "h": 1, "r": 0, "v": 12, "cat": "part", "desc": "물약을 담는다. 냉장고·자판기·쓰레기통."},
 	"cloth": {"name": "천 조각", "w": 1, "h": 1, "r": 0, "v": 18, "cat": "part", "desc": "조끼·붕대·소음기 재료. 상자·사물함."},
@@ -447,6 +448,8 @@ const RECIPES := [
 		"benefit": "총 부품: 반동 -20%", "hint": {"pipe": "수거함", "cloth": "상자"}},
 	{"id": "att_bow_string", "station": "weapon", "kind": "item", "item": "att_bow_string", "amount": 1, "name": "강화 시위", "cost": {"rope": 2, "spring": 1}, "coins": 0,
 		"benefit": "활·석궁 부품: 피해 +15%", "hint": {"rope": "상자", "spring": "공구함"}},
+	{"id": "smoke_can", "station": "weapon", "kind": "item", "name": "연막 깡통 ×2", "item": "smoke_can", "amount": 2, "cost": {"gunpowder": 1, "bottle": 1, "cloth": 1}, "coins": 10,
+		"benefit": "T로 던지는 연막: 냥이 시야를 9초간 가린다", "hint": {"gunpowder": "공구함·사물함", "bottle": "냉장고·쓰레기통", "cloth": "상자·사물함"}},
 	# ── 물약 제작소 (약초 할멈 하이에나 냥) ──
 	{"id": "potion_heal", "station": "potion", "kind": "item", "name": "체력 물약", "item": "potion_heal", "amount": 1, "cost": {"herb": 2, "bottle": 1}, "coins": 0,
 		"benefit": "빠르게 마시는 체력 +50", "hint": {"herb": "화분·약품함", "bottle": "냉장고·쓰레기통"}},
@@ -507,6 +510,7 @@ const SHOP := [
 	{"id": "smg", "kind": "weapon", "weapon": "smg", "price": 560, "name": "꼬리흔들 기관단총"},
 	{"id": "carbine", "kind": "weapon", "weapon": "carbine", "price": 640, "name": "카빈 소총"},
 	{"id": "potion_heal", "kind": "item", "item": "potion_heal", "amount": 1, "price": 90, "name": "체력 물약"},
+	{"id": "smoke_can", "kind": "item", "item": "smoke_can", "amount": 1, "price": 75, "name": "연막 깡통"},
 	{"id": "herb", "kind": "item", "item": "herb", "amount": 2, "price": 45, "name": "약초 잎 ×2"},
 	{"id": "bottle", "kind": "item", "item": "bottle", "amount": 2, "price": 25, "name": "빈 유리병 ×2"},
 	{"id": "cloth", "kind": "item", "item": "cloth", "amount": 2, "price": 40, "name": "천 조각 ×2"},

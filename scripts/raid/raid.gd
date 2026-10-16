@@ -76,6 +76,8 @@ func _ready() -> void:
 		bag.try_add("bandage")
 	for sid in kit.get("snacks", []):
 		bag.try_add(sid)
+	for tid in kit.get("throws", []):
+		bag.try_add(tid)
 	if Net.in_raid:
 		Net.raid = self
 		seed(Net.raid_seed)   # 모두 같은 맵·같은 상자 내용
@@ -348,6 +350,35 @@ func _spawn_decor(c: String, x: int, y: int) -> void:
 		spr.position = Vector2(0, -T * 0.5)
 		holder.add_child(spr)
 	world.add_child(holder)
+
+# ── 연막: 구름 안이나 너머는 냥이가 못 본다 ──
+var smokes: Array = []   # [중심, 반지름, 남은 시간]
+
+func add_smoke(pos: Vector2, radius: float, dur: float) -> void:
+	smokes.append([pos, radius, dur])
+	if is_instance_valid(FX.fx3d):
+		FX.fx3d.smoke_cloud(pos, radius, dur)
+	emit_noise(pos, 180.0)
+
+func smoke_blocks(a: Vector2, b: Vector2) -> bool:
+	for sm in smokes:
+		var c: Vector2 = sm[0]
+		var r: float = sm[1]
+		if a.distance_to(c) < r or b.distance_to(c) < r:
+			return true
+		var ab := b - a
+		var l2 := ab.length_squared()
+		if l2 < 1.0:
+			continue
+		var k := clampf((c - a).dot(ab) / l2, 0.0, 1.0)
+		if (a + ab * k).distance_to(c) < r * 0.9:
+			return true
+	return false
+
+func _update_smokes(delta: float) -> void:
+	for sm in smokes:
+		sm[2] -= delta
+	smokes = smokes.filter(func(sm): return sm[2] > 0.0)
 
 # ── 보스 등장 알림 (처음 마주쳤을 때 한 번) ──
 var _boss_seen := {}
@@ -809,6 +840,7 @@ func _physics_process(delta: float) -> void:
 	_update_pickups()
 	_update_traps(delta)
 	_update_boss_intro()
+	_update_smokes(delta)
 	_update_tutorial(delta)
 	if power_on_t >= 0.0:
 		power_on_t += delta

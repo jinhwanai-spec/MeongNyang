@@ -267,7 +267,7 @@ func _perceive(delta: float) -> void:
 		in_cone = true  # 이미 경계 중이면 사방을 본다
 	if dist < 70.0:
 		in_cone = true
-	if dist <= vision and in_cone and raid.has_los(center(), p.global_position + Vector2(0, -20)):
+	if dist <= vision and in_cone and raid.has_los(center(), p.global_position + Vector2(0, -20)) and not raid.smoke_blocks(center(), p.global_position):
 		sees_player = true
 		last_seen = p.global_position
 		var rate := (1.0 - dist / vision) * 2.6 + 0.5

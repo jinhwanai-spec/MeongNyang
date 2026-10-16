@@ -376,6 +376,8 @@ func _handle_combat_input() -> void:
 		try_heal()
 	if Input.is_action_just_pressed("eat"):
 		try_eat()
+	if Input.is_action_just_pressed("throw"):
+		throw_smoke()
 	if Input.is_action_just_pressed("skill"):
 		use_skill()
 	if Input.is_action_pressed("fire") and not raid.mouse_over_ui():
@@ -706,6 +708,19 @@ func equip_armor_from_bag(idx: int) -> bool:
 	return true
 
 # ── 햄스터다움: 속도·은신·간식 ───────────────────────
+## 연막 깡통 던지기 (가방에 있어야 한다)
+func throw_smoke() -> void:
+	if dead or input_locked or raid.inv_open:
+		return
+	var idx: int = raid.bag.find_first("smoke_can")
+	if idx < 0:
+		raid.notify("연막 깡통이 없다 (무기 제작소에서 만들거나 시장에서 사자)", DB.C_MUTED)
+		return
+	raid.bag.remove_at(idx)
+	var target := global_position + (raid.mouse_world() - global_position).limit_length(6.0 * DB.TILE)
+	SkillObj.spawn(raid, "smoke", global_position + Vector2(0, -20), target)
+	Sfx.play("swing", -4.0)
+
 func speed_mul() -> float:
 	var m := float(hdata.get("speed", 1.0))
 	var lr: float = raid.bag.load_ratio()
