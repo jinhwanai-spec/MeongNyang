@@ -71,9 +71,53 @@ func _stations() -> void:
 	board.position = Vector3(13.85, 0, 7.6)
 	board.rotation.y = -PI * 0.5
 	add_child(board)
-	var rack := ProcModels.weapon_wall(["assault_rifle", "shotgun", "sniper", "smg", "katana"])
-	rack.position = Vector3(7.2, 0, 0.62)
+	# 무기 제작소 벽 진열대: 시설 단계가 오를수록 총이 늘어난다
+	var wall_ids := ["assault_rifle", "shotgun", "sniper", "smg", "katana"]
+	if GameState.fac("weapon") >= 2:
+		wall_ids += ["lmg", "crossbow"]
+	if GameState.fac("weapon") >= 3:
+		wall_ids += ["dmr", "fire_axe"]
+	var rack := ProcModels.weapon_wall(wall_ids)
+	rack.position = Vector3(7.2 - (wall_ids.size() - 5) * 0.3, 0, 0.62)
 	add_child(rack)
+	_facility_dress()
+
+## 시설 강화 단계가 눈에 보이게: 금빛 별 명패 + 단계별 소품 + 3단계 조명
+func _facility_dress() -> void:
+	var spots := {
+		"weapon": [Vector3(7.2, 2.35, 0.75), Color("#FFB070")],
+		"potion": [markers["st_potion"] + Vector3(0.8, 2.0, -0.75), Color("#7CFF9A")],
+		"armor": [markers["st_armor"] + Vector3(0.9, 2.1, 0.9), Color("#FF8A4A")],
+	}
+	for st in spots:
+		var lv := GameState.fac(st)
+		if lv < 2:
+			continue
+		var at: Vector3 = spots[st][0]
+		var col: Color = spots[st][1]
+		var plate := Label3D.new()
+		plate.text = "★".repeat(lv)
+		plate.font_size = 64
+		plate.pixel_size = 0.006
+		plate.modulate = Color("#FFD34E")
+		plate.outline_size = 14
+		plate.outline_modulate = Color(0.25, 0.12, 0.02)
+		plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		plate.position = at
+		add_child(plate)
+		if st == "potion":
+			for i in (lv - 1) * 2:
+				var pt := ProcModels.potion(["potion_heal", "potion_iron", "potion_swift", "potion_focus"][i % 4])
+				pt.position = markers["st_potion"] + Vector3(0.15 + i * 0.22, 0, 0.35)
+				pt.scale = Vector3.ONE * 1.6
+				add_child(pt)
+		if lv >= 3:
+			var ol := OmniLight3D.new()
+			ol.light_color = col
+			ol.light_energy = 0.8
+			ol.omni_range = 2.5
+			ol.position = at + Vector3(0, -0.6, 0.4)
+			add_child(ol)
 
 func marker(n: String) -> Vector3:
 	return markers.get(n, Vector3(7, 0, 6))
