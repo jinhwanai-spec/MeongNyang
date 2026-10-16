@@ -338,6 +338,10 @@ func _footsteps(delta: float, move: Vector2, sprinting: bool) -> void:
 		step_acc = 0.0
 		var tile := raid.tile_at(global_position)
 		var nm := float(hdata.get("noise", 1.0))
+		# 바닥 재질에 따른 조용한 발소리 (웅크리면 더 작게)
+		var surf := "step_grass" if tile in ["g", "p"] else ("step_mud" if tile == "m" else ("" if tile == "w" else "step_hard"))
+		if surf != "":
+			Sfx.play(surf, (-24.0 if crouching else -17.0) + (3.0 if sprinting else 0.0), 0.12)
 		# 풀숲을 서서 지나가면 풀이 흔들려 위치가 드러난다
 		if tile == "g" and not crouching:
 			FX.rustle(raid.fx_layer, global_position)
