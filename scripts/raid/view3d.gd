@@ -670,6 +670,26 @@ func _update_gates(delta: float) -> void:
 		(info.beam as Node3D).scale.y = 1.4 if active else 1.0
 
 ## 탈출 성공 연출: A 맨홀이면 햄스터가 쏙 들어가고, B 트럭이면 트럭에 타고 떠난다
+## 쓰러질 때: 가방이 바닥에 툭 떨어지고 빛기둥이 선다 (다음 원정에서 회수)
+func play_death_bag(p: Vector2, stays: bool) -> void:
+	var bp := ProcModels.backpack()
+	bp.scale = Vector3.ONE * 1.6
+	var at := Vector3(p.x / T + 0.35, 0.0, p.y / T + 0.15)
+	bp.position = at + Vector3(0, 1.4, 0)
+	bp.rotation = Vector3(0.0, randf() * TAU, 0.0)
+	add_child(bp)
+	var tw := create_tween()
+	tw.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+	tw.tween_property(bp, "position", at, 0.45).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(bp, "rotation:z", 0.35, 0.45)
+	tw.tween_callback(func(): Sfx.play("bag_found", -4.0, 0.7))
+	if stays:
+		var beam := ProcModels.light_beam(DB.C_LEGEND, 3.0, 0.22)
+		beam.position = at
+		beam.scale = Vector3(1, 0.01, 1)
+		add_child(beam)
+		tw.tween_property(beam, "scale:y", 1.0, 0.6).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
 func play_extract(ex: ExitZone) -> void:
 	if extracting or not exit3d.has(ex):
 		return

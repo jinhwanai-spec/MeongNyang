@@ -923,6 +923,8 @@ func _end(survived: bool, reason: String) -> void:
 		GameState.settle_lost_bags(_remaining_lost_bags(), not survived, new_bag)
 		result["bag_rule"] = str(GameState.diff("bag_rule"))
 		result["bag_left"] = not survived and str(GameState.diff("bag_rule")) != "instant"
+		if not survived and view3d:
+			view3d.play_death_bag(Vector2(new_bag.pos[0], new_bag.pos[1]), bool(result.bag_left))
 	if survived:
 		GameState.contract_event("extract", {"region": LevelData.region, "value": bag.total_value()})
 	if survived and view3d and extract_zone:
@@ -966,6 +968,24 @@ func _end(survived: bool, reason: String) -> void:
 	lbl.grow_vertical = Control.GROW_DIRECTION_BOTH
 	lbl.modulate.a = 0.0
 	ov.add_child(lbl)
+	if not survived and result.has("bag_left"):
+		var sub_t := "가방을 떨어뜨렸다 — 다음 원정에서 이 자리에서 되찾을 수 있다" if result.bag_left else "가방을 떨어뜨렸다 — 난이도 규칙에 따라 가방은 사라진다"
+		var sub := UITheme.label(sub_t, 24, DB.C_LEGEND if result.bag_left else Color(0.8, 0.8, 0.85), true)
+		sub.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sub.add_theme_constant_override("outline_size", 8)
+		sub.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+		sub.grow_horizontal = Control.GROW_DIRECTION_BOTH
+		lbl.offset_top -= 190
+		lbl.offset_bottom -= 190
+		sub.offset_top -= 120
+		sub.offset_bottom -= 120
+		sub.modulate.a = 0.0
+		ov.add_child(sub)
+		var tws := create_tween()
+		tws.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
+		tws.tween_interval(0.5)
+		tws.tween_property(sub, "modulate:a", 1.0, 0.4)
 	var tw := create_tween()
 	tw.set_process_mode(Tween.TWEEN_PROCESS_IDLE)
 	tw.tween_property(lbl, "modulate:a", 1.0, 0.5)
