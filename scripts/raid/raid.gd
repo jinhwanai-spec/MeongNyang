@@ -90,6 +90,8 @@ func _ready() -> void:
 	_build_pause()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	Sfx.music("raid")
+	Sfx.ambient("harbor" if LevelData.region == "dock" else "")
+	tree_exiting.connect(func(): Sfx.ambient(""))
 	notify("원정 시작 — " + str(Regions.cur().short), DB.C_HERO)
 	if not GameState.tutorial_done:
 		hud.show_hint("WASD 이동 · 마우스 조준 · 좌클릭 사격 · Shift 달리기", 8.0)
@@ -248,6 +250,8 @@ func _spawn_entities() -> void:
 					_spawn_enemy("bulldog", foot - Vector2(0, 8))
 				"c":
 					_spawn_enemy("cat", foot - Vector2(0, 8))
+				"Y":
+					_spawn_enemy("bulldog", foot - Vector2(0, 8), 0, "항구 대장 흑냥이")
 				"G":
 					generator = Generator.new()
 					generator.raid = self
@@ -413,9 +417,11 @@ func _make_exit(label: String, cells: Array, need: float) -> ExitZone:
 	ez.add_child(l)
 	return ez
 
-func _spawn_enemy(t: String, pos: Vector2, eid: int = 0) -> Enemy:
+func _spawn_enemy(t: String, pos: Vector2, eid: int = 0, elite_title: String = "") -> Enemy:
 	var e := Enemy.new()
 	e.setup(self, t, pos)
+	if elite_title != "":
+		e.make_elite(elite_title)
 	e.net_id = eid if eid > 0 else next_eid
 	next_eid = maxi(next_eid, e.net_id) + 1
 	e.puppet = Net.is_client()
@@ -815,11 +821,15 @@ func on_enemy_killed(e: Enemy) -> void:
 				items.append(am)
 				if randf() < 0.5:
 					items.append(am)
-	# 입고 있던 갑옷도 떨어질 수 있다 (헬멧 50%, 조끼 60%)
-	if e.helmet != "" and randf() < 0.5:
+	# 입고 있던 갑옷도 떨어질 수 있다 (헬멧 50%, 조끼 60%) — 대장은 전부 + 귀한 전리품
+	if e.helmet != "" and (e.elite or randf() < 0.5):
 		items.append(e.helmet)
-	if e.vest != "" and randf() < 0.6:
+	if e.vest != "" and (e.elite or randf() < 0.6):
 		items.append(e.vest)
+	if e.elite:
+		items.append_array(["gold_collar", ["att_drum_mag", "att_holo", "att_scope_4x"].pick_random(), "lens", "metal_sheet", "metal_sheet", "gunpowder", "potion_big", "ammo_rifle", "ammo_rifle"])
+		notify("항구 대장을 쓰러뜨렸다! 귀한 전리품이 떨어졌다", DB.C_LEGEND)
+		Sfx.play("rare", -2.0)
 	if not items.is_empty():
 		var drop := LootContainer.new()
 		drop.setup(self, "drop", e.global_position)

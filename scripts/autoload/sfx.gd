@@ -59,6 +59,29 @@ func play_at(name_: String, pos: Vector2, vol_db: float = 0.0, pitch_var: float 
 	p.pitch_scale = 1.0 + randf_range(-pitch_var, pitch_var)
 	p.play()
 
+## 환경음 (파도 소리 등) — 배경음과 따로 반복 재생. "" 이면 멈춤
+var _amb: AudioStreamPlayer
+var _amb_name := ""
+func ambient(name_: String, vol_db: float = -10.0) -> void:
+	if _amb == null:
+		_amb = AudioStreamPlayer.new()
+		add_child(_amb)
+	if name_ == _amb_name:
+		return
+	_amb_name = name_
+	var s := _stream("amb_" + name_) if name_ != "" else null
+	if s == null:
+		_amb.stop()
+		return
+	if s is AudioStreamWAV:
+		var w := s as AudioStreamWAV
+		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		w.loop_begin = 0
+		w.loop_end = int(w.get_length() * w.mix_rate)
+	_amb.stream = s
+	_amb.volume_db = vol_db + sfx_volume_db
+	_amb.play()
+
 func music(name_: String) -> void:
 	if name_ == _music_name:
 		return

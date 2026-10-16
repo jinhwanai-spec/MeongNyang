@@ -44,3 +44,23 @@ f = 40 + 35*np.clip(tt/1.2,0,1)
 eng = np.sin(2*np.pi*np.cumsum(f)/SR)*0.6 + np.sign(np.sin(2*np.pi*np.cumsum(f*2)/SR))*0.15 + lp(nz(1.6),0.1)*0.3
 save('truck', eng*env(len(eng),0.15,None,1.2), 0.8)
 print('ok')
+# 항구 환경음 (8초 반복): 파도 + 갈매기 + 밧줄 삐걱
+dur = 8.0
+n = int(SR*dur)
+x = np.arange(n)/SR
+waves = lp(lp(nz(dur),0.03),0.08)*3.0
+amp = 0.55 + 0.45*np.sin(2*np.pi*x/4.0)**2
+amb = waves*amp
+def gull(at_s, g=0.25):
+    d=0.35; tt=t(d)
+    f=1500+600*np.sin(np.pi*tt/d)
+    s_=np.sin(2*np.pi*np.cumsum(f)/SR)*env(len(tt),0.02,None,3)*g
+    o=np.zeros(n); i=int(SR*at_s); o[i:i+len(s_)]+=s_[:n-i]; return o
+amb = amb + gull(1.2) + gull(1.55,0.18) + gull(5.3,0.2)
+creak = sweep(180,240,0.5,'tri')*env(int(SR*0.5),0.1,None,2)*0.12
+o=np.zeros(n); i=int(SR*3.4); o[i:i+len(creak)]+=creak
+amb = amb + o
+# 끝과 시작을 이어 붙이기 쉽게 살짝 페이드
+f_=int(SR*0.3); amb[:f_]*=np.linspace(0.6,1,f_); amb[-f_:]*=np.linspace(1,0.6,f_)
+save('amb_harbor', amb, 0.5)
+print('amb ok')

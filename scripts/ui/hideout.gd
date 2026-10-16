@@ -803,4 +803,16 @@ func _build_stash() -> void:
 		if int(GameState.weapons[wid]) > 0:
 			var ic := ItemIcon.make(wid, 50, true, int(GameState.weapons[wid]))
 			wg.add_child(ic)
-	wc.add_child(UITheme.label("권총탄 %d · 산탄 %d · 석궁 화살 %d" % [int(GameState.ammo.get("pistol", 0)), int(GameState.ammo.get("shell", 0)), int(GameState.ammo.get("bolt", 0))], 15, DB.C_MUTED))
+	wc.add_child(UITheme.label("권총탄 %d · 산탄 %d · 소총탄 %d · 석궁 화살 %d" % [int(GameState.ammo.get("pistol", 0)), int(GameState.ammo.get("shell", 0)), int(GameState.ammo.get("rifle", 0)), int(GameState.ammo.get("bolt", 0))], 15, DB.C_MUTED))
+	var ac := _card(stash_box)
+	ac.add_child(UITheme.label("갑옷", 19, DB.C_TEXT, true))
+	var ag := HFlowContainer.new()
+	ag.add_theme_constant_override("h_separation", 8)
+	ac.add_child(ag)
+	var any_a := false
+	for aid in GameState.armor:
+		if int(GameState.armor[aid]) > 0:
+			ag.add_child(ItemIcon.make(aid, 58, false, int(GameState.armor[aid])))
+			any_a = true
+	if not any_a:
+		ac.add_child(UITheme.label("갑옷이 없다. 갑옷 제작소에서 만들 수 있다.", 14, DB.C_MUTED))

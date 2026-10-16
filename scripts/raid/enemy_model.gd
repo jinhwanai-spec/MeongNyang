@@ -24,6 +24,7 @@ const ANIMS := {
 
 var ent: Enemy
 var type := "hyena"
+var big := 1.0
 var pivot: Node3D
 var body: Node3D
 var model: Node3D
@@ -118,6 +119,9 @@ func setup(e: Enemy) -> void:
 			ap.play(names.idle)
 			ap.seek(randf() * 1.5)
 			anim_now = "idle"
+	if e.elite:
+		big = 1.35
+		pivot.scale = Vector3.ONE * big
 	_attach_weapon(e.weapon)
 	_attach_armor(e.helmet, e.vest)
 	flash_mat = StandardMaterial3D.new()
@@ -188,7 +192,7 @@ func _orient_armor() -> void:
 	var b := pivot.global_basis.orthonormalized()
 	for ar in armor_roots:
 		var n: Node3D = ar[0]
-		n.global_basis = b.scaled(Vector3.ONE * float(ar[1]))
+		n.global_basis = b.scaled(Vector3.ONE * float(ar[1]) * big)
 
 ## 손 위치는 뼈를 따라가고, 방향은 몸 정면 기준으로 (총은 앞으로, 근접 무기는 위로 들고 있다가 휘두를 때 내려침)
 func _aim_weapon(delta: float) -> void:
@@ -207,7 +211,7 @@ func _aim_weapon(delta: float) -> void:
 		tilt = Basis(Vector3.RIGHT, -raise)
 	else:
 		tilt = Basis(Vector3.RIGHT, _recoil * 0.35)
-	weapon_root.global_basis = (fwd * tilt).scaled(Vector3.ONE * 0.95)
+	weapon_root.global_basis = (fwd * tilt).scaled(Vector3.ONE * 0.95 * big)
 
 func _make_labels(text: String, col: Color) -> void:
 	label = Label3D.new()

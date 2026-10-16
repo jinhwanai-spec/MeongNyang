@@ -24,6 +24,7 @@ var armor_dur := {}    # 갑옷 id -> 남은 내구도 (가장 최근에 입은 
 var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds": 2, "snacks": 2, "helmet": "", "vest": ""}
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
 var region := "mart"      # 원정 지역 (Regions)
+var seen := {}            # 한 번 보여 준 안내 (새 기능 소개 등)
 # 직전 원정 결과 (결과 화면용)
 var last_result := {}
 
@@ -54,7 +55,7 @@ func new_game() -> void:
 func save_game() -> void:
 	var data := {"coins": coins, "stash": stash, "weapons": weapons, "ammo": ammo, "crafted": crafted,
 		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster,
-		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "mods": mods, "armor": armor, "armor_dur": armor_dur}
+		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "mods": mods, "armor": armor, "armor_dur": armor_dur}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "\t"))
@@ -111,6 +112,7 @@ func load_game() -> bool:
 			armor_dur[str(k)] = float(ad[k])
 	hamster = str(d.get("hamster", "baragi"))
 	region = str(d.get("region", "mart"))
+	seen = d.get("seen", {}) if typeof(d.get("seen", {})) == TYPE_DICTIONARY else {}
 	if not Regions.DATA.has(region):
 		region = "mart"
 	if not DB.HAMSTERS.has(hamster):

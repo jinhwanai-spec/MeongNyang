@@ -49,6 +49,7 @@ var last_hitter := 1
 var net_pos := Vector2.ZERO
 var target: Node2D           # 노리는 햄스터 (가장 가까운 플레이어)
 var weapon := ""             # 들고 있는 무기 (죽으면 떨어뜨림)
+var elite := false           # 대장 고양이 (크고 단단하고 좋은 걸 떨어뜨림)
 var helmet := ""             # 쓰고 있는 헬멧 / 입은 조끼 (피해를 줄이고, 죽으면 떨어뜨릴 수 있다)
 var vest := ""
 var gunner := false          # 총을 들었으면 거리를 두고 쏜다
@@ -104,6 +105,21 @@ func _roll_armor() -> void:
 		helmet = str((rr[0][1] as Array).pick_random())
 	if randf() < float(rr[1][0]):
 		vest = str((rr[1][1] as Array).pick_random())
+
+## 대장: 체력 4.5배, 경기관총, 최고급 갑옷
+func make_elite(title: String) -> void:
+	elite = true
+	data = data.duplicate()
+	data.name = title
+	data.name_color = DB.C_LEGEND
+	data.radius = float(data.radius) * 1.25
+	radius = float(data.radius)
+	hp = float(DB.ENEMIES[type].hp) * 4.5 * float(GameState.diff("enemy_hp"))
+	max_hp = hp
+	weapon = "lmg"
+	gunner = true
+	helmet = "helmet_3"
+	vest = "vest_3"
 
 func armor_prot() -> float:
 	var p := 0.0

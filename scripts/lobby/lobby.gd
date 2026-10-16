@@ -60,6 +60,8 @@ func _ready() -> void:
 	view.add_child(cam)
 	cam_pos = Vector3(sp.x, 0, sp.z)
 	_build_ui()
+	if not GameState.seen.has("v18"):
+		_whats_new()
 
 func _make_avatar() -> void:
 	if avatar:
@@ -112,6 +114,35 @@ func _build_ui() -> void:
 	hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	hint.add_theme_constant_override("outline_size", 6)
 	root.add_child(hint)
+
+## 새 기능 안내 (한 번만)
+func _whats_new() -> void:
+	GameState.seen["v18"] = true
+	GameState.save_game()
+	var pc := PanelContainer.new()
+	pc.add_theme_stylebox_override("panel", UITheme.box(Color(DB.C_UI_SOLID, 0.94), 14, Color(DB.C_LEGEND, 0.7), 2, 18))
+	pc.position = Vector2(24, 24)
+	pc.custom_minimum_size = Vector2(520, 0)
+	ui.add_child(pc)
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 6)
+	pc.add_child(v)
+	v.add_child(UITheme.label("은신처가 넓어졌어요!", 22, DB.C_LEGEND, true))
+	for line in [
+		"• 무기 제작소: 총·탄약·총 부품 제작, 총에 부품 끼우기 (3D 미리보기)",
+		"• 물약 제작소: 약초·빈 병으로 체력·기력·강철 피부·질풍·그림자 물약",
+		"• 갑옷 제작소: 헬멧·조끼 3단계 + 수리 (입으면 몸에 보여요)",
+		"• 쓰러지면 가방이 그 자리에 남아요 — 다음 원정에서 회수!",
+		"• 출발 준비: 난이도(가방 규칙 등) · 새 지역 '냥냥 항구' 선택",
+	]:
+		var l := UITheme.label(line, 15, DB.C_TEXT)
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		v.add_child(l)
+	v.add_child(UITheme.label("(12초 뒤 사라져요)", 12, DB.C_MUTED))
+	var tw := pc.create_tween()
+	tw.tween_interval(12.0)
+	tw.tween_property(pc, "modulate:a", 0.0, 0.8)
+	tw.tween_callback(pc.queue_free)
 
 func _info_text() -> String:
 	var hd: Dictionary = DB.HAMSTERS.get(GameState.hamster, DB.HAMSTERS.baragi)

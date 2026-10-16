@@ -12,6 +12,7 @@ const T := float(DB.TILE)
 const PITCH := 49.0         # 카메라 내려다보는 각도
 const CAM_DIST := 16.0
 var cam_dist := CAM_DIST   # 테스트·연출용으로 바꿀 수 있음
+var _aim_dist := CAM_DIST
 const FOV := 34.0
 const WALL_H := 2.6         # 벽 높이 (타일 단위) — 햄스터보다 훨씬 높은 인간 세계
 const GLASS_LOW := 0.32
@@ -488,7 +489,13 @@ func _process(delta: float) -> void:
 	var vs0 := get_viewport().get_visible_rect().size
 	var mo := (get_viewport().get_mouse_position() - vs0 * 0.5) / vs0.y
 	mo = mo.limit_length(0.5)
-	var look := Vector2(mo.x, mo.y / sin(deg_to_rad(PITCH))) * 3.2
+	# 우클릭 조준: 더 멀리 내다보고, 스코프를 달았으면 카메라도 멀어진다
+	var pl: Player = raid.player
+	var scoped := pl.aim_k > 0.0 and str(pl.mods.get(pl.current_weapon(), {}).get("optic", "")) == "scope_4x"
+	var look := Vector2(mo.x, mo.y / sin(deg_to_rad(PITCH))) * lerpf(3.2, 6.5 if scoped else 4.6, pl.aim_k)
+	_aim_dist = lerpf(_aim_dist, (CAM_DIST + 5.0) if scoped else CAM_DIST, 1.0 - exp(-4.0 * delta))
+	if cam_dist >= CAM_DIST - 0.01 and absf(cam_dist - CAM_DIST) < 6.0:
+		cam_dist = _aim_dist
 	var want := Vector3(pp.x / T + look.x, 0, pp.y / T + look.y)
 	look_t = look_t.lerp(want - Vector3(pp.x / T, 0, pp.y / T), 1.0 - exp(-6.0 * delta))
 	cam_target = Vector3(pp.x / T, 0, pp.y / T) + look_t

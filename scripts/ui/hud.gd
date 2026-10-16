@@ -172,6 +172,7 @@ func _draw_hud() -> void:
 	_draw_hurt(vs)
 	_draw_extract(vs)
 	_draw_exit_arrows(p, vs)
+	_draw_boss(p, vs)
 	if hint_t > 0.0 and hint != "":
 		var a := minf(1.0, hint_t)
 		var w := font_b.get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x + 40
@@ -531,10 +532,24 @@ func _draw_exit_arrows(p: Player, vs: Vector2) -> void:
 			Sprites.draw_fit(canvas, bt, Rect2(edge2 - Vector2(11, 11), Vector2(22, 22)))
 		_txt(edge2 - dir2 * 26 + Vector2(-40, 6), "내 가방 %dm" % int(d2.length() / DB.TILE), 13, bcol, true, HORIZONTAL_ALIGNMENT_CENTER, 80)
 
+## 대장 고양이 체력 막대 (화면 위 가운데)
+func _draw_boss(p: Player, vs: Vector2) -> void:
+	for e in get_tree().get_nodes_in_group("enemy"):
+		if not e.elite or e.dead:
+			continue
+		if not e.is_aware() and e.global_position.distance_to(p.global_position) > 520.0:
+			continue
+		var r := Rect2(Vector2(vs.x * 0.5 - 230, 96), Vector2(460, 40))
+		_panel(r, 0.85)
+		_txt(r.position + Vector2(14, 17), str(e.data.name), 15, DB.C_LEGEND, true, HORIZONTAL_ALIGNMENT_LEFT, -1, font_b)
+		_txt(r.position + Vector2(14, 17), "%d / %d" % [ceili(e.hp), int(e.max_hp)], 13, DB.C_TEXT, true, HORIZONTAL_ALIGNMENT_RIGHT, 432)
+		_bar(Rect2(r.position + Vector2(14, 23), Vector2(432, 10)), clampf(e.hp / e.max_hp, 0.0, 1.0), DB.C_DANGER)
+		return
+
 func _draw_crosshair(p: Player) -> void:
 	var m := canvas.get_local_mouse_position()
 	var wid := p.current_weapon()
-	var spread := 8.0 + p.recoil * 1.5
+	var spread := (8.0 + p.recoil * 1.5) * lerpf(1.0, 0.6, p.aim_k)
 	if wid != "":
 		spread += float(p.wstat(wid).spread) * 0.6
 	var col := Color(1, 1, 1, 0.9)

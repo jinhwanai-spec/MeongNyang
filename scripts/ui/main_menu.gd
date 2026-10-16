@@ -31,6 +31,9 @@ func _ready() -> void:
 		sheet = "hamster"
 	if ModelChar.available():
 		ham = ModelChar.load_model(true)
+		var lo := GameState.loadout
+		var gw := str(lo.primary) if str(lo.primary) != "" else str(lo.sidearm)
+		ModelChar.arm_static(ham, gw, GameState.mods.get(gw, {}), str(lo.get("helmet", "")), str(lo.get("vest", "")))
 		ham.position = center
 		ham.scale = Vector3.ONE * 1.25
 		v.add_child(ham)
@@ -114,7 +117,7 @@ func _build_ui() -> void:
 	_btn("멀티플레이", false, func(): multi.emit())
 	_btn("설정", false, func(): _open_settings())
 	_btn("나가기", false, func(): get_tree().quit())
-	var ver := UITheme.label("v0.5 · 3D", 13, Color(1, 1, 1, 0.45))
+	var ver := UITheme.label("v0.18 · 3D", 13, Color(1, 1, 1, 0.45))
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	ver.position = Vector2(24, -34)
 	root.add_child(ver)

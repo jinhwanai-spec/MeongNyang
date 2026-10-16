@@ -25,6 +25,8 @@ var mags := {}                    # 무기 id -> 탄창에 든 탄
 var reserve := {"pistol": 0, "shell": 0, "bolt": 0, "rifle": 0}
 var melee_id := "bat"               # 근접 무기 (V)
 var mods := {}                      # 총 부품 (무기 id -> {슬롯: 부품})
+var aiming := false                 # 우클릭 조준: 느리게 움직이며 정확하게, 스코프면 멀리 본다
+var aim_k := 0.0
 var helmet := ""                    # 입은 헬멧 / 조끼 (DB.ITEMS id)
 var vest := ""
 var helmet_dur := 0.0
@@ -164,6 +166,9 @@ func setup(kit: Dictionary) -> void:
 ## 부품을 반영한 무기 성능 (+ 집중 물약)
 func wstat(wid: String) -> Dictionary:
 	var w := DB.apply_mods(wid, mods.get(wid, {}))
+	if aim_k > 0.0:
+		w.spread = float(w.spread) * lerpf(1.0, 0.55, aim_k)
+		w.recoil = float(w.recoil) * lerpf(1.0, 0.8, aim_k)
 	if buffs.has("focus"):
 		w.spread = float(w.spread) * 0.5
 		w.reload = float(w.reload) * 0.7
@@ -194,6 +199,8 @@ func _physics_process(delta: float) -> void:
 	var move := Vector2.ZERO
 	if not input_locked:
 		move = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	aiming = not input_locked and not raid.inv_open and current_weapon() != "" and Input.is_action_pressed("aim_alt") and dodge_t <= 0.0
+	aim_k = move_toward(aim_k, 1.0 if aiming else 0.0, delta * 5.0)
 
 	# 웅크리기 토글
 	if not input_locked and Input.is_action_just_pressed("crouch"):
@@ -234,6 +241,8 @@ func _physics_process(delta: float) -> void:
 			spd *= 0.45
 		if reload_t > 0.0:
 			spd *= 0.85
+		if aiming:
+			spd *= 0.6
 		velocity = velocity.lerp(move * spd, 1.0 - exp(-delta * 18.0))
 		if sprinting and not buffs.has("seed"):
 			stamina -= SPRINT_DRAIN * delta

@@ -204,6 +204,7 @@ func _stand_players() -> void:
 		var pos := center + Vector3((i - (list.size() - 1) * 0.5) * 1.3, 0, 0)
 		if ModelChar.available():
 			var mm := ModelChar.load_model(true)
+			ModelChar.arm_static(mm, ["assault_rifle", "shotgun", "smg", "carbine"][i % 4])
 			mm.position = pos
 			mm.rotation_degrees.y = 20.0
 			stand.add_child(mm)

@@ -49,6 +49,38 @@ static func load_model(play_idle: bool = false) -> Node3D:
 		a.seek(randf() * 2.0)
 	return m
 
+## 메뉴·대기실용 가만히 서 있는 모델에 총·갑옷을 쥐여 준다
+static func arm_static(m: Node3D, wid: String, mods: Dictionary = {}, helmet: String = "", vest: String = "") -> void:
+	var sk := m.find_children("*", "Skeleton3D", true, false)
+	if sk.is_empty() or not ResourceLoader.exists(HAMSTER_NOGUN):
+		return
+	var skel0 := sk[0] as Skeleton3D
+	if skel0.find_bone("chest") >= 0:
+		var ba := BoneAttachment3D.new()
+		ba.bone_name = "chest"
+		skel0.add_child(ba)
+		if DB.WEAPONS.has(wid):
+			var hold := Node3D.new()
+			hold.position = Vector3(-0.17, -0.02, 0.36)
+			hold.rotation = Vector3(0.05, 0.3, 0)
+			ba.add_child(hold)
+			var g := EnemyModel.weapon_scene(wid)
+			if g:
+				ProcModels.attach_mods(g, wid, mods)
+				hold.add_child(g)
+		if vest != "" and DB.ITEMS.has(vest):
+			var v := ProcModels.vest(int(DB.ITEMS[vest].tier))
+			v.position = Vector3(0, -0.03, -0.07)
+			ba.add_child(v)
+	if helmet != "" and DB.ITEMS.has(helmet) and skel0.find_bone("head") >= 0:
+		var bh := BoneAttachment3D.new()
+		bh.bone_name = "head"
+		skel0.add_child(bh)
+		var h := ProcModels.helmet(int(DB.ITEMS[helmet].tier))
+		h.position = Vector3(0, 0.3, 0.02)
+		h.scale = Vector3.ONE * 1.28
+		bh.add_child(h)
+
 static func anim_player(m: Node) -> AnimationPlayer:
 	var list := m.find_children("*", "AnimationPlayer", true, false)
 	if list.is_empty():
@@ -160,6 +192,7 @@ func _process(delta: float) -> void:
 	model.visible = _f("burrow_t") <= 0.0
 	_set_alpha(0.35 if _f("cloak_t") > 0.0 else 1.0)
 	_update_gear(delta)
+	_update_buff_fx()
 
 # ── 장비: 손에 든 총 / 근접 무기 / 헬멧 / 조끼 ────────
 var skel: Skeleton3D
@@ -299,6 +332,46 @@ func _update_gear(_delta: float) -> void:
 			helmet_node.position = Vector3(0, 0.3, 0.02)
 			helmet_node.scale = Vector3.ONE * 1.28
 			head_att.add_child(helmet_node)
+
+# ── 물약 효과 보이기: 강철 피부 = 푸른 막, 질풍 = 발밑 바람 ──
+var iron_fx: MeshInstance3D
+var swift_fx: CPUParticles3D
+func _update_buff_fx() -> void:
+	var b = ent.get("buffs")
+	if typeof(b) != TYPE_DICTIONARY:
+		return
+	var iron: bool = b.has("iron")
+	if iron and iron_fx == null:
+		iron_fx = MeshInstance3D.new()
+		var sm := SphereMesh.new()
+		sm.radius = 0.62
+		sm.height = 1.3
+		iron_fx.mesh = sm
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		m.albedo_color = Color(0.45, 0.7, 1.0, 0.18)
+		m.cull_mode = BaseMaterial3D.CULL_FRONT
+		iron_fx.material_override = m
+		iron_fx.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		iron_fx.position = Vector3(0, 0.62, 0)
+		pivot.add_child(iron_fx)
+	elif not iron and iron_fx:
+		iron_fx.queue_free()
+		iron_fx = null
+	if iron_fx:
+		var k := 0.15 + 0.08 * sin(t * 6.0)
+		(iron_fx.material_override as StandardMaterial3D).albedo_color.a = k
+	var swift: bool = b.has("swift") or b.has("carrot")
+	if swift and swift_fx == null:
+		swift_fx = ProcModels.embers(Vector3(0, 0.05, -0.1), Color("#9CFFB4"), 18, 0.5, 0.03)
+		swift_fx.direction = Vector3(0, 0.3, -1)
+		swift_fx.gravity = Vector3.ZERO
+		pivot.add_child(swift_fx)
+	elif not swift and swift_fx:
+		swift_fx.queue_free()
+		swift_fx = null
 
 ## 레이저 지시기: 총구 방향으로 빨간 선
 func _add_laser() -> void:
