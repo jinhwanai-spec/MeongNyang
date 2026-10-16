@@ -687,10 +687,10 @@ func equip_armor_from_bag(idx: int) -> bool:
 	var old: String = helmet if it.slot == "helmet" else vest
 	if it.slot == "helmet":
 		helmet = id
-		helmet_dur = float(it.dur)
+		helmet_dur = GameState.armor_max(id)
 	else:
 		vest = id
-		vest_dur = float(it.dur)
+		vest_dur = GameState.armor_max(id)
 	if old != "":
 		_stow(old)
 	Sfx.play("equip_armor", -2.0)

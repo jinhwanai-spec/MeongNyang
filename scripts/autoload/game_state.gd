@@ -25,6 +25,7 @@ var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
 var region := "mart"      # 원정 지역 (Regions)
 var seen := {}            # 한 번 보여 준 안내 (새 기능 소개 등)
+var facility := {"weapon": 1, "potion": 1, "armor": 1}  # 시설 강화 단계 (1~3)
 var contracts: Array = [] # 의뢰 게시판 [{kind, target, need, have, region, coins, item, done}]
 # 직전 원정 결과 (결과 화면용)
 var last_result := {}
@@ -51,6 +52,7 @@ func new_game() -> void:
 	armor = {"vest_1": 1}
 	armor_dur = {}
 	contracts = []
+	facility = {"weapon": 1, "potion": 1, "armor": 1}
 	fill_contracts()
 	save_game()
 
@@ -58,7 +60,7 @@ func new_game() -> void:
 func save_game() -> void:
 	var data := {"coins": coins, "stash": stash, "weapons": weapons, "ammo": ammo, "crafted": crafted,
 		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster,
-		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "mods": mods, "armor": armor, "armor_dur": armor_dur}
+		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "facility": facility, "mods": mods, "armor": armor, "armor_dur": armor_dur}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "\t"))
@@ -114,6 +116,11 @@ func load_game() -> bool:
 		for k in ad:
 			armor_dur[str(k)] = float(ad[k])
 	hamster = str(d.get("hamster", "baragi"))
+	facility = {"weapon": 1, "potion": 1, "armor": 1}
+	var fc = d.get("facility", {})
+	if typeof(fc) == TYPE_DICTIONARY:
+		for k in facility:
+			facility[k] = clampi(int(fc.get(k, 1)), 1, 3)
 	region = str(d.get("region", "mart"))
 	seen = d.get("seen", {}) if typeof(d.get("seen", {})) == TYPE_DICTIONARY else {}
 	contracts = []
@@ -219,7 +226,29 @@ func weapon_stats(wid: String) -> Dictionary:
 
 # ── 갑옷 ─────────────────────────────────────────────
 func armor_max(aid: String) -> float:
-	return float(DB.ITEMS.get(aid, {}).get("dur", 100))
+	return float(DB.ITEMS.get(aid, {}).get("dur", 100)) * float(DB.FACILITY.armor.mul[fac("armor") - 1])
+
+# ── 시설 강화 ────────────────────────────────────────
+func fac(st: String) -> int:
+	return int(facility.get(st, 1))
+
+func can_upgrade(st: String) -> bool:
+	var lv := fac(st)
+	if lv >= 3:
+		return false
+	var nx: Dictionary = DB.FACILITY[st].levels[lv]
+	return has_items(nx.cost) and coins >= int(nx.coins)
+
+func upgrade_facility(st: String) -> bool:
+	if not can_upgrade(st):
+		return false
+	var nx: Dictionary = DB.FACILITY[st].levels[fac(st)]
+	for id in nx.cost:
+		remove_item(id, int(nx.cost[id]))
+	coins -= int(nx.coins)
+	facility[st] = fac(st) + 1
+	save_game()
+	return true
 
 func armor_left(aid: String) -> float:
 	return float(armor_dur.get(aid, armor_max(aid)))

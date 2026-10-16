@@ -243,7 +243,7 @@ func _draw_status(p: Player, vs: Vector2) -> void:
 		if aid == "":
 			continue
 		var dur: float = p.helmet_dur if aslot == "helmet" else p.vest_dur
-		var mx := float(DB.ITEMS[aid].dur)
+		var mx := GameState.armor_max(aid)
 		var ax := r.end.x + 8.0
 		var ir := Rect2(Vector2(ax, ay), Vector2(30, 30))
 		UITheme.box(Color(0.08, 0.09, 0.12, 0.82), 6, Color(1, 1, 1, 0.12), 1).draw(canvas.get_canvas_item(), ir)

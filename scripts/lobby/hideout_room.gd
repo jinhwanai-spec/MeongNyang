@@ -169,6 +169,9 @@ func _labels() -> void:
 			continue
 		var l := Label3D.new()
 		l.text = STATIONS[k][0]
+		var fk: String = {"st_craft": "weapon", "st_potion": "potion", "st_armor": "armor"}.get(k, "")
+		if fk != "" and GameState.fac(fk) > 1:
+			l.text += "  Lv.%d" % GameState.fac(fk)
 		l.font = FX.font()
 		l.font_size = 30
 		l.outline_size = 10

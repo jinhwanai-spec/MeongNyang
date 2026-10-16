@@ -511,6 +511,7 @@ func _build_station(box: VBoxContainer, station: String) -> void:
 	hh.add_child(_npc_face(str(info[0])))
 	hh.add_child(head)
 	box.add_child(hh)
+	_build_facility(box, station)
 	if station == "weapon":
 		_build_mods(box)
 	elif station == "armor":
@@ -574,6 +575,54 @@ func _build_station(box: VBoxContainer, station: String) -> void:
 			c.add_child(ml)
 		_benefit(c, rec.benefit)
 
+## 시설 강화 카드: 현재 단계·다음 효과·필요한 재료
+func _build_facility(box: VBoxContainer, station: String) -> void:
+	if not DB.FACILITY.has(station):
+		return
+	var fd: Dictionary = DB.FACILITY[station]
+	var lv := GameState.fac(station)
+	var c := _card(box, Color(DB.C_LEGEND, 0.55))
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 10)
+	c.add_child(h)
+	var stars := ""
+	for i in 3:
+		stars += "★" if i < lv else "☆"
+	h.add_child(UITheme.label("시설 Lv.%d  %s" % [lv, stars], 19, DB.C_LEGEND, true))
+	var now := UITheme.label("지금: " + str(fd.effect[lv - 1]), 15, DB.C_TEXT)
+	now.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	h.add_child(now)
+	if lv >= 3:
+		h.add_child(UITheme.label("최고 단계", 15, DB.C_MUTED, true))
+		return
+	var nx: Dictionary = fd.levels[lv]
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	c.add_child(row)
+	row.add_child(UITheme.label("강화하면 → " + str(fd.effect[lv]), 15, Color("#6CCB5F"), true))
+	var mats := HFlowContainer.new()
+	mats.add_theme_constant_override("h_separation", 10)
+	mats.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(mats)
+	for id in nx.cost:
+		var have := int(GameState.stash.get(id, 0))
+		var need := int(nx.cost[id])
+		var mb := HBoxContainer.new()
+		var ic := ItemIcon.make(id, 28)
+		ic.dim = have < need
+		mb.add_child(ic)
+		mb.add_child(UITheme.label("%s %d/%d" % [DB.ITEMS[id].name, have, need], 13, Color("#6CCB5F") if have >= need else DB.C_DANGER))
+		mats.add_child(mb)
+	mats.add_child(UITheme.label("+ %d냥" % int(nx.coins), 13, DB.C_LEGEND if GameState.coins >= int(nx.coins) else DB.C_DANGER))
+	var ub := UITheme.button("강화", 16, GameState.can_upgrade(station))
+	ub.disabled = not GameState.can_upgrade(station)
+	ub.pressed.connect(func():
+		if GameState.upgrade_facility(station):
+			Sfx.play({"weapon": "craft_weapon", "potion": "craft_potion", "armor": "craft_armor"}[station], 0.0)
+			show_toast("%s Lv.%d 강화 완료! %s" % [fd.name, GameState.fac(station), fd.effect[GameState.fac(station) - 1]], DB.C_LEGEND)
+			refresh())
+	row.add_child(ub)
+
 func _craft(rec: Dictionary) -> void:
 	if not GameState.has_items(rec.cost) or GameState.coins < int(rec.coins):
 		return
@@ -588,9 +637,10 @@ func _craft(rec: Dictionary) -> void:
 			if rec.id == "crossbow" and int(GameState.ammo.get("bolt", 0)) < 6:
 				GameState.ammo["bolt"] = int(GameState.ammo.get("bolt", 0)) + 6
 		"ammo":
-			GameState.ammo[rec.ammo] = int(GameState.ammo.get(rec.ammo, 0)) + int(rec.amount)
+			GameState.ammo[rec.ammo] = int(GameState.ammo.get(rec.ammo, 0)) + int(round(int(rec.amount) * float(DB.FACILITY.weapon.mul[GameState.fac("weapon") - 1])))
 		"item":
-			GameState.add_item(rec.item, int(rec.amount))
+			var extra := int(DB.FACILITY.potion.mul[GameState.fac("potion") - 1]) if str(rec.get("station", "")) == "potion" else 0
+			GameState.add_item(rec.item, int(rec.amount) + extra)
 		"armor":
 			GameState.armor[rec.item] = int(GameState.armor.get(rec.item, 0)) + 1
 			GameState.armor_dur[rec.item] = GameState.armor_max(rec.item)

@@ -257,6 +257,19 @@ const BAG_RULES := {"instant": "바로 사라짐", "two": "두 번 연속 쓰러
 const BAG_RULE_ORDER := ["instant", "two", "keep"]
 const DIFF_STEPS := {"enemy_dmg": [0.5, 0.7, 0.85, 1.0, 1.15, 1.3, 1.5], "enemy_hp": [0.7, 0.85, 1.0, 1.2, 1.4], "loot": [0.7, 0.85, 1.0, 1.25, 1.5]}
 
+# ── 시설 강화 (은신처 제작소 1~3단계) ─────────────────
+const FACILITY := {
+	"weapon": {"name": "무기 제작소", "mul": [1.0, 1.5, 2.0],
+		"effect": ["탄약 제작량 기본", "탄약 제작량 +50%", "탄약 제작량 +100%"],
+		"levels": [{}, {"cost": {"metal_sheet": 2, "spring": 2}, "coins": 150}, {"cost": {"metal_sheet": 4, "gunpowder": 3, "circuit": 1}, "coins": 400}]},
+	"potion": {"name": "물약 제작소", "mul": [0, 1, 2],
+		"effect": ["물약 제작량 기본", "물약·약품 한 번에 +1개", "물약·약품 한 번에 +2개"],
+		"levels": [{}, {"cost": {"herb": 4, "bottle": 3}, "coins": 120}, {"cost": {"herb": 6, "bottle": 4, "catnip": 1}, "coins": 350}]},
+	"armor": {"name": "갑옷 제작소", "mul": [1.0, 1.25, 1.5],
+		"effect": ["갑옷 내구도 기본", "모든 갑옷 내구도 +25%", "모든 갑옷 내구도 +50%"],
+		"levels": [{}, {"cost": {"cloth": 4, "metal_sheet": 2}, "coins": 150}, {"cost": {"cloth": 6, "metal_sheet": 5, "battery": 1}, "coins": 400}]},
+}
+
 # ── 총 부품 ───────────────────────────────────────────
 # slot: optic(조준경) / muzzle(총구) / mag(탄창) / grip(손잡이) / stock(개머리판)
 # fits: 끼울 수 있는 총 계열 (pistol/smg/rifle/shotgun/bow), mul: 성능 배율
