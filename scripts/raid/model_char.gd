@@ -205,6 +205,7 @@ var melee_hold: Node3D
 var melee_node: Node3D
 var melee_key := ""
 var back_hold: Node3D
+var pack_node: Node3D
 var vest_node: Node3D
 var vest_key := ""
 var helmet_node: Node3D
@@ -229,8 +230,14 @@ func _setup_gear() -> void:
 	melee_hold = Node3D.new()
 	melee_hold.position = Vector3(-0.19, 0.0, 0.38)
 	chest_att.add_child(melee_hold)
+	# 등에 멘 배낭: 가방이 찰수록 커진다 (전리품을 많이 들었다는 게 눈에 보이게)
+	pack_node = ProcModels.backpack(Color("#8A6A45"))
+	pack_node.position = Vector3(0, -0.2, -0.38)
+	pack_node.rotation = Vector3(0.12, PI, 0)
+	pack_node.scale = Vector3.ONE * 0.62
+	chest_att.add_child(pack_node)
 	back_hold = Node3D.new()
-	back_hold.position = Vector3(0.12, -0.12, -0.34)
+	back_hold.position = Vector3(0.12, -0.12, -0.46)
 	back_hold.rotation = Vector3(-PI * 0.5 + 0.25, 0, 0.9)
 	chest_att.add_child(back_hold)
 
@@ -267,6 +274,13 @@ func _gear() -> Dictionary:
 func _update_gear(_delta: float) -> void:
 	if chest_att == null or not is_instance_valid(ent):
 		return
+	if pack_node:
+		var load_k := 0.0
+		var rd = ent.get("raid")
+		if rd != null and is_instance_valid(rd) and rd.get("bag") != null and ent == rd.get("player"):
+			load_k = float(rd.bag.load_ratio())
+		var want := 0.7 + 0.3 * load_k
+		pack_node.scale = pack_node.scale.lerp(Vector3.ONE * want, 0.1)
 	var g := _gear()
 	var gun: String = g.gun if DB.WEAPONS.has(g.gun) else ""
 	var mods: Dictionary = g.mods.get(gun, {}) if gun != "" else {}
