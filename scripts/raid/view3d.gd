@@ -215,11 +215,82 @@ func _water() -> void:
 				var x0 := x
 				while x < LevelData.width() and LevelData.code(x, y) == "~":
 					x += 1
-				var wp := ProcModels.water_plane(Vector2(x - x0, 1.0))
-				wp.position = Vector3((x0 + x) * 0.5, -0.02, y + 0.5)
+				var wp := ProcModels.water_plane(Vector2(x - x0, 1.0), LevelData.region == "town")
+				wp.position = Vector3((x0 + x) * 0.5, 0.012, y + 0.5)
 				add_child(wp)
 			else:
 				x += 1
+	if LevelData.region == "town":
+		_pond_dress()
+
+## 공원 연못: 연잎·연꽃, 물가 갈대와 돌
+func _pond_dress() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7331
+	var pad := ProcModels.mat(Color("#4E9A4A"), 0.7)
+	var pad2 := ProcModels.mat(Color("#6DB65A"), 0.7)
+	var flower := ProcModels.mat(Color("#FFB3CF"), 0.5)
+	var reed := ProcModels.mat(Color("#7FA650"), 0.8)
+	var stone := ProcModels.mat(Color("#6F6B63"), 0.95)
+	for y in LevelData.height():
+		for x in LevelData.width():
+			if LevelData.code(x, y) != "~":
+				continue
+			var shore := false
+			for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if LevelData.code(x + d.x, y + d.y) != "~":
+					shore = true
+			if shore:
+				# 물가: 돌 1~2개 + 갈대 한 무더기
+				for i in rng.randi_range(0, 1):
+					var s := MeshInstance3D.new()
+					var sm := SphereMesh.new()
+					var r := rng.randf_range(0.12, 0.22)
+					sm.radius = r
+					sm.height = r * 1.1
+					s.mesh = sm
+					s.material_override = stone
+					s.position = Vector3(x + rng.randf_range(0.1, 0.9), 0.0, y + rng.randf_range(0.1, 0.9))
+					s.rotation.y = rng.randf() * TAU
+					s.scale = Vector3(1.3, 1.0, 1.0)
+					add_child(s)
+				if rng.randf() < 0.45:
+					var cx := x + rng.randf_range(0.2, 0.8)
+					var cz := y + rng.randf_range(0.2, 0.8)
+					for i in 6:
+						var c := MeshInstance3D.new()
+						var cm := CylinderMesh.new()
+						var h := rng.randf_range(0.35, 0.7)
+						cm.top_radius = 0.008
+						cm.bottom_radius = 0.02
+						cm.height = h
+						cm.radial_segments = 5
+						c.mesh = cm
+						c.material_override = reed
+						c.position = Vector3(cx + rng.randf_range(-0.12, 0.12), h * 0.5, cz + rng.randf_range(-0.12, 0.12))
+						c.rotation = Vector3(rng.randf_range(-0.2, 0.2), 0, rng.randf_range(-0.2, 0.2))
+						add_child(c)
+			elif rng.randf() < 0.22:
+				var p := MeshInstance3D.new()
+				var pm := CylinderMesh.new()
+				var pr := rng.randf_range(0.14, 0.26)
+				pm.top_radius = pr
+				pm.bottom_radius = pr
+				pm.height = 0.01
+				pm.radial_segments = 14
+				p.mesh = pm
+				p.material_override = pad if rng.randf() < 0.6 else pad2
+				p.position = Vector3(x + rng.randf_range(0.2, 0.8), 0.03, y + rng.randf_range(0.2, 0.8))
+				add_child(p)
+				if rng.randf() < 0.3:
+					var f := MeshInstance3D.new()
+					var fm := SphereMesh.new()
+					fm.radius = 0.06
+					fm.height = 0.07
+					f.mesh = fm
+					f.material_override = flower
+					f.position = p.position + Vector3(0, 0.03, 0)
+					add_child(f)
 
 # ── 벽 ───────────────────────────────────────────────
 func _is_wall(x: int, y: int) -> bool:

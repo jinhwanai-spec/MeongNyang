@@ -612,7 +612,7 @@ static func boat() -> Node3D:
 	return r
 
 ## 바다: 반짝이는 물결 면 (셰이더)
-static func water_plane(size: Vector2) -> MeshInstance3D:
+static func water_plane(size: Vector2, pond: bool = false) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var pm := PlaneMesh.new()
 	pm.size = size
@@ -633,15 +633,19 @@ void fragment(){
 	NORMAL = (VIEW_MATRIX * vec4(n,0.0)).xyz;
 	vec3 c = mix(deep.rgb, shallow.rgb, 0.5+0.25*w);
 	float sparkle = pow(max(0.0, sin(p.x*7.0+TIME*3.0)*sin(p.y*6.0-TIME*2.5)), 24.0);
-	ALBEDO = c + vec3(sparkle*0.6);
-	ROUGHNESS = 0.08;
-	METALLIC = 0.1;
-	SPECULAR = 0.7;
+	ALBEDO = c + vec3(sparkle*0.25);
+	ROUGHNESS = 0.22;
+	METALLIC = 0.0;
+	SPECULAR = 0.35;
 	ALPHA = deep.a;
 }
 """
 	var m := ShaderMaterial.new()
 	m.shader = sh
+	if pond:
+		# 공원 연못: 밝은 청록, 덜 번들거리게
+		m.set_shader_parameter("deep", Color(0.10, 0.30, 0.33, 0.88))
+		m.set_shader_parameter("shallow", Color(0.20, 0.47, 0.45, 0.88))
 	mi.material_override = m
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return mi
