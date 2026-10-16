@@ -789,6 +789,8 @@ func _update_storm3d(delta: float) -> void:
 	env.ambient_light_color = _amb0.lerp(Color(0.72, 0.74, 0.78), k * 0.6)
 	env.ambient_light_energy = _amb_e0 * (1.0 - 0.05 * k) + _flash * 1.2
 	env.background_color = _bg0.lerp(Color(0.06, 0.07, 0.1), k)
+	if env.fog_enabled:
+		env.fog_density = 0.016 * (1.0 - 0.6 * k)   # 폭풍 + 안개가 겹치면 너무 뿌예지지 않게
 	if k > 0.02:
 		if _rain3d == null:
 			_rain3d = _make_rain3d()
