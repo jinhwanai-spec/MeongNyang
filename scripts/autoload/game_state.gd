@@ -25,6 +25,7 @@ var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
 var region := "mart"      # 원정 지역 (Regions)
 var seen := {}            # 한 번 보여 준 안내 (새 기능 소개 등)
+var deals: Array = []      # 오늘의 특가 [{id, sold}]
 var ham_xp := {}   # 용병별 경험치 {hamster_id: xp}
 var facility := {"weapon": 1, "potion": 1, "armor": 1}  # 시설 강화 단계 (1~3)
 var contracts: Array = [] # 의뢰 게시판 [{kind, target, need, have, region, coins, item, done}]
@@ -55,6 +56,7 @@ func new_game() -> void:
 	contracts = []
 	facility = {"weapon": 1, "potion": 1, "armor": 1}
 	ham_xp = {}
+	refresh_deals()
 	fill_contracts()
 	save_game()
 
@@ -62,7 +64,7 @@ func new_game() -> void:
 func save_game() -> void:
 	var data := {"coins": coins, "stash": stash, "weapons": weapons, "ammo": ammo, "crafted": crafted,
 		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster,
-		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "facility": facility, "ham_xp": ham_xp, "mods": mods, "armor": armor, "armor_dur": armor_dur}
+		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "facility": facility, "ham_xp": ham_xp, "deals": deals, "mods": mods, "armor": armor, "armor_dur": armor_dur}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "\t"))
@@ -123,6 +125,14 @@ func load_game() -> bool:
 	if typeof(fc) == TYPE_DICTIONARY:
 		for k in facility:
 			facility[k] = clampi(int(fc.get(k, 1)), 1, 3)
+	deals = []
+	var dl = d.get("deals", [])
+	if typeof(dl) == TYPE_ARRAY:
+		for x in dl:
+			if typeof(x) == TYPE_DICTIONARY and DB.ITEMS.has(str(x.get("id", ""))):
+				deals.append({"id": str(x.id), "sold": bool(x.get("sold", false))})
+	if deals.is_empty():
+		refresh_deals()
 	ham_xp = {}
 	var hx = d.get("ham_xp", {})
 	if typeof(hx) == TYPE_DICTIONARY:
@@ -264,6 +274,13 @@ func add_ham_xp(id: String, amount: int) -> int:
 	ham_xp[id] = int(ham_xp.get(id, 0)) + maxi(0, amount)
 	return ham_level(id) - before
 
+func refresh_deals() -> void:
+	var pool: Array = DB.DEAL_POOL.duplicate()
+	pool.shuffle()
+	deals = []
+	for i in 3:
+		deals.append({"id": str(pool[i]), "sold": false})
+
 func roll_weather() -> String:
 	var r := randf()
 	for w in DB.WEATHER:
@@ -404,10 +421,12 @@ func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Arra
 		else:
 			add_item(id)
 	stats.extracts = int(stats.extracts) + 1
+	refresh_deals()
 	save_game()
 
 func finish_raid_death() -> void:
 	stats.deaths = int(stats.deaths) + 1
+	refresh_deals()
 	save_game()
 
 # ── 의뢰 ─────────────────────────────────────────────

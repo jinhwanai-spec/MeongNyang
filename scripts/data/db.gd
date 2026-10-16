@@ -488,6 +488,13 @@ const RECIPES := [
 ]
 
 # ── 상점 (냥이 시장) ─────────────────────────────────
+## 냥이 시장 '오늘의 특가' 후보 (원정을 다녀올 때마다 3개가 바뀐다, 30% 할인)
+const DEAL_POOL := ["helmet_2", "vest_2", "att_holo", "att_scope_4x", "att_suppressor", "att_ext_mag", "att_laser", "att_drum_mag", "att_stock",
+	"potion_iron", "potion_swift", "potion_focus", "potion_shadow", "lens", "circuit", "battery"]
+
+static func deal_price(id: String) -> int:
+	return int(round(float(ITEMS[id].v) * 2.0 * 0.7 / 5.0) * 5.0)
+
 const SHOP := [
 	{"id": "ammo_pistol", "kind": "ammo", "ammo": "pistol", "amount": 12, "price": 36, "name": "권총탄 12발"},
 	{"id": "ammo_shell", "kind": "ammo", "ammo": "shell", "amount": 6, "price": 54, "name": "산탄 6발"},

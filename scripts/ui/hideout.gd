@@ -812,6 +812,50 @@ func _build_market() -> void:
 		trend.add_child(UITheme.label("%s ×%.2f %s" % [names[cat], m, "▲" if m > 1.05 else ("▼" if m < 0.95 else "–")], 14, col))
 	_benefit(npc, "판 돈으로 탄약·붕대를 사서 다음 원정 생존력을 높이자 (시세는 원정마다 바뀐다)")
 
+	# 오늘의 특가 (원정을 다녀오면 바뀐다)
+	var dc := _card(market_box, Color(DB.C_LEGEND, 0.75))
+	var dh := HBoxContainer.new()
+	dc.add_child(dh)
+	var dt := UITheme.label("오늘의 특가  -30%", 19, DB.C_LEGEND, true)
+	dt.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dh.add_child(dt)
+	dh.add_child(UITheme.label("원정을 다녀오면 바뀌어요", 13, DB.C_MUTED))
+	for di in GameState.deals.size():
+		var dd: Dictionary = GameState.deals[di]
+		var did := str(dd.id)
+		var it: Dictionary = DB.ITEMS[did]
+		var price := DB.deal_price(did)
+		var row3 := HBoxContainer.new()
+		row3.add_theme_constant_override("separation", 10)
+		dc.add_child(row3)
+		row3.add_child(ItemIcon.make(did, 44))
+		var dv := VBoxContainer.new()
+		dv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row3.add_child(dv)
+		dv.add_child(UITheme.label(str(it.name), 16, DB.C_TEXT, true))
+		var ds := UITheme.label(str(it.get("desc", "")), 12, DB.C_MUTED)
+		ds.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		dv.add_child(ds)
+		var sold := bool(dd.get("sold", false))
+		var db2 := UITheme.button("매진" if sold else "%d냥" % price, 15, not sold and GameState.coins >= price)
+		db2.disabled = sold or GameState.coins < price
+		db2.custom_minimum_size = Vector2(90, 0)
+		db2.pressed.connect(func():
+			if GameState.coins < price or bool(GameState.deals[di].get("sold", false)):
+				return
+			GameState.coins -= price
+			if str(it.cat) == "armor":
+				GameState.armor[did] = int(GameState.armor.get(did, 0)) + 1
+				GameState.armor_dur[did] = GameState.armor_max(did)
+			else:
+				GameState.add_item(did, 1)
+			GameState.deals[di]["sold"] = true
+			GameState.save_game()
+			Sfx.play("coin", -2.0)
+			show_toast("특가 %s 구매!" % str(it.name))
+			refresh())
+		row3.add_child(db2)
+
 	var sell := _card(market_box)
 	var sh := HBoxContainer.new()
 	sell.add_child(sh)

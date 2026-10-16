@@ -135,6 +135,8 @@ func _process(_d: float) -> void:
 			"fac": get_node("/root/GameState").facility = {"weapon": int(arg), "potion": int(arg), "armor": int(arg)}
 			"shield": Enemy.force_shield = arg != "0"
 			"weather": Raid.force_weather = arg
+			"tptrap":
+				main.current.player.global_position = main.current.traps[int(arg)][1] + Vector2(-60, 0)
 			"god":
 				main.current.player.hp = 99999.0
 				main.current.player.max_hp = 99999.0
