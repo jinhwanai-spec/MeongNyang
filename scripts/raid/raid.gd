@@ -90,7 +90,7 @@ func _ready() -> void:
 	_build_pause()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	Sfx.music("raid")
-	Sfx.ambient("harbor" if LevelData.region == "dock" else "")
+	Sfx.ambient({"dock": "harbor", "town": "park", "mart": "mart"}.get(LevelData.region, ""))
 	tree_exiting.connect(func(): Sfx.ambient(""))
 	notify("원정 시작 — " + str(Regions.cur().short), DB.C_HERO)
 	if not GameState.tutorial_done:
