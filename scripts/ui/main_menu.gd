@@ -117,7 +117,7 @@ func _build_ui() -> void:
 	_btn("멀티플레이", false, func(): multi.emit())
 	_btn("설정", false, func(): _open_settings())
 	_btn("나가기", false, func(): get_tree().quit())
-	var ver := UITheme.label("v0.54 · 3D", 13, Color(1, 1, 1, 0.45))
+	var ver := UITheme.label("v0.56 · 3D", 13, Color(1, 1, 1, 0.45))
 	ver.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	ver.position = Vector2(24, -34)
 	root.add_child(ver)

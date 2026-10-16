@@ -587,6 +587,7 @@ func _update_traps(delta: float) -> void:
 			if bag.try_add("cheese"):
 				notify("쥐덫에서 치즈 미끼를 살짝 빼냈다", Color("#6CCB5F"))
 			_contract("bait")
+			GameState.stat_add("baits")
 		else:
 			Sfx.play("trap_snap", -1.0, 0.08)
 			shake(7.0)
@@ -890,6 +891,9 @@ func toggle_inventory(open: bool, c: LootContainer = null) -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if open else Input.MOUSE_MODE_HIDDEN
 
 func open_loot(c: LootContainer) -> void:
+	if c.supply and not c.get_meta("counted", false):
+		c.set_meta("counted", true)
+		GameState.stat_add("supplies")
 	toggle_inventory(true, c)
 	if tut_step == 1:
 		tut_step = 2

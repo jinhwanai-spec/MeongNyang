@@ -25,6 +25,7 @@ var loadout := {"primary": "shotgun", "sidearm": "pistol", "melee": "bat", "meds
 var hamster := "baragi"   # 선택한 햄스터 용병 (DB.HAMSTERS)
 var region := "mart"      # 원정 지역 (Regions)
 var seen := {}            # 한 번 보여 준 안내 (새 기능 소개 등)
+var ach_claimed := {}     # 받은 도전 과제 보상 {id: true}
 var deals: Array = []      # 오늘의 특가 [{id, sold}]
 var ham_xp := {}   # 용병별 경험치 {hamster_id: xp}
 var facility := {"weapon": 1, "potion": 1, "armor": 1}  # 시설 강화 단계 (1~3)
@@ -56,6 +57,7 @@ func new_game() -> void:
 	contracts = []
 	facility = {"weapon": 1, "potion": 1, "armor": 1}
 	ham_xp = {}
+	ach_claimed = {}
 	refresh_deals()
 	fill_contracts()
 	save_game()
@@ -64,7 +66,7 @@ func new_game() -> void:
 func save_game() -> void:
 	var data := {"coins": coins, "stash": stash, "weapons": weapons, "ammo": ammo, "crafted": crafted,
 		"stats": stats, "loadout": loadout, "tutorial_done": tutorial_done, "hamster": hamster,
-		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "facility": facility, "ham_xp": ham_xp, "deals": deals, "mods": mods, "armor": armor, "armor_dur": armor_dur}
+		"difficulty": difficulty, "lost_bags": lost_bags, "region": region, "seen": seen, "contracts": contracts, "facility": facility, "ham_xp": ham_xp, "deals": deals, "ach": ach_claimed, "mods": mods, "armor": armor, "armor_dur": armor_dur}
 	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(data, "\t"))
@@ -125,6 +127,7 @@ func load_game() -> bool:
 	if typeof(fc) == TYPE_DICTIONARY:
 		for k in facility:
 			facility[k] = clampi(int(fc.get(k, 1)), 1, 3)
+	ach_claimed = d.get("ach", {}) if typeof(d.get("ach", {})) == TYPE_DICTIONARY else {}
 	deals = []
 	var dl = d.get("deals", [])
 	if typeof(dl) == TYPE_ARRAY:
@@ -273,6 +276,24 @@ func add_ham_xp(id: String, amount: int) -> int:
 	var before := ham_level(id)
 	ham_xp[id] = int(ham_xp.get(id, 0)) + maxi(0, amount)
 	return ham_level(id) - before
+
+# ── 도전 과제 ────────────────────────────────────────
+func stat_add(key: String, n: int = 1) -> void:
+	stats[key] = int(stats.get(key, 0)) + n
+
+func ach_progress(a: Array) -> int:
+	return mini(int(stats.get(str(a[3]), 0)), int(a[4]))
+
+func ach_ready(a: Array) -> bool:
+	return not ach_claimed.has(str(a[0])) and ach_progress(a) >= int(a[4])
+
+func claim_ach(a: Array) -> bool:
+	if not ach_ready(a):
+		return false
+	ach_claimed[str(a[0])] = true
+	coins += int(a[5])
+	save_game()
+	return true
 
 func refresh_deals() -> void:
 	var pool: Array = DB.DEAL_POOL.duplicate()
@@ -426,6 +447,7 @@ func finish_raid_extract(kit_weapons: Array, kit_ammo: Dictionary, bag_ids: Arra
 		else:
 			add_item(id)
 	stats.extracts = int(stats.extracts) + 1
+	stat_add("ext_" + LevelData.region)
 	refresh_deals()
 	save_game()
 

@@ -980,6 +980,39 @@ func _build_stash() -> void:
 			lvs.append("%s Lv.%d" % [DB.HAMSTERS[hid].name, GameState.ham_level(hid)])
 	if not lvs.is_empty():
 		rc.add_child(UITheme.label("용병: " + " · ".join(lvs), 13, Color("#9FE38A")))
+	# 도전 과제
+	var achc := _card(stash_box, Color(DB.C_LEGEND, 0.5))
+	var ready_n := 0
+	for a in DB.ACHIEVEMENTS:
+		if GameState.ach_ready(a):
+			ready_n += 1
+	achc.add_child(UITheme.label("도전 과제  %d / %d%s" % [GameState.ach_claimed.size(), DB.ACHIEVEMENTS.size(), ("  (보상 %d개 받을 수 있음!)" % ready_n) if ready_n > 0 else ""], 19, DB.C_LEGEND if ready_n > 0 else DB.C_TEXT, true))
+	var achg := GridContainer.new()
+	achg.columns = 2
+	achg.add_theme_constant_override("h_separation", 14)
+	achg.add_theme_constant_override("v_separation", 6)
+	achc.add_child(achg)
+	for a in DB.ACHIEVEMENTS:
+		var row := HBoxContainer.new()
+		row.custom_minimum_size = Vector2(330, 0)
+		row.add_theme_constant_override("separation", 6)
+		var done: bool = GameState.ach_claimed.has(str(a[0]))
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		col.add_child(UITheme.label(("★ " if done else "") + str(a[1]), 14, Color("#6CCB5F") if done else DB.C_TEXT, true))
+		col.add_child(UITheme.label("%s  %d/%d" % [str(a[2]), GameState.ach_progress(a), int(a[4])], 12, DB.C_MUTED))
+		row.add_child(col)
+		if GameState.ach_ready(a):
+			var cb := UITheme.button("+%d냥" % int(a[5]), 13, true)
+			cb.pressed.connect(func():
+				if GameState.claim_ach(a):
+					Sfx.play("coin", -2.0)
+					show_toast("도전 과제 '%s' 보상 %d냥!" % [str(a[1]), int(a[5])], DB.C_LEGEND)
+					refresh())
+			row.add_child(cb)
+		elif not done:
+			row.add_child(UITheme.label("%d냥" % int(a[5]), 12, DB.C_MUTED))
+		achg.add_child(row)
 	var c := _card(stash_box)
 	var h := HBoxContainer.new()
 	c.add_child(h)

@@ -491,6 +491,22 @@ const RECIPES := [
 ]
 
 # ── 상점 (냥이 시장) ─────────────────────────────────
+## 도전 과제: [id, 이름, 설명, 기록 키, 목표, 보상 냥]
+const ACHIEVEMENTS := [
+	["first_extract", "첫 귀환", "원정에서 살아 돌아오기", "extracts", 1, 100],
+	["extract_10", "베테랑 용병", "탈출 10번", "extracts", 10, 500],
+	["ext_mart", "마트 단골", "멍냥마트에서 탈출", "ext_mart", 1, 120],
+	["ext_dock", "항구 사나이", "냥냥 항구에서 탈출", "ext_dock", 1, 150],
+	["ext_town", "골목 탐험가", "냥냥 주택가에서 탈출", "ext_town", 1, 150],
+	["ext_subway", "막차 탑승", "냥냥 지하철역에서 탈출", "ext_subway", 1, 200],
+	["kills_50", "고양이 사냥꾼", "고양이 50마리 처치", "kills", 50, 300],
+	["boss_1", "대장 사냥", "보스 처치", "boss_kills", 1, 300],
+	["boss_4", "보스 도장 깨기", "보스 4번 처치", "boss_kills", 4, 800],
+	["barrels_10", "불꽃놀이", "기름통 10개 터뜨리기", "barrels", 10, 250],
+	["baits_5", "치즈 도둑", "쥐덫에서 미끼 5개 빼 오기", "baits", 5, 200],
+	["supply_3", "하늘의 선물", "보급 상자 3번 열기", "supplies", 3, 300],
+]
+
 ## 원정 중 떨어지는 보급 상자 (낙하산) 전리품
 const SUPPLY_TABLE := [["att_holo", 8], ["att_scope_4x", 5], ["att_suppressor", 6], ["att_ext_mag", 7], ["att_drum_mag", 4], ["att_laser", 6],
 	["potion_iron", 8], ["potion_swift", 8], ["potion_focus", 6], ["potion_big", 8], ["medkit", 10], ["helmet_2", 6], ["vest_2", 6], ["helmet_3", 2], ["vest_3", 2],
